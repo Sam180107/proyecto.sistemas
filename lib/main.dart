@@ -3,18 +3,16 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 // Estas rutas ahora son relativas a la carpeta lib/
-import 'firebase_options.dart'; 
+import 'firebase_options.dart';
 import 'data/auth_repository.dart';
 import 'logic/auth_cubit.dart';
-import 'presentacion/login_screen.dart'; // <--- Esto cambió
+import 'presentacion/landing_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Inicializa Firebase con el archivo que generó el CLI
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const MyApp());
 }
@@ -31,7 +29,7 @@ class MyApp extends StatelessWidget {
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'BookSwap Unimet',
-          home: LoginScreen(), // Ahora sí lo encuentra aquí
+          home: const LandingPage(), // Empezamos con la Landing Page
         ),
       ),
     );
