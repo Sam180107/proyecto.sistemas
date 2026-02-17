@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_screen.dart';
+import 'como_funciona_page.dart';
+import 'beneficios_page.dart';
+import 'preguntas_frecuentes_page.dart';
+import 'centro_de_ayuda_page.dart';
+import 'politicas_de_uso_page.dart';
+import 'contacto_page.dart';
+import 'terminos_y_condiciones_page.dart';
+import 'privacidad_page.dart';
+import 'cookies_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -753,26 +762,37 @@ class _LandingPageState extends State<LandingPage> {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _buildFooterBrand()),
                     Expanded(
                       child: _buildFooterColumn('Plataforma', [
-                        'Cómo Funciona',
-                        'Beneficios',
-                        'Preguntas Frecuentes',
+                        {'label': 'Cómo Funciona', 'page': ComoFuncionaPage()},
+                        {'label': 'Beneficios', 'page': BeneficiosPage()},
+                        {
+                          'label': 'Preguntas Frecuentes',
+                          'page': PreguntasFrecuentesPage(),
+                        },
                       ]),
                     ),
                     Expanded(
                       child: _buildFooterColumn('Soporte', [
-                        'Centro de Ayuda',
-                        'Políticas de Uso',
-                        'Contacto',
+                        {
+                          'label': 'Centro de Ayuda',
+                          'page': CentroDeAyudaPage(),
+                        },
+                        {
+                          'label': 'Políticas de Uso',
+                          'page': PoliticasDeUsoPage(),
+                        },
+                        {'label': 'Contacto', 'page': ContactoPage()},
                       ]),
                     ),
                     Expanded(
                       child: _buildFooterColumn('Legal', [
-                        'Términos y Condiciones',
-                        'Privacidad',
-                        'Cookies',
+                        {
+                          'label': 'Términos y Condiciones',
+                          'page': TerminosYCondicionesPage(),
+                        },
+                        {'label': 'Privacidad', 'page': PrivacidadPage()},
+                        {'label': 'Cookies', 'page': CookiesPage()},
                       ]),
                     ),
                   ],
@@ -784,21 +804,30 @@ class _LandingPageState extends State<LandingPage> {
                     _buildFooterBrand(),
                     const SizedBox(height: 24),
                     _buildFooterColumn('Plataforma', [
-                      'Cómo Funciona',
-                      'Beneficios',
-                      'Preguntas Frecuentes',
+                      {'label': 'Cómo Funciona', 'page': ComoFuncionaPage()},
+                      {'label': 'Beneficios', 'page': BeneficiosPage()},
+                      {
+                        'label': 'Preguntas Frecuentes',
+                        'page': PreguntasFrecuentesPage(),
+                      },
                     ]),
                     const SizedBox(height: 24),
                     _buildFooterColumn('Soporte', [
-                      'Centro de Ayuda',
-                      'Políticas de Uso',
-                      'Contacto',
+                      {'label': 'Centro de Ayuda', 'page': CentroDeAyudaPage()},
+                      {
+                        'label': 'Políticas de Uso',
+                        'page': PoliticasDeUsoPage(),
+                      },
+                      {'label': 'Contacto', 'page': ContactoPage()},
                     ]),
                     const SizedBox(height: 24),
                     _buildFooterColumn('Legal', [
-                      'Términos y Condiciones',
-                      'Privacidad',
-                      'Cookies',
+                      {
+                        'label': 'Términos y Condiciones',
+                        'page': TerminosYCondicionesPage(),
+                      },
+                      {'label': 'Privacidad', 'page': PrivacidadPage()},
+                      {'label': 'Cookies', 'page': CookiesPage()},
                     ]),
                   ],
                 );
@@ -845,7 +874,7 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
-  Widget _buildFooterColumn(String title, List<String> items) {
+  Widget _buildFooterColumn(String title, List<Map<String, dynamic>> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -861,9 +890,21 @@ class _LandingPageState extends State<LandingPage> {
         ...items.map(
           (item) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              item,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => item['page']),
+                );
+              },
+              child: Text(
+                item['label'],
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                  decoration: TextDecoration.underline,
+                ),
+              ),
             ),
           ),
         ),
