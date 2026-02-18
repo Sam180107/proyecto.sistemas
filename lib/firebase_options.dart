@@ -87,4 +87,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'unimet-proyecto-libros.firebasestorage.app',
     measurementId: 'G-J2Z60MW9HD',
   );
+
 }
