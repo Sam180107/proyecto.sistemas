@@ -26,10 +26,10 @@ class MyApp extends StatelessWidget {
       create: (context) => AuthRepository(),
       child: BlocProvider(
         create: (context) => AuthCubit(context.read<AuthRepository>()),
-        child: MaterialApp(
+        child: const MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'BookSwap Unimet',
-          home: const LandingPage(), // Empezamos con la Landing Page
+          home: LandingPage(), // Empezamos con la Landing Page
         ),
       ),
     );
