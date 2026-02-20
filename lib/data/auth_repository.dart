@@ -3,8 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthRepository {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
+  // Usuario actual
   User? get currentUser => _firebaseAuth.currentUser;
 
+  // Stream de cambios de autenticación
   Stream<User?> get authStateChanges =>
       _firebaseAuth.authStateChanges();
 
@@ -17,29 +19,35 @@ class AuthRepository {
   }
 
   // 📝 Registro
-  Future<void> register({
+  Future<User> register({
     required String email,
     required String password,
   }) async {
     _validateInstitutionalEmail(email);
 
-    await _firebaseAuth.createUserWithEmailAndPassword(
+    final credential =
+        await _firebaseAuth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
+
+    return credential.user!;
   }
 
   // 🔑 Login
-  Future<void> logIn({
+  Future<User> logIn({
     required String email,
     required String password,
   }) async {
     _validateInstitutionalEmail(email);
 
-    await _firebaseAuth.signInWithEmailAndPassword(
+    final credential =
+        await _firebaseAuth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+
+    return credential.user!;
   }
 
   // 🚪 Logout
