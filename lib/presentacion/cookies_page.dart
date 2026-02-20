@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 class CookiesPage extends StatelessWidget {
+  const CookiesPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Back'),
-        backgroundColor: const Color.fromARGB(255, 2, 126, 243),
+        title: const Text('Cookies'),
+        backgroundColor: const Color(0xFF027EF3),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -23,7 +25,7 @@ class CookiesPage extends StatelessWidget {
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
-                      offset: Offset(0, 3),
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -39,13 +41,13 @@ class CookiesPage extends StatelessWidget {
                         color: Colors.teal.shade800,
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Utilizamos cookies esenciales para mantener tu sesión activa y recordar si tienes permisos de Administrador.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Esto evita que tengas que reingresar la contraseña cada vez que cambias entre el Home y el Dashboard.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
