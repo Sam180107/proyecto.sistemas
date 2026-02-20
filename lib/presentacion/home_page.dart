@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../logic/auth_cubit.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Lista de libros "ficticia" para que tus amigos vean cómo se vería
     final List<Map<String, String>> libros = [
       {'titulo': 'Cálculo de Stewart', 'precio': '20\$', 'estado': 'Nuevo'},
       {'titulo': 'Física Universitaria', 'precio': '15\$', 'estado': 'Usado'},
@@ -17,15 +17,18 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
       appBar: AppBar(
-        title: const Text('Marketplace Unimet', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Marketplace Unimet',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: const Color(0xFF1976D2),
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, '/');
+            onPressed: () {
+              // 🔥 Logout correcto vía Cubit
+              context.read<AuthCubit>().logout();
             },
           )
         ],
@@ -35,13 +38,19 @@ class HomePage extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.all(20.0),
-            child: Text('Libros Disponibles', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Libros Disponibles',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           Expanded(
             child: GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // Dos columnas de libros
+                crossAxisCount: 2,
                 crossAxisSpacing: 15,
                 mainAxisSpacing: 15,
                 childAspectRatio: 0.8,
@@ -56,11 +65,32 @@ class HomePage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.book, size: 50, color: Color(0xFF1976D2)),
+                      const Icon(
+                        Icons.book,
+                        size: 50,
+                        color: Color(0xFF1976D2),
+                      ),
                       const SizedBox(height: 10),
-                      Text(libros[index]['titulo']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(libros[index]['precio']!, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                      Text(libros[index]['estado']!, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text(
+                        libros[index]['titulo']!,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        libros[index]['precio']!,
+                        style: const TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        libros[index]['estado']!,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -71,7 +101,7 @@ class HomePage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Aquí tus amigos programarán el formulario para subir libros
+          // Próximo hito
         },
         backgroundColor: const Color(0xFF1976D2),
         child: const Icon(Icons.add),
