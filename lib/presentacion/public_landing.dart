@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../logic/auth_cubit.dart';
 import 'login_screen.dart';
 import 'como_funciona_page.dart';
 import 'beneficios_page.dart';
@@ -22,90 +25,173 @@ class PublicLanding extends StatefulWidget {
 class _PublicLandingState extends State<PublicLanding> {
   final GlobalKey _howItWorksKey = GlobalKey();
 
-  //valores por defecto si no hay datos en firebase
+  // Defaults si Firestore está vacío o falla
   int totalStudents = 500;
   int totalMaterials = 1200;
   double satisfaction = 95.0;
 
+  bool _statsLoading = false;
+  bool _disposed = false;
+
+  void _log(String msg) => debugPrint("[PublicLanding] $msg");
+
   @override
   void initState() {
     super.initState();
+    _log("initState()");
     _loadStatistics();
   }
 
-  //Estadisticas desde firebase
+  @override
+  void dispose() {
+    _disposed = true;
+    _log("dispose()");
+    super.dispose();
+  }
+
+  double _toDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0.0;
+    return 0.0;
+  }
+
   Future<void> _loadStatistics() async {
+    if (_statsLoading) return;
+    _statsLoading = true;
+
+    _log("📊 _loadStatistics(): iniciando...");
+
     try {
-      final firestore = FirebaseFirestore.instance;
-      final usersSnapshot = await firestore.collection('users').get();
-      final materialsSnapshot = await firestore.collection('materials').get();
-      final reviewsSnapshot = await firestore.collection('reviews').get();
-      double avgRating = 0.0;
-      if (reviewsSnapshot.docs.isNotEmpty) {
-        double totalRating = 0.0;
-        for (var doc in reviewsSnapshot.docs) {
-          totalRating += (doc.data()['rating'] ?? 0.0) as double;
+      final fs = FirebaseFirestore.instance;
+
+      final usersSnap = await fs.collection('users').get();
+      final materialsSnap = await fs.collection('materials').get();
+      final reviewsSnap = await fs.collection('reviews').get();
+
+      _log("📌 users docs: ${usersSnap.docs.length}");
+      _log("📌 materials docs: ${materialsSnap.docs.length}");
+      _log("📌 reviews docs: ${reviewsSnap.docs.length}");
+
+      double avgRatingPercent = 0.0;
+      if (reviewsSnap.docs.isNotEmpty) {
+        double total = 0.0;
+        for (final doc in reviewsSnap.docs) {
+          total += _toDouble(doc.data()['rating']);
         }
-        avgRating = (totalRating / reviewsSnapshot.docs.length) * 20;
+        avgRatingPercent = (total / reviewsSnap.docs.length) * 20.0; // 0..5 -> 0..100
+      }
+
+      if (!mounted || _disposed) {
+        _log("⚠️ Widget desmontado → no setState()");
+        return;
       }
 
       setState(() {
-        totalStudents = usersSnapshot.docs.isNotEmpty
-            ? usersSnapshot.docs.length
-            : 500;
-        totalMaterials = materialsSnapshot.docs.isNotEmpty
-            ? materialsSnapshot.docs.length
-            : 1200;
-        satisfaction = avgRating > 0 ? avgRating : 95.0;
+        totalStudents = usersSnap.docs.isNotEmpty ? usersSnap.docs.length : 500;
+        totalMaterials = materialsSnap.docs.isNotEmpty ? materialsSnap.docs.length : 1200;
+        satisfaction = avgRatingPercent > 0 ? avgRatingPercent : 95.0;
       });
-    } catch (e) {
-      print('Error cargando estadísticas: $e');
+
+      _log("✅ Stats OK: students=$totalStudents, materials=$totalMaterials, satisfaction=$satisfaction");
+    } catch (e, st) {
+      _log("❌ Error cargando estadísticas: $e");
+      _log("🧾 $st");
+    } finally {
+      _statsLoading = false;
     }
   }
 
+  /// 🔥 NAVEGACIÓN ROBUSTA: mantiene el MISMO AuthCubit en el nuevo Route
+  void _pushWithSameCubit(Widget page, {String? tag}) {
+    final cubit = context.read<AuthCubit>();
+    _log("➡️ push ${tag ?? page.runtimeType} (preservando AuthCubit)");
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: cubit,
+          child: page,
+        ),
+      ),
+    );
+  }
+
+  void _goLogin() => _pushWithSameCubit(const LoginScreen(), tag: "LoginScreen");
+
+  void _openPage(String label, Widget page) => _pushWithSameCubit(page, tag: label);
+
   void _scrollToHowItWorks() {
-    final context = _howItWorksKey.currentContext;
-    if (context != null) {
-      Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.easeInOut,
-      );
+    final ctx = _howItWorksKey.currentContext;
+    if (ctx == null) {
+      _log("⚠️ No se pudo scrollear: howItWorks context null");
+      return;
     }
+    _log("🧭 Scroll → HowItWorks");
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Widget _safeAsset(
+    String path, {
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    BorderRadius? radius,
+  }) {
+    final img = Image.asset(
+      path,
+      width: width,
+      height: height,
+      fit: fit,
+      errorBuilder: (context, error, stack) {
+        _log("❌ Asset error ($path): $error");
+        return Container(
+          width: width,
+          height: height,
+          alignment: Alignment.center,
+          color: const Color(0xFFE5E7EB),
+          child: const Icon(Icons.broken_image, size: 40, color: Colors.black45),
+        );
+      },
+    );
+
+    if (radius == null) return img;
+    return ClipRRect(borderRadius: radius, child: img);
   }
 
   @override
   Widget build(BuildContext context) {
+    _log("build()");
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
       body: Stack(
         children: [
           SingleChildScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             child: Column(
               children: [
                 const SizedBox(height: 80),
                 _buildBodySection(context),
-                Container(
-                  key: _howItWorksKey,
-                  child: _buildHowItWorksSection(),
-                ),
+                Container(key: _howItWorksKey, child: _buildHowItWorksSection()),
                 _buildBenefitsSection(),
-                _buildCTASection(context),
+                _buildCTASection(),
                 _buildFooter(),
               ],
             ),
           ),
-          Positioned(top: 0, left: 0, right: 0, child: _buildHeader(context)),
+          Positioned(top: 0, left: 0, right: 0, child: _buildHeader()),
         ],
       ),
     );
   }
 
-  // header
-  Widget _buildHeader(BuildContext context) {
+  // HEADER
+  Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
       decoration: BoxDecoration(
@@ -121,11 +207,10 @@ class _PublicLandingState extends State<PublicLanding> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Logo
           Row(
             children: [
               ClipOval(
-                child: Image.asset(
+                child: _safeAsset(
                   'assets/sdi.assets.jpg',
                   width: 32,
                   height: 32,
@@ -133,9 +218,9 @@ class _PublicLandingState extends State<PublicLanding> {
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
+              const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'BookSwap',
                     style: TextStyle(
@@ -153,18 +238,11 @@ class _PublicLandingState extends State<PublicLanding> {
             ],
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
+            onPressed: _goLogin,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1976D2),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               elevation: 0,
             ),
             child: Text(
@@ -181,10 +259,10 @@ class _PublicLandingState extends State<PublicLanding> {
     );
   }
 
-  //body
+  // BODY
   Widget _buildBodySection(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 1024;
+    final w = MediaQuery.of(context).size.width;
+    final isDesktop = w > 1024;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 80),
@@ -192,14 +270,14 @@ class _PublicLandingState extends State<PublicLanding> {
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(child: _buildBodyContent(context)),
+                Expanded(child: _buildBodyContent()),
                 const SizedBox(width: 60),
                 Expanded(child: _buildBodyImage()),
               ],
             )
           : Column(
               children: [
-                _buildBodyContent(context),
+                _buildBodyContent(),
                 const SizedBox(height: 40),
                 _buildBodyImage(),
               ],
@@ -207,7 +285,7 @@ class _PublicLandingState extends State<PublicLanding> {
     );
   }
 
-  Widget _buildBodyContent(BuildContext context) {
+  Widget _buildBodyContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -227,7 +305,6 @@ class _PublicLandingState extends State<PublicLanding> {
           ),
         ),
         const SizedBox(height: 24),
-
         const Text(
           'Intercambia y Vende\nMaterial Académico con\nConfianza',
           style: TextStyle(
@@ -238,78 +315,49 @@ class _PublicLandingState extends State<PublicLanding> {
           ),
         ),
         const SizedBox(height: 20),
-
         const Text(
           'La plataforma institucional para estudiantes que facilita el intercambio de libros, apuntes y material académico de forma segura y verificada.',
           style: TextStyle(fontSize: 18, color: Color(0xFF6B7280), height: 1.6),
         ),
         const SizedBox(height: 32),
-
         Row(
           children: [
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              },
+              onPressed: _goLogin,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1976D2),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 20,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 elevation: 2,
               ),
               child: const Text(
                 'Comenzar Ahora',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
             const SizedBox(width: 16),
             OutlinedButton(
               onPressed: _scrollToHowItWorks,
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 20,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
                 side: const BorderSide(color: Color(0xFF1976D2), width: 2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
               child: const Text(
                 'Conoce Más',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1976D2),
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1976D2)),
               ),
             ),
           ],
         ),
         const SizedBox(height: 40),
-
-        Row(
+        Wrap(
+          spacing: 40,
+          runSpacing: 16,
           children: [
             _buildStatItem('$totalStudents+', 'Estudiantes Activos'),
-            const SizedBox(width: 40),
             _buildStatItem('$totalMaterials+', 'Materiales Disponibles'),
-            const SizedBox(width: 40),
-            _buildStatItem(
-              '${satisfaction.toStringAsFixed(0)}%',
-              'Satisfacción',
-            ),
+            _buildStatItem('${satisfaction.toStringAsFixed(0)}%', 'Satisfacción'),
           ],
         ),
       ],
@@ -328,18 +376,17 @@ class _PublicLandingState extends State<PublicLanding> {
             color: Color(0xFF1976D2),
           ),
         ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-        ),
+        Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
       ],
     );
   }
 
   Widget _buildBodyImage() {
+    final radius = BorderRadius.circular(24);
+
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: radius,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -350,18 +397,13 @@ class _PublicLandingState extends State<PublicLanding> {
       ),
       child: Stack(
         children: [
-          // Placeholder de imagen - aquí irá la imagen de la biblioteca
-          ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Image.asset(
-              'assets/imagen1_landingpage.jpeg', // Asegúrate de que esté en tu pubspec.yaml
-              height: 400,
-              width: double.infinity, // Para que ocupe todo el ancho disponible
-              fit: BoxFit.cover,
-            ),
+          _safeAsset(
+            'assets/imagen1_landingpage.jpeg',
+            height: 400,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            radius: radius,
           ),
-
-          //Cuadro de la imagen
           Positioned(
             bottom: 20,
             left: 20,
@@ -371,30 +413,18 @@ class _PublicLandingState extends State<PublicLanding> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                  ),
+                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20),
                 ],
               ),
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.verified, color: Color(0xFF1976D2), size: 24),
                   SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '100% Verificado',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        'Solo usuarios institucionales',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
+                      Text('100% Verificado', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text('Solo usuarios institucionales', style: TextStyle(fontSize: 12, color: Colors.grey)),
                     ],
                   ),
                 ],
@@ -406,7 +436,7 @@ class _PublicLandingState extends State<PublicLanding> {
     );
   }
 
-  //Parte Explicativa
+  // HOW IT WORKS
   Widget _buildHowItWorksSection() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 80),
@@ -427,67 +457,53 @@ class _PublicLandingState extends State<PublicLanding> {
             style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
           ),
           const SizedBox(height: 60),
-
           LayoutBuilder(
             builder: (context, constraints) {
-              if (constraints.maxWidth > 900) {
+              final wide = constraints.maxWidth > 900;
+
+              final steps = [
+                _buildStepCard(
+                  Icons.search,
+                  '1. Busca Material',
+                  'Encuentra libros, apuntes y material académico que necesitas para tus materias. Filtra por carrera, semestre y asignatura.',
+                  const Color(0xFFE3F2FD),
+                ),
+                _buildStepCard(
+                  Icons.swap_horiz,
+                  '2. Intercambia o Compra',
+                  'Elige entre intercambiar tu material o comprarlo a precios justos. Contacta directamente con otros estudiantes verificados.',
+                  const Color(0xFFE8F5E9),
+                ),
+                _buildStepCard(
+                  Icons.people,
+                  '3. Construye Reputación',
+                  'Recibe y deja reseñas después de cada transacción. Construye tu perfil de confianza en la comunidad estudiantil.',
+                  const Color(0xFFFFF3E0),
+                ),
+              ];
+
+              if (wide) {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _buildStepCard(
-                        Icons.search,
-                        '1. Busca Material',
-                        'Encuentra libros, apuntes y material académico que necesitas para tus materias. Filtra por carrera, semestre y asignatura.',
-                        const Color(0xFFE3F2FD),
-                      ),
-                    ),
+                    Expanded(child: steps[0]),
                     const SizedBox(width: 24),
-                    Expanded(
-                      child: _buildStepCard(
-                        Icons.swap_horiz,
-                        '2. Intercambia o Compra',
-                        'Elige entre intercambiar tu material o comprarlo a precios justos. Contacta directamente con otros estudiantes verificados.',
-                        const Color(0xFFE8F5E9),
-                      ),
-                    ),
+                    Expanded(child: steps[1]),
                     const SizedBox(width: 24),
-                    Expanded(
-                      child: _buildStepCard(
-                        Icons.people,
-                        '3. Construye Reputación',
-                        'Recibe y deja reseñas después de cada transacción. Construye tu perfil de confianza en la comunidad estudiantil.',
-                        const Color(0xFFFFF3E0),
-                      ),
-                    ),
-                  ],
-                );
-              } else {
-                return Column(
-                  children: [
-                    _buildStepCard(
-                      Icons.search,
-                      '1. Busca Material',
-                      'Encuentra libros, apuntes y material académico que necesitas para tus materias. Filtra por carrera, semestre y asignatura.',
-                      const Color(0xFFE3F2FD),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildStepCard(
-                      Icons.swap_horiz,
-                      '2. Intercambia o Compra',
-                      'Elige entre intercambiar tu material o comprarlo a precios justos. Contacta directamente con otros estudiantes verificados.',
-                      const Color(0xFFE8F5E9),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildStepCard(
-                      Icons.people,
-                      '3. Construye Reputación',
-                      'Recibe y deja reseñas después de cada transacción. Construye tu perfil de confianza en la comunidad estudiantil.',
-                      const Color(0xFFFFF3E0),
-                    ),
+                    Expanded(child: steps[2]),
                   ],
                 );
               }
+
+              return Column(
+                children: [
+                  steps[0],
+                  const SizedBox(height: 24),
+                  steps[1],
+                  const SizedBox(height: 24),
+                  steps[2],
+                ],
+              );
             },
           ),
         ],
@@ -495,12 +511,7 @@ class _PublicLandingState extends State<PublicLanding> {
     );
   }
 
-  Widget _buildStepCard(
-    IconData icon,
-    String title,
-    String description,
-    Color bgColor,
-  ) {
+  Widget _buildStepCard(IconData icon, String title, String description, Color bgColor) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -508,11 +519,7 @@ class _PublicLandingState extends State<PublicLanding> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -525,21 +532,13 @@ class _PublicLandingState extends State<PublicLanding> {
           const SizedBox(height: 20),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
             description,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF6B7280),
-              height: 1.6,
-            ),
+            style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.6),
             textAlign: TextAlign.center,
           ),
         ],
@@ -547,29 +546,29 @@ class _PublicLandingState extends State<PublicLanding> {
     );
   }
 
+  // BENEFITS
   Widget _buildBenefitsSection() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 80),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth > 900) {
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: _buildBenefitsList()),
-                const SizedBox(width: 60),
-                Expanded(child: _buildBenefitsImage()),
-              ],
-            );
-          } else {
-            return Column(
-              children: [
-                _buildBenefitsList(),
-                const SizedBox(height: 40),
-                _buildBenefitsImage(),
-              ],
-            );
-          }
+          final wide = constraints.maxWidth > 900;
+          return wide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: _buildBenefitsList()),
+                    const SizedBox(width: 60),
+                    Expanded(child: _buildBenefitsImage()),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildBenefitsList(),
+                    const SizedBox(height: 40),
+                    _buildBenefitsImage(),
+                  ],
+                );
         },
       ),
     );
@@ -589,7 +588,6 @@ class _PublicLandingState extends State<PublicLanding> {
           ),
         ),
         const SizedBox(height: 40),
-
         _buildBenefitItem(
           Icons.trending_up,
           'Reduce Costos Académicos',
@@ -597,7 +595,6 @@ class _PublicLandingState extends State<PublicLanding> {
           const Color(0xFFE3F2FD),
         ),
         const SizedBox(height: 24),
-
         _buildBenefitItem(
           Icons.shield,
           'Seguridad Garantizada',
@@ -605,7 +602,6 @@ class _PublicLandingState extends State<PublicLanding> {
           const Color(0xFFE8F5E9),
         ),
         const SizedBox(height: 24),
-
         _buildBenefitItem(
           Icons.recycling,
           'Economía Circular',
@@ -616,21 +612,13 @@ class _PublicLandingState extends State<PublicLanding> {
     );
   }
 
-  Widget _buildBenefitItem(
-    IconData icon,
-    String title,
-    String description,
-    Color bgColor,
-  ) {
+  Widget _buildBenefitItem(IconData icon, String title, String description, Color bgColor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
           child: Icon(icon, color: const Color(0xFF1976D2), size: 24),
         ),
         const SizedBox(width: 16),
@@ -638,23 +626,10 @@ class _PublicLandingState extends State<PublicLanding> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
+              Text(title,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
               const SizedBox(height: 4),
-              Text(
-                description,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                  height: 1.6,
-                ),
-              ),
+              Text(description, style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.6)),
             ],
           ),
         ),
@@ -663,32 +638,28 @@ class _PublicLandingState extends State<PublicLanding> {
   }
 
   Widget _buildBenefitsImage() {
+    final radius = BorderRadius.circular(24);
+
     return Container(
       height: 400,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: radius,
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 10)),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Image.asset(
-          'assets/imagen2_landingpage.jpeg',
-          width: double.infinity,
-          height: 400,
-          fit: BoxFit.cover,
-        ),
+      child: _safeAsset(
+        'assets/imagen2_landingpage.jpeg',
+        width: double.infinity,
+        height: 400,
+        fit: BoxFit.cover,
+        radius: radius,
       ),
     );
   }
 
-  //Encima de pie de pagina
-  Widget _buildCTASection(BuildContext context) {
+  // CTA
+  Widget _buildCTASection() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 80),
       decoration: const BoxDecoration(
@@ -703,11 +674,8 @@ class _PublicLandingState extends State<PublicLanding> {
           children: [
             Text(
               '¿Listo para Comenzar?',
-              style: GoogleFonts.inter(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: GoogleFonts.inter(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             const Text(
@@ -717,30 +685,16 @@ class _PublicLandingState extends State<PublicLanding> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              },
+              onPressed: _goLogin,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 20,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 elevation: 4,
               ),
               child: const Text(
                 'Iniciar Sesión Ahora',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1976D2),
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1976D2)),
               ),
             ),
           ],
@@ -749,8 +703,28 @@ class _PublicLandingState extends State<PublicLanding> {
     );
   }
 
-  //Pie de pagina
+  // FOOTER
   Widget _buildFooter() {
+    // ✅ IMPORTANTE: QUITÉ const AQUÍ para evitar tus errores “const_with_non_const”
+    // Funcionalidad y navegación intactas.
+    final platformItems = [
+      {'label': 'Cómo Funciona', 'page': ComoFuncionaPage()},
+      {'label': 'Beneficios', 'page': BeneficiosPage()},
+      {'label': 'Preguntas Frecuentes', 'page': PreguntasFrecuentesPage()},
+    ];
+
+    final supportItems = [
+      {'label': 'Centro de Ayuda', 'page': CentroDeAyudaPage()},
+      {'label': 'Políticas de Uso', 'page': PoliticasDeUsoPage()},
+      {'label': 'Contacto', 'page': ContactoPage()},
+    ];
+
+    final legalItems = [
+      {'label': 'Términos y Condiciones', 'page': TerminosYCondicionesPage()},
+      {'label': 'Privacidad', 'page': PrivacidadPage()},
+      {'label': 'Cookies', 'page': CookiesPage()},
+    ];
+
     return Container(
       padding: const EdgeInsets.all(40),
       color: Colors.white,
@@ -758,80 +732,31 @@ class _PublicLandingState extends State<PublicLanding> {
         children: [
           LayoutBuilder(
             builder: (context, constraints) {
-              if (constraints.maxWidth > 900) {
+              final wide = constraints.maxWidth > 900;
+
+              if (wide) {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _buildFooterColumn('Plataforma', [
-                        {'label': 'Cómo Funciona', 'page': ComoFuncionaPage()},
-                        {'label': 'Beneficios', 'page': BeneficiosPage()},
-                        {
-                          'label': 'Preguntas Frecuentes',
-                          'page': PreguntasFrecuentesPage(),
-                        },
-                      ]),
-                    ),
-                    Expanded(
-                      child: _buildFooterColumn('Soporte', [
-                        {
-                          'label': 'Centro de Ayuda',
-                          'page': CentroDeAyudaPage(),
-                        },
-                        {
-                          'label': 'Políticas de Uso',
-                          'page': PoliticasDeUsoPage(),
-                        },
-                        {'label': 'Contacto', 'page': ContactoPage()},
-                      ]),
-                    ),
-                    Expanded(
-                      child: _buildFooterColumn('Legal', [
-                        {
-                          'label': 'Términos y Condiciones',
-                          'page': TerminosYCondicionesPage(),
-                        },
-                        {'label': 'Privacidad', 'page': PrivacidadPage()},
-                        {'label': 'Cookies', 'page': CookiesPage()},
-                      ]),
-                    ),
-                  ],
-                );
-              } else {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildFooterBrand(),
-                    const SizedBox(height: 24),
-                    _buildFooterColumn('Plataforma', [
-                      {'label': 'Cómo Funciona', 'page': ComoFuncionaPage()},
-                      {'label': 'Beneficios', 'page': BeneficiosPage()},
-                      {
-                        'label': 'Preguntas Frecuentes',
-                        'page': PreguntasFrecuentesPage(),
-                      },
-                    ]),
-                    const SizedBox(height: 24),
-                    _buildFooterColumn('Soporte', [
-                      {'label': 'Centro de Ayuda', 'page': CentroDeAyudaPage()},
-                      {
-                        'label': 'Políticas de Uso',
-                        'page': PoliticasDeUsoPage(),
-                      },
-                      {'label': 'Contacto', 'page': ContactoPage()},
-                    ]),
-                    const SizedBox(height: 24),
-                    _buildFooterColumn('Legal', [
-                      {
-                        'label': 'Términos y Condiciones',
-                        'page': TerminosYCondicionesPage(),
-                      },
-                      {'label': 'Privacidad', 'page': PrivacidadPage()},
-                      {'label': 'Cookies', 'page': CookiesPage()},
-                    ]),
+                    Expanded(child: _buildFooterColumn('Plataforma', platformItems)),
+                    Expanded(child: _buildFooterColumn('Soporte', supportItems)),
+                    Expanded(child: _buildFooterColumn('Legal', legalItems)),
                   ],
                 );
               }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildFooterBrand(),
+                  const SizedBox(height: 24),
+                  _buildFooterColumn('Plataforma', platformItems),
+                  const SizedBox(height: 24),
+                  _buildFooterColumn('Soporte', supportItems),
+                  const SizedBox(height: 24),
+                  _buildFooterColumn('Legal', legalItems),
+                ],
+              );
             },
           ),
           const SizedBox(height: 40),
@@ -848,11 +773,11 @@ class _PublicLandingState extends State<PublicLanding> {
   }
 
   Widget _buildFooterBrand() {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Icon(Icons.book, color: Color(0xFF1976D2), size: 32),
             SizedBox(width: 8),
             Text(
@@ -865,8 +790,8 @@ class _PublicLandingState extends State<PublicLanding> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        const Text(
+        SizedBox(height: 12),
+        Text(
           'Sistema de Intercambio y Venta de Material\nAcadémico Institucional',
           style: TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.6),
         ),
@@ -880,25 +805,19 @@ class _PublicLandingState extends State<PublicLanding> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A1A),
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
         ),
         const SizedBox(height: 16),
-        ...items.map(
-          (item) => Padding(
+        ...items.map((item) {
+          final label = item['label'] as String;
+          final page = item['page'] as Widget;
+
+          return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => item['page']),
-                );
-              },
+              onTap: () => _openPage(label, page),
               child: Text(
-                item['label'],
+                label,
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF6B7280),
@@ -906,8 +825,8 @@ class _PublicLandingState extends State<PublicLanding> {
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
