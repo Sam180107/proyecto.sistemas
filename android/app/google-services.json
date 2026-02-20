@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "380634079068",
+    "project_id": "unimet-proyecto-libros",
+    "storage_bucket": "unimet-proyecto-libros.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380634079068:android:19dfb2e7974ec285c0ab99",
+        "android_client_info": {
+          "package_name": "com.example.unimet_marketplace"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "380634079068-v53glb6pkcbvc07nug370ohf9nrbmf8g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnJQhFhsUYsB2kc_B8lSFMnUKsc2k9bX4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "380634079068-v53glb6pkcbvc07nug370ohf9nrbmf8g.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "380634079068-o82mb6i43uvaa285tn7sn2q8bvrlpu7f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.unimetMarketplace"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
