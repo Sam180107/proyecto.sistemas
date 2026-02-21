@@ -1,80 +1,130 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'custom_app_bar.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Lista de libros "ficticia" para que tus amigos vean cómo se vería
-    final List<Map<String, String>> libros = [
-      {'titulo': 'Cálculo de Stewart', 'precio': '20\$', 'estado': 'Nuevo'},
-      {'titulo': 'Física Universitaria', 'precio': '15\$', 'estado': 'Usado'},
-      {'titulo': 'Derecho Romano', 'precio': '10\$', 'estado': 'Como nuevo'},
-      {'titulo': 'Economía Samuelson', 'precio': '25\$', 'estado': 'Nuevo'},
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
-      appBar: AppBar(
-        title: const Text('Marketplace Unimet', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1976D2),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, '/');
-            },
-          )
+      appBar: const CustomAppBar(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Explorar Material Académico',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Encuentra libros y material de estudio para tus cursos',
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Buscar libros, materias, autores...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.filter_list),
+                label: const Text('Filtros'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black87,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  side: const BorderSide(color: Colors.grey),
+                ),
+              ),
+              const SizedBox(height: 20),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: 8,
+                itemBuilder: (context, index) {
+                  return _buildBookCard();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
-      body: Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(20.0),
-            child: Text('Libros Disponibles', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          ),
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // Dos columnas de libros
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 0.8,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
               ),
-              itemCount: libros.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.book, size: 50, color: Color(0xFF1976D2)),
-                      const SizedBox(height: 10),
-                      Text(libros[index]['titulo']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(libros[index]['precio']!, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                      Text(libros[index]['estado']!, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                    ],
-                  ),
-                );
-              },
+              child: Image.asset(
+                'assets/sample_book.jpg', // Reemplaza con la ruta de tu imagen
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Título del Libro',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Categoría',
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+              ],
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Aquí tus amigos programarán el formulario para subir libros
-        },
-        backgroundColor: const Color(0xFF1976D2),
-        child: const Icon(Icons.add),
       ),
     );
   }
