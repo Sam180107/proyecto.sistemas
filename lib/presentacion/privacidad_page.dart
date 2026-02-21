@@ -4,7 +4,7 @@ class PrivacidadPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Back'), backgroundColor: Colors.teal),
+      appBar: AppBar(title: Text('Back'), backgroundColor: Colors.blue),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

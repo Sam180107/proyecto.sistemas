@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart'; // Asegúrate de haber creado este archivo
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,6 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLogin = true; // Controla si estamos en Entrar o Registrar
+  bool isPasswordVisible = false; // Track password visibility
 
   // Función para mostrar mensajes en la parte inferior (Snackbars)
   void _mostrarMensaje(String texto, Color color) {
@@ -30,15 +32,16 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = emailController.text.trim().toLowerCase();
     final password = passwordController.text.trim();
 
-    // 1. Validar campos vacíos
     if (email.isEmpty || password.isEmpty) {
       _mostrarMensaje("Por favor, llena todos los campos", Colors.orange);
       return;
     }
 
-    // 2. Validación de Dominio Unimet (Solo para Registro)
     if (!isLogin && !email.endsWith('@correo.unimet.edu.ve')) {
-      _mostrarMensaje("Solo se permiten correos @correo.unimet.edu.ve", Colors.red);
+      _mostrarMensaje(
+        "Solo se permiten correos @correo.unimet.edu.ve",
+        Colors.red,
+      );
       return;
     }
 
@@ -46,14 +49,14 @@ class _LoginScreenState extends State<LoginScreen> {
       if (isLogin) {
         // INICIAR SESIÓN
         await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email, 
-          password: password
+          email: email,
+          password: password,
         );
       } else {
         // REGISTRAR CUENTA
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email, 
-          password: password
+          email: email,
+          password: password,
         );
         _mostrarMensaje("¡Usuario registrado con éxito!", Colors.green);
       }
@@ -65,7 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
       }
-
     } on FirebaseAuthException catch (e) {
       // TRADUCTOR DE ERRORES DE FIREBASE
       String mensajeEspanol;
@@ -112,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 50),
-                
+
                 // Logo de la SDI
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -121,17 +123,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(35),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05), 
-                        blurRadius: 20
-                      )
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                      ),
                     ],
                   ),
-                  child: Image.asset('assets/sdi.assets.jpg', width: 75, height: 75),
+                  child: Image.asset(
+                    'assets/sdi.assets.jpg',
+                    width: 75,
+                    height: 75,
+                  ),
                 ),
-                
+
                 const SizedBox(height: 25),
-                const Text('BookSwap', style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold)),
-                const Text('Intercambio de Material Académico', style: TextStyle(color: Colors.black45, fontSize: 16)),
+                const Text(
+                  'BookSwap',
+                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  'Intercambio de Material Académico',
+                  style: TextStyle(color: Colors.black45, fontSize: 16),
+                ),
                 const SizedBox(height: 40),
 
                 // TARJETA BLANCA DE FORMULARIO
@@ -153,7 +165,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 35),
 
-                      const Text('Correo Institucional', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Correo Institucional',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: emailController,
@@ -163,31 +178,48 @@ class _LoginScreenState extends State<LoginScreen> {
                           filled: true,
                           fillColor: const Color(0xFFF3F4F6),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20), 
-                            borderSide: BorderSide.none
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
                           ),
                         ),
                       ),
                       const Padding(
                         padding: EdgeInsets.only(top: 8, left: 5),
-                        child: Text('Usa tu correo institucional verificado', style: TextStyle(fontSize: 12, color: Colors.black38)),
+                        child: Text(
+                          'Usa tu correo institucional verificado',
+                          style: TextStyle(fontSize: 12, color: Colors.black38),
+                        ),
                       ),
                       const SizedBox(height: 25),
 
-                      const Text('Contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Contraseña',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: passwordController,
-                        obscureText: true,
+                        obscureText: !isPasswordVisible, // Toggle visibility
                         decoration: InputDecoration(
                           hintText: '••••••••',
                           prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: const Icon(Icons.visibility_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                isPasswordVisible = !isPasswordVisible;
+                              });
+                            },
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF3F4F6),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20), 
-                            borderSide: BorderSide.none
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
                           ),
                         ),
                       ),
@@ -199,21 +231,46 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1976D2),
                           minimumSize: const Size(double.infinity, 62),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
                         ),
-                        child: Text(isLogin ? 'Iniciar Sesión' : 'Registrarse', 
-                          style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          isLogin ? 'Iniciar Sesión' : 'Registrarse',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      
+
                       const SizedBox(height: 25),
-                      const Center(
-                        child: Text('¿Olvidaste tu contraseña?', 
-                          style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w600))
-                      ),
+                      if (isLogin)
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ForgotPasswordScreen(),
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              '¿Olvidaste tu contraseña?',
+                              style: TextStyle(
+                                color: Color(0xFF1976D2),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 35),
 
                 // FOOTER DE SEGURIDAD
@@ -221,7 +278,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
                     Icon(Icons.lock_outline, size: 16, color: Colors.black38),
-                    Text(' Protección de datos garantizada', style: TextStyle(color: Colors.black38, fontSize: 13)),
+                    Text(
+                      ' Protección de datos garantizada',
+                      style: TextStyle(color: Colors.black38, fontSize: 13),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -233,9 +293,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: Colors.black38, fontSize: 11),
                       children: [
                         TextSpan(text: 'Al continuar, aceptas los '),
-                        TextSpan(text: 'Términos de Servicio', style: TextStyle(decoration: TextDecoration.underline)),
+                        TextSpan(
+                          text: 'Términos de Servicio',
+                          style: TextStyle(
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
                         TextSpan(text: ' y '),
-                        TextSpan(text: 'Política de Privacidad', style: TextStyle(decoration: TextDecoration.underline)),
+                        TextSpan(
+                          text: 'Política de Privacidad',
+                          style: TextStyle(
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -262,11 +332,13 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(22),
           ),
           child: Center(
-            child: Text(label, 
+            child: Text(
+              label,
               style: TextStyle(
-                color: active ? Colors.white : Colors.black54, 
-                fontWeight: FontWeight.bold
-              )),
+                color: active ? Colors.white : Colors.black54,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ),
