@@ -46,12 +46,38 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    context.read<AuthCubit>().login(email, password).catchError((error) {
-      _mostrarMensaje(
-        "Error al iniciar sesión: ${error.toString()}",
-        Colors.red,
-      );
-    });
+    final authCubit = context.read<AuthCubit>();
+
+    if (isLogin) {
+      authCubit.login(email, password).catchError((error) {
+        _mostrarMensaje(
+          "Error al iniciar sesión: ${error.toString()}",
+          Colors.red,
+        );
+      });
+    } else {
+      // Logic for Registration
+      // This will register the user and then log them out immediately in the cubit.
+      authCubit
+          .register(email, password)
+          .then((_) {
+            // Show success message and switch to login tab
+            _mostrarMensaje(
+              "Registro exitoso. Ahora puedes iniciar sesión.",
+              Colors.green,
+            );
+            setState(() {
+              isLogin = true;
+              passwordController.clear();
+            });
+          })
+          .catchError((error) {
+            _mostrarMensaje(
+              "Error al registrarse: ${error.toString()}",
+              Colors.red,
+            );
+          });
+    }
   }
 
   void _navigateToForgotPasswordScreen() {
@@ -203,16 +229,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (state is AuthError) {
                               _mostrarMensaje(state.message, Colors.red);
                             } else if (state is AuthAuthenticated) {
-                              _mostrarMensaje(
-                                "Inicio de sesión exitoso",
-                                Colors.green,
-                              );
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const HomePage(),
-                                ),
-                              );
+                              if (isLogin) {
+                                _mostrarMensaje(
+                                  "Inicio de sesión exitoso",
+                                  Colors.green,
+                                );
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const HomePage(),
+                                  ),
+                                );
+                              }
                             }
                           },
                           builder: (context, state) {

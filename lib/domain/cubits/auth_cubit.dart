@@ -18,11 +18,11 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> register(String email, String password) async {
     emit(AuthLoading());
     try {
-      final user = await _authRepository.register(
-        email: email,
-        password: password,
-      );
-      emit(AuthAuthenticated(user));
+      await _authRepository.register(email: email, password: password);
+      // Firebase automatically logs in the user after registration.
+      // We log out immediately so the user has to log in manually.
+      await _authRepository.logOut();
+      emit(AuthUnauthenticated());
     } catch (e) {
       emit(AuthError(e.toString()));
     }
