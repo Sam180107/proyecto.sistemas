@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 class BeneficiosPage extends StatelessWidget {
+  const BeneficiosPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Back'),
-        backgroundColor: const Color.fromARGB(255, 2, 126, 243),
+        title: const Text('Beneficios'),
+        backgroundColor: const Color(0xFF027EF3),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -23,12 +25,12 @@ class BeneficiosPage extends StatelessWidget {
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
-                      offset: Offset(0, 3),
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
                 padding: const EdgeInsets.all(20),
-                child: Column(
+                child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -36,7 +38,7 @@ class BeneficiosPage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
-                        color: Colors.teal.shade800,
+                        color: Colors.teal,
                       ),
                     ),
                     SizedBox(height: 20),
@@ -51,12 +53,12 @@ class BeneficiosPage extends StatelessWidget {
                     ),
                     SizedBox(height: 20),
                     Text(
-                      'Red Académica: Más que una transacción, facilitamos el contacto entre estudiantes de distintos niveles para tutorías y consejos sobre materias.',
+                      'Red Académica: Facilitamos el contacto entre estudiantes para tutorías y apoyo académico.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
                     SizedBox(height: 20),
                     Text(
-                      'Interfaz Optimizada: Diseño responsive que se adapta a tu monitor de escritorio (1440px) o a tu tablet mientras estás en clase.',
+                      'Interfaz Optimizada: Diseño responsive adaptado a escritorio y tablet.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
                   ],
