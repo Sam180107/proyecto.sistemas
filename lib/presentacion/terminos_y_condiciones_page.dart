@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
 class TerminosYCondicionesPage extends StatelessWidget {
+  const TerminosYCondicionesPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Back'), backgroundColor: Colors.teal),
+      appBar: AppBar(
+        title: const Text('Términos y Condiciones'),
+        backgroundColor: const Color(0xFF027EF3),
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -20,12 +25,12 @@ class TerminosYCondicionesPage extends StatelessWidget {
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
-                      offset: Offset(0, 3),
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
                 padding: const EdgeInsets.all(20),
-                child: Column(
+                child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -33,7 +38,7 @@ class TerminosYCondicionesPage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
-                        color: Colors.teal.shade800,
+                        color: Colors.teal,
                       ),
                     ),
                     SizedBox(height: 20),

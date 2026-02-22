@@ -1,220 +1,153 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Lista de libros "ficticia" para que tus amigos vean cómo se vería
+    final List<Map<String, String>> libros = [
+      {'titulo': 'Cálculo de Stewart', 'precio': '20\$', 'estado': 'Nuevo'},
+      {'titulo': 'Física Universitaria', 'precio': '15\$', 'estado': 'Usado'},
+      {'titulo': 'Derecho Romano', 'precio': '10\$', 'estado': 'Como nuevo'},
+      {'titulo': 'Economía Samuelson', 'precio': '25\$', 'estado': 'Nuevo'},
+    ];
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        toolbarHeight: 70,
-        leading: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundImage: AssetImage('assets/sdi.assets.jpg'), // Asegúrate de que el logo esté en esta ruta
-          ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              "BookSwap",
-              style: TextStyle(color: Color(0xFF003870), fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            Text(
-              "Sistema de Intercambio Académico",
-              style: TextStyle(color: Colors.grey, fontSize: 10),
-            ),
-          ],
-        ),
+        title: const Text('Marketplace Unimet', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF1976D2),
+        elevation: 0,
         actions: [
-          _navItem(context, Icons.home, "Inicio", true, () {
-            // Ya estamos aquí
-          }),
-          _navItem(context, Icons.search, "Buscar", false, () {
-            // Lógica de búsqueda
-          }),
-          _navItem(context, Icons.add_circle_outline, "Publicar", false, () {
-            // Lógica para subir libro
-          }),
-          // BOTÓN DE PERFIL: Ahora sí ejecuta la navegación
-          _navItem(context, Icons.person_outline, "Perfil", false, () {
-            Navigator.pushNamed(context, '/perfil');
-          }),
-          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacementNamed(context, '/');
+            },
+          )
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Explorar Material Académico",
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-            ),
-            const Text(
-              "Encuentra libros y material de estudio para tus cursos",
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-            
-            // Buscador y Filtro (Estilo Figma)
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "Buscar libros, materias, autores...",
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.tune, color: Color(0xFF003870)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 25),
-
-            // Grid de Libros
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text('Libros Disponibles', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          ),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.65,
+                crossAxisCount: 2, // Dos columnas de libros
                 crossAxisSpacing: 15,
                 mainAxisSpacing: 15,
+                childAspectRatio: 0.8,
               ),
-              itemCount: 4, // Esto luego lo cambiaremos por datos reales de Firebase
-              itemBuilder: (context, index) => _buildBookCard(),
+              itemCount: libros.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.book, size: 50, color: Color(0xFF1976D2)),
+                      const SizedBox(height: 10),
+                      Text(libros[index]['titulo']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(libros[index]['precio']!, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                      Text(libros[index]['estado']!, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    ],
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Aquí tus amigos programarán el formulario para subir libros
+        },
+        backgroundColor: const Color(0xFF1976D2),
+        child: const Icon(Icons.add),
       ),
     );
   }
 
-  // Widget para los botones de la barra superior
-  Widget _navItem(BuildContext context, IconData icon, String label, bool active, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: active ? const Color(0xFF003870) : Colors.black87,
-              size: 24,
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                color: active ? const Color(0xFF003870) : Colors.black87,
-                fontSize: 10,
-                fontWeight: active ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  // Responsive simple para Web: 2 columnas en pantallas pequeñas, 3 o 4 en grandes
+  int _columnsForWidth(double width) {
+    if (width >= 1100) return 4;
+    if (width >= 800) return 3;
+    return 2;
   }
+}
 
-  // Widget de las tarjetas de libros
-  Widget _buildBookCard() {
+class _LibroCard extends StatelessWidget {
+  final String titulo;
+  final String precio;
+  final String estado;
+
+  const _LibroCard({
+    required this.titulo,
+    required this.precio,
+    required this.estado,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                child: Container(
-                  height: 140,
-                  color: Colors.grey[200],
-                  child: const Center(child: Icon(Icons.book, size: 40, color: Colors.grey)),
-                ),
-              ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF003870),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: const Text(
-                    "Venta",
-                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  "MATEMÁTICAS",
-                  style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  "Cálculo: Una Variable",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  "James Stewart",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  "\$ 45.00",
-                  style: TextStyle(color: Color(0xFF003870), fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ],
-            ),
+            blurRadius: 6,
+            color: Colors.black12,
+            offset: Offset(0, 2),
           )
         ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.book,
+              size: 50,
+              color: Color(0xFF1976D2),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              titulo,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              precio,
+              style: const TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              estado,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
