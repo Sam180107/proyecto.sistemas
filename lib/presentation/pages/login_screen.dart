@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'home_page.dart'; // Asegúrate de haber creado este archivo
-import 'forgot_password_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/cubits/auth_cubit.dart';
+import '../../domain/entities/auth_state.dart';
+import '../../presentacion/forgot_password_screen.dart';
+import '../../presentacion/home_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLogin = true; // Controla si estamos en Entrar o Registrar
-  bool isPasswordVisible = false; // Track password visibility
+  bool isPasswordVisible = false; // Controla la visibilidad de la contraseña
 
   // Función para mostrar mensajes en la parte inferior (Snackbars)
   void _mostrarMensaje(String texto, Color color) {
@@ -27,8 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Lógica de Autenticación con Traducción de Errores
-  Future<void> autenticar() async {
+  // Lógica de autenticación usando AuthCubit
+  void autenticar() {
     final email = emailController.text.trim().toLowerCase();
     final password = passwordController.text.trim();
 
@@ -37,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (!isLogin && !email.endsWith('@correo.unimet.edu.ve')) {
+    if (!email.endsWith('@correo.unimet.edu.ve')) {
       _mostrarMensaje(
         "Solo se permiten correos @correo.unimet.edu.ve",
         Colors.red,
@@ -45,61 +47,20 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    try {
-      if (isLogin) {
-        // INICIAR SESIÓN
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-      } else {
-        // REGISTRAR CUENTA
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        _mostrarMensaje("¡Usuario registrado con éxito!", Colors.green);
-      }
+    context.read<AuthCubit>().login(email, password).catchError((error) {
+      _mostrarMensaje(
+        "Error al iniciar sesión: ${error.toString()}",
+        Colors.red,
+      );
+    });
+  }
 
-      // NAVEGACIÓN AL HOME (LA APP COMO TAL)
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      // TRADUCTOR DE ERRORES DE FIREBASE
-      String mensajeEspanol;
-      switch (e.code) {
-        case 'invalid-credential':
-          mensajeEspanol = "El correo o la contraseña son incorrectos.";
-          break;
-        case 'user-not-found':
-          mensajeEspanol = "No existe un usuario con este correo.";
-          break;
-        case 'wrong-password':
-          mensajeEspanol = "La contraseña es incorrecta.";
-          break;
-        case 'email-already-in-use':
-          mensajeEspanol = "Este correo ya está registrado en otra cuenta.";
-          break;
-        case 'weak-password':
-          mensajeEspanol = "La contraseña debe tener al menos 6 caracteres.";
-          break;
-        case 'network-request-failed':
-          mensajeEspanol = "Error de conexión. Revisa tu internet.";
-          break;
-        case 'invalid-email':
-          mensajeEspanol = "El formato del correo no es válido.";
-          break;
-        default:
-          mensajeEspanol = "Ocurrió un error: ${e.message}";
-      }
-      _mostrarMensaje(mensajeEspanol, Colors.red);
-    } catch (e) {
-      _mostrarMensaje("Error inesperado. Inténtalo más tarde.", Colors.red);
-    }
+  // Add a button to navigate to the Forgot Password screen
+  void _navigateToForgotPasswordScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+    );
   }
 
   @override
@@ -112,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // Navigate back to the landing page
+            Navigator.pop(context); // Navegar de regreso a la página anterior
           },
         ),
       ),
@@ -137,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(35),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 20,
                         ),
                       ],
@@ -160,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // TARJETA BLANCA DE FORMULARIO
+                  // Tarjeta blanca del formulario
                   Container(
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
@@ -170,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Selector de Pestañas
+                        // Selector de pestañas
                         Row(
                           children: [
                             _buildTab("Iniciar Sesión", true),
@@ -243,38 +204,60 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 35),
 
                         // Botón Continuar
-                        ElevatedButton(
-                          onPressed: autenticar,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1976D2),
-                            minimumSize: const Size(double.infinity, 62),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: Text(
-                            isLogin ? 'Iniciar Sesión' : 'Registrarse',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                        BlocConsumer<AuthCubit, AuthState>(
+                          listener: (context, state) {
+                            if (state is AuthError) {
+                              _mostrarMensaje(
+                                state.message,
+                                Colors.red,
+                              ); // Mostrar el mensaje de error
+                            } else if (state is AuthAuthenticated) {
+                              _mostrarMensaje(
+                                "Inicio de sesión exitoso",
+                                Colors.green,
+                              );
+                              // Navegar a la HomePage en lugar de la LandingPage
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const HomePage(),
+                                ),
+                              );
+                            }
+                          },
+                          builder: (context, state) {
+                            if (state is AuthLoading) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+
+                            return ElevatedButton(
+                              onPressed: autenticar,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1976D2),
+                                minimumSize: const Size(double.infinity, 62),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: Text(
+                                isLogin ? 'Iniciar Sesión' : 'Registrarse',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                          },
                         ),
 
                         const SizedBox(height: 25),
                         if (isLogin)
                           Center(
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ForgotPasswordScreen(),
-                                  ),
-                                );
-                              },
+                            child: TextButton(
+                              onPressed: _navigateToForgotPasswordScreen,
                               child: const Text(
                                 '¿Olvidaste tu contraseña?',
                                 style: TextStyle(
@@ -290,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 35),
 
-                  // FOOTER DE SEGURIDAD
+                  // Footer de seguridad
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [

@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-// Estas rutas ahora son relativas a la carpeta lib/
 import 'firebase_options.dart';
-import 'data/auth_repository.dart';
-import 'logic/auth_cubit.dart';
+import 'data/repositories/auth_repository.dart';
+import 'domain/cubits/auth_cubit.dart';
 import 'presentacion/landing_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa Firebase con el archivo que generó el CLI
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("Firebase inicializado correctamente");
+  } catch (e) {
+    print("Error al inicializar Firebase: $e");
+  }
 
   runApp(const MyApp());
 }
