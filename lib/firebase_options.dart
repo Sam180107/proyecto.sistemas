@@ -64,7 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '380634079068',
     projectId: 'unimet-proyecto-libros',
     storageBucket: 'unimet-proyecto-libros.firebasestorage.app',
-    iosClientId: '380634079068-o82mb6i43uvaa285tn7sn2q8bvrlpu7f.apps.googleusercontent.com',
+    iosClientId:
+        '380634079068-o82mb6i43uvaa285tn7sn2q8bvrlpu7f.apps.googleusercontent.com',
     iosBundleId: 'com.example.unimetMarketplace',
   );
 
@@ -74,7 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '380634079068',
     projectId: 'unimet-proyecto-libros',
     storageBucket: 'unimet-proyecto-libros.firebasestorage.app',
-    iosClientId: '380634079068-o82mb6i43uvaa285tn7sn2q8bvrlpu7f.apps.googleusercontent.com',
+    iosClientId:
+        '380634079068-o82mb6i43uvaa285tn7sn2q8bvrlpu7f.apps.googleusercontent.com',
     iosBundleId: 'com.example.unimetMarketplace',
   );
 
@@ -87,5 +89,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'unimet-proyecto-libros.firebasestorage.app',
     measurementId: 'G-J2Z60MW9HD',
   );
-
 }
