@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'firebase_options.dart';
-import 'data/repositories/auth_repository.dart';
-import 'domain/cubits/auth_cubit.dart';
-import 'presentacion/pages/landing_page.dart';
+import 'package:unimet_marketplace/firebase_options.dart';
+import 'package:unimet_marketplace/data/repositories/auth_repository.dart';
+import 'package:unimet_marketplace/domain/cubits/auth_cubit.dart';
+import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/home_page.dart';
+import 'package:unimet_marketplace/presentacion/perfil_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    print("Firebase inicializado correctamente");
-  } catch (e) {
-    print("Error al inicializar Firebase: $e");
-  }
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const MyApp());
 }
@@ -33,7 +28,12 @@ class MyApp extends StatelessWidget {
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'BookSwap Unimet',
-          home: const LandingPage(),
+          initialRoute: '/landing',
+          routes: {
+            '/landing': (context) => const LandingPage(),
+            '/home': (context) => const HomePage(),
+            '/perfil': (context) => const PerfilPage(),
+          },
         ),
       ),
     );
