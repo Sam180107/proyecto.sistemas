@@ -22,7 +22,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key}); // Esto quita el error de 'key' que tenías antes
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'BookSwap Unimet',
-          home: const LandingPage(), // Empezamos con la Landing Page
+          home: const LandingPage(),
         ),
       ),
     );

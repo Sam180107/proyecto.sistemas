@@ -99,7 +99,7 @@ class HomePage extends StatelessWidget {
                 top: Radius.circular(16),
               ),
               child: Image.asset(
-                'assets/sample_book.jpg', // Reemplaza con la ruta de tu imagen
+                'assets/sample_book.jpg', // !!!Placeholder!!!
                 fit: BoxFit.cover,
                 width: double.infinity,
               ),

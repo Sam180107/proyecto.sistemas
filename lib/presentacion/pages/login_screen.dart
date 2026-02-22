@@ -15,10 +15,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  bool isLogin = true; // Controla si estamos en Entrar o Registrar
-  bool isPasswordVisible = false; // Controla la visibilidad de la contraseña
+  bool isLogin = true;
+  bool isPasswordVisible = false;
 
-  // Función para mostrar mensajes en la parte inferior (Snackbars)
   void _mostrarMensaje(String texto, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -55,7 +54,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  // Add a button to navigate to the Forgot Password screen
   void _navigateToForgotPasswordScreen() {
     Navigator.push(
       context,
@@ -73,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // Navegar de regreso a la página anterior
+            Navigator.pop(context);
           },
         ),
       ),
@@ -90,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const SizedBox(height: 50),
 
-                  // Logo de la SDI
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -121,7 +118,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // Tarjeta blanca del formulario
                   Container(
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
@@ -131,7 +127,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Selector de pestañas
                         Row(
                           children: [
                             _buildTab("Iniciar Sesión", true),
@@ -177,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 10),
                         TextField(
                           controller: passwordController,
-                          obscureText: !isPasswordVisible, // Toggle visibility
+                          obscureText: !isPasswordVisible,
                           decoration: InputDecoration(
                             hintText: '••••••••',
                             prefixIcon: const Icon(Icons.lock_outline),
@@ -203,20 +198,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 35),
 
-                        // Botón Continuar
                         BlocConsumer<AuthCubit, AuthState>(
                           listener: (context, state) {
                             if (state is AuthError) {
-                              _mostrarMensaje(
-                                state.message,
-                                Colors.red,
-                              ); // Mostrar el mensaje de error
+                              _mostrarMensaje(state.message, Colors.red);
                             } else if (state is AuthAuthenticated) {
                               _mostrarMensaje(
                                 "Inicio de sesión exitoso",
                                 Colors.green,
                               );
-                              // Navegar a la HomePage en lugar de la LandingPage
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -273,7 +263,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 35),
 
-                  // Footer de seguridad
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
@@ -320,7 +309,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Widget para las pestañas de selección
   Widget _buildTab(String label, bool tabLogin) {
     bool active = isLogin == tabLogin;
     return Expanded(

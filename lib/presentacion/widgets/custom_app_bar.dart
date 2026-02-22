@@ -31,19 +31,19 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         IconButton(
           icon: const Icon(Icons.home, color: Color(0xFF1976D2)),
-          onPressed: () {}, // Sin funcionalidad por ahora
+          onPressed: () {}, // !!!No tiene funcionalidad todavia!!!
         ),
         IconButton(
           icon: const Icon(Icons.search, color: Color(0xFF1976D2)),
-          onPressed: () {}, // Sin funcionalidad por ahora
+          onPressed: () {}, // !!!No tiene funcionalidad todavia!!!
         ),
         IconButton(
           icon: const Icon(Icons.add_circle_outline, color: Color(0xFF1976D2)),
-          onPressed: () {}, // Sin funcionalidad por ahora
+          onPressed: () {}, // !!!No tiene funcionalidad todavia!!!
         ),
         IconButton(
           icon: const Icon(Icons.person_outline, color: Color(0xFF1976D2)),
-          onPressed: () {}, // Sin funcionalidad por ahora
+          onPressed: () {}, // !!!No tiene funcionalidad todavia!!!
         ),
       ],
     );
