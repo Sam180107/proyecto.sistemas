@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../presentation/pages/login_screen.dart';
+import 'login_screen.dart';
 import 'como_funciona_page.dart';
 import 'beneficios_page.dart';
 import 'preguntas_frecuentes_page.dart';

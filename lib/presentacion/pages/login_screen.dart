@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/cubits/auth_cubit.dart';
 import '../../domain/entities/auth_state.dart';
-import '../../presentacion/forgot_password_screen.dart';
-import '../../presentacion/home_page.dart';
+import 'forgot_password_screen.dart';
+import 'home_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

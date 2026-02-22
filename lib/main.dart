@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'firebase_options.dart';
 import 'data/repositories/auth_repository.dart';
 import 'domain/cubits/auth_cubit.dart';
-import 'presentacion/landing_page.dart';
+import 'presentacion/pages/landing_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
