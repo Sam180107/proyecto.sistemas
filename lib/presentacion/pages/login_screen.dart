@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Lógica de autenticación usando AuthCubit
+  // Logica de autenticación con AuthCubit
   void autenticar() {
     final email = emailController.text.trim().toLowerCase();
     final password = passwordController.text.trim();
@@ -51,8 +51,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (isLogin) {
       authCubit.login(email, password);
     } else {
-      // Logic for Registration
-      // This will register the user and then log them out immediately in the cubit.
       authCubit.register(email, password);
     }
   }

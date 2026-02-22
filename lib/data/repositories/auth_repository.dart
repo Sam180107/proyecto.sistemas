@@ -35,7 +35,7 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    _validateInstitutionalEmail(email); // Valida el correo institucional
+    _validateInstitutionalEmail(email);
     try {
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,

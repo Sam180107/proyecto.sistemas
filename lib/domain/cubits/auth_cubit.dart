@@ -19,8 +19,6 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       await _authRepository.register(email: email, password: password);
-      // Firebase automatically logs in the user after registration.
-      // We log out immediately so the user has to log in manually.
       await _authRepository.logOut();
       emit(AuthUnauthenticated());
     } catch (e) {
@@ -37,7 +35,7 @@ class AuthCubit extends Cubit<AuthState> {
       );
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthError(e.toString())); // Emitir el error capturado
+      emit(AuthError(e.toString()));
     }
   }
 
