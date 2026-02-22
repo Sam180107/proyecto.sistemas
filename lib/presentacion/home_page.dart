@@ -1,122 +1,220 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Lista de libros "ficticia" para que tus amigos vean cómo se vería
-    final List<Map<String, String>> libros = [
-      {'titulo': 'Cálculo de Stewart', 'precio': '20\$', 'estado': 'Nuevo'},
-      {'titulo': 'Física Universitaria', 'precio': '15\$', 'estado': 'Usado'},
-      {'titulo': 'Derecho Romano', 'precio': '10\$', 'estado': 'Como nuevo'},
-      {'titulo': 'Economía Samuelson', 'precio': '25\$', 'estado': 'Nuevo'},
-      {'titulo': 'Álgebra Lineal', 'precio': '18\$', 'estado': 'Usado'},
-      {'titulo': 'Termodinámica', 'precio': '30\$', 'estado': 'Nuevo'},
-    ];
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7), // Gris claro de fondo
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'BookSwap', 
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        toolbarHeight: 70,
+        leading: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: CircleAvatar(
+            backgroundImage: AssetImage('assets/sdi.assets.jpg'), // Asegúrate de que el logo esté en esta ruta
+          ),
         ),
-        centerTitle: true, // Nombre centrado para que se vea más moderno
-        backgroundColor: const Color(0xFF003870), // Azul Unimet
-        elevation: 4,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text(
+              "BookSwap",
+              style: TextStyle(color: Color(0xFF003870), fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            Text(
+              "Sistema de Intercambio Académico",
+              style: TextStyle(color: Colors.grey, fontSize: 10),
+            ),
+          ],
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              // Al cerrar sesión, volvemos a la pantalla de login
-              Navigator.pushReplacementNamed(context, '/');
-            },
-            tooltip: 'Cerrar Sesión',
-          )
+          _navItem(context, Icons.home, "Inicio", true, () {
+            // Ya estamos aquí
+          }),
+          _navItem(context, Icons.search, "Buscar", false, () {
+            // Lógica de búsqueda
+          }),
+          _navItem(context, Icons.add_circle_outline, "Publicar", false, () {
+            // Lógica para subir libro
+          }),
+          // BOTÓN DE PERFIL: Ahora sí ejecuta la navegación
+          _navItem(context, Icons.person_outline, "Perfil", false, () {
+            Navigator.pushNamed(context, '/perfil');
+          }),
+          const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 25.0),
-            child: Text(
-              'Libros Disponibles', 
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF333333))
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Explorar Material Académico",
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
-          ),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            const Text(
+              "Encuentra libros y material de estudio para tus cursos",
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            
+            // Buscador y Filtro (Estilo Figma)
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Buscar libros, materias, autores...",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.tune, color: Color(0xFF003870)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 25),
+
+            // Grid de Libros
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // Dos columnas de libros
+                crossAxisCount: 2,
+                childAspectRatio: 0.65,
                 crossAxisSpacing: 15,
                 mainAxisSpacing: 15,
-                childAspectRatio: 0.85,
               ),
-              itemCount: libros.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.menu_book_rounded, size: 60, color: Color(0xFF003870)),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          libros[index]['titulo']!, 
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        libros[index]['precio']!, 
-                        style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)
-                      ),
-                      const SizedBox(height: 2),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          libros[index]['estado']!, 
-                          style: const TextStyle(color: Colors.grey, fontSize: 11)
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+              itemCount: 4, // Esto luego lo cambiaremos por datos reales de Firebase
+              itemBuilder: (context, index) => _buildBookCard(),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget para los botones de la barra superior
+  Widget _navItem(BuildContext context, IconData icon, String label, bool active, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: active ? const Color(0xFF003870) : Colors.black87,
+              size: 24,
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: active ? const Color(0xFF003870) : Colors.black87,
+                fontSize: 10,
+                fontWeight: active ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget de las tarjetas de libros
+  Widget _buildBookCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 2,
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Aquí se abrirá el formulario para subir libros
-          print("Abrir formulario de subida");
-        },
-        label: const Text('Vender Libro', style: TextStyle(color: Colors.white)),
-        icon: const Icon(Icons.add, color: Colors.white),
-        backgroundColor: const Color(0xFFFF6B00), // Naranja Unimet para que resalte
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                child: Container(
+                  height: 140,
+                  color: Colors.grey[200],
+                  child: const Center(child: Icon(Icons.book, size: 40, color: Colors.grey)),
+                ),
+              ),
+              Positioned(
+                top: 10,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF003870),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: const Text(
+                    "Venta",
+                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "MATEMÁTICAS",
+                  style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  "Cálculo: Una Variable",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  "James Stewart",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "\$ 45.00",
+                  style: TextStyle(color: Color(0xFF003870), fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
