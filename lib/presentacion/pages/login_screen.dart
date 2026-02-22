@@ -49,34 +49,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final authCubit = context.read<AuthCubit>();
 
     if (isLogin) {
-      authCubit.login(email, password).catchError((error) {
-        _mostrarMensaje(
-          "Error al iniciar sesión: ${error.toString()}",
-          Colors.red,
-        );
-      });
+      authCubit.login(email, password);
     } else {
       // Logic for Registration
       // This will register the user and then log them out immediately in the cubit.
-      authCubit
-          .register(email, password)
-          .then((_) {
-            // Show success message and switch to login tab
-            _mostrarMensaje(
-              "Registro exitoso. Ahora puedes iniciar sesión.",
-              Colors.green,
-            );
-            setState(() {
-              isLogin = true;
-              passwordController.clear();
-            });
-          })
-          .catchError((error) {
-            _mostrarMensaje(
-              "Error al registrarse: ${error.toString()}",
-              Colors.red,
-            );
-          });
+      authCubit.register(email, password);
     }
   }
 
@@ -241,6 +218,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 );
                               }
+                            } else if (state is AuthUnauthenticated &&
+                                !isLogin) {
+                              _mostrarMensaje(
+                                "Registro exitoso. Ahora puedes iniciar sesión.",
+                                Colors.green,
+                              );
+                              setState(() {
+                                isLogin = true;
+                                passwordController.clear();
+                              });
                             }
                           },
                           builder: (context, state) {
