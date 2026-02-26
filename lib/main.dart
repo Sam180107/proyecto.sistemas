@@ -6,7 +6,7 @@ import 'package:unimet_marketplace/data/repositories/auth_repository.dart';
 import 'package:unimet_marketplace/domain/cubits/auth_cubit.dart';
 import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/home_page.dart';
-import 'package:unimet_marketplace/presentacion/perfil_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/perfil_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
