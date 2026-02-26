@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-// Estas rutas ahora son relativas a la carpeta lib/
-import 'firebase_options.dart';
-import 'data/auth_repository.dart';
-import 'logic/auth_cubit.dart';
-import 'presentacion/landing_page.dart';
+import 'package:unimet_marketplace/firebase_options.dart';
+import 'package:unimet_marketplace/data/repositories/auth_repository.dart';
+import 'package:unimet_marketplace/domain/cubits/auth_cubit.dart';
+import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/home_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/perfil_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
