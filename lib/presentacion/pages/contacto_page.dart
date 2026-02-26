@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 class ContactoPage extends StatelessWidget {
+  const ContactoPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Back'), backgroundColor: Colors.blue),
+      appBar: AppBar(title: const Text('Back'), backgroundColor: Colors.blue),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -20,7 +22,7 @@ class ContactoPage extends StatelessWidget {
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
-                      offset: Offset(0, 3),
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -36,18 +38,18 @@ class ContactoPage extends StatelessWidget {
                         color: Colors.teal.shade800,
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Soporte Técnico: ¿Problemas con el login o la visualización del card de perfil? Escríbenos a tecnico@sdi-portal.edu.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Oficinas de Bienestar: Encuéntranos en el edificio central, planta alta, módulo de atención al estudiante.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Reportes: Para denunciar un mal uso de la plataforma, utiliza el formulario interno bajo el asunto "Reporte de Usuario".',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),

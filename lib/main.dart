@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'firebase_options.dart';
-import 'data/repositories/auth_repository.dart';
-import 'domain/cubits/auth_cubit.dart';
-import 'presentacion/pages/landing_page.dart';
+import 'package:unimet_marketplace/firebase_options.dart';
+import 'package:unimet_marketplace/data/repositories/auth_repository.dart';
+import 'package:unimet_marketplace/domain/cubits/auth_cubit.dart';
+import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/home_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/perfil_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,10 +32,10 @@ class MyApp extends StatelessWidget {
       create: (context) => AuthRepository(),
       child: BlocProvider(
         create: (context) => AuthCubit(context.read<AuthRepository>()),
-        child: MaterialApp(
+        child: const MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'BookSwap Unimet',
-          home: const LandingPage(),
+          home: LandingPage(),
         ),
       ),
     );

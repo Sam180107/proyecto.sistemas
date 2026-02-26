@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 class BeneficiosPage extends StatelessWidget {
+  const BeneficiosPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Back'), backgroundColor: Colors.blue),
+      appBar: AppBar(title: const Text('Back'), backgroundColor: Colors.blue),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -20,7 +22,7 @@ class BeneficiosPage extends StatelessWidget {
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
-                      offset: Offset(0, 3),
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -36,23 +38,23 @@ class BeneficiosPage extends StatelessWidget {
                         color: Colors.teal.shade800,
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Economía Circular: Reduce el gasto anual en libros hasta en un 60% mediante el intercambio y la compra de segunda mano.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Sostenibilidad Ambiental: Al reutilizar materiales académicos, disminuimos la huella de papel y fomentamos un campus verde.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Red Académica: Más que una transacción, facilitamos el contacto entre estudiantes de distintos niveles para tutorías y consejos sobre materias.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Interfaz Optimizada: Diseño responsive que se adapta a tu monitor de escritorio (1440px) o a tu tablet mientras estás en clase.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),

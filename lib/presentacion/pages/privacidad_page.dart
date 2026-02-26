@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 class PrivacidadPage extends StatelessWidget {
+  const PrivacidadPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Back'), backgroundColor: Colors.blue),
+      appBar: AppBar(title: const Text('Back'), backgroundColor: Colors.blue),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -20,7 +22,7 @@ class PrivacidadPage extends StatelessWidget {
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
-                      offset: Offset(0, 3),
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -36,20 +38,20 @@ class PrivacidadPage extends StatelessWidget {
                         color: Colors.teal.shade800,
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Tus datos (nombre, carrera, foto de perfil) solo son visibles para otros usuarios logueados.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'El sistema de favoritos y el historial de transacciones se cifran bajo estándares AES-256 para asegurar que tu actividad académica sea privada y segura.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),

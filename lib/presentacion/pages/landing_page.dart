@@ -133,9 +133,9 @@ class _LandingPageState extends State<LandingPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
+              const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'BookSwap',
                     style: TextStyle(
@@ -377,8 +377,8 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 ],
               ),
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.verified, color: Color(0xFF1976D2), size: 24),
                   SizedBox(width: 8),
                   Column(
@@ -848,11 +848,11 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _buildFooterBrand() {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
+          children: [
             Icon(Icons.book, color: Color(0xFF1976D2), size: 32),
             SizedBox(width: 8),
             Text(
@@ -865,8 +865,8 @@ class _LandingPageState extends State<LandingPage> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        const Text(
+        SizedBox(height: 12),
+        Text(
           'Sistema de Intercambio y Venta de Material\nAcadémico Institucional',
           style: TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.6),
         ),

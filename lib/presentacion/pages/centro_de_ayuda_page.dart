@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 class CentroDeAyudaPage extends StatelessWidget {
+  const CentroDeAyudaPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Back'), backgroundColor: Colors.blue),
+      appBar: AppBar(title: const Text('Back'), backgroundColor: Colors.blue),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -20,7 +22,7 @@ class CentroDeAyudaPage extends StatelessWidget {
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 2,
                       blurRadius: 5,
-                      offset: Offset(0, 3),
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -36,18 +38,18 @@ class CentroDeAyudaPage extends StatelessWidget {
                         color: Colors.teal.shade800,
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Primeros Pasos: Tutorial sobre cómo configurar tu perfil y cambiar tu nombre o contraseña desde el Sidebar de usuario.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Guía de Publicación: Requisitos de imagen y descripción para que tus libros se vendan más rápido en la Grid de Inicio.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
-                    SizedBox(height: 20),
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Resolución de Conflictos: Qué hacer si un material no coincide con la descripción o si un usuario no se presenta al intercambio.',
                       style: TextStyle(fontSize: 20, color: Colors.black87),
                     ),
