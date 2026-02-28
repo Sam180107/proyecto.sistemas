@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../widgets/custom_app_bar.dart'; // Asegúrate de que la ruta a tu widget sea correcta
 
 class AdminHomePage extends StatelessWidget {
   const AdminHomePage({super.key});
@@ -8,143 +9,36 @@ class AdminHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FB),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTitleSection(),
-                  const SizedBox(height: 32),
-                  _buildAdminActions(context),
-                  const SizedBox(height: 40),
-                  _buildSummaryGrid(),
-                  const SizedBox(height: 40),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 3, child: _buildLineChartCard()),
-                      const SizedBox(width: 24),
-                      Expanded(flex: 2, child: _buildPieChartCard()),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                  _buildBarChartCard(),
-                ],
-              ),
+      // USAMOS TU CUSTOM APP BAR CON CEREBRO DE NAVEGACIÓN
+      appBar: const CustomAppBar(), 
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTitleSection(),
+            const SizedBox(height: 32),
+            _buildAdminActions(context),
+            const SizedBox(height: 40),
+            _buildSummaryGrid(),
+            const SizedBox(height: 40),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: _buildLineChartCard()),
+                const SizedBox(width: 24),
+                Expanded(flex: 2, child: _buildPieChartCard()),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE3F2FD),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(Icons.book, color: Color(0xFF1976D2), size: 24),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'BookSwap',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1976D2),
-                    ),
-                  ),
-                  Text(
-                    'Sistema de Intercambio Académico',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              _buildHeaderTab('Inicio', Icons.home_outlined),
-              _buildHeaderTab('Buscar', Icons.search),
-              _buildHeaderTab('Publicar', Icons.add_circle_outline),
-              _buildHeaderTab('Dashboard', Icons.bar_chart, isActive: true),
-              _buildHeaderTab('Perfil', Icons.person_outline),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderTab(String label, IconData icon, {bool isActive = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: isActive
-              ? BoxDecoration(
-                  color: const Color(0xFF1976D2),
-                  borderRadius: BorderRadius.circular(8),
-                )
-              : null,
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isActive ? Colors.white : Colors.black87,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  color: isActive ? Colors.white : Colors.black87,
-                ),
-              ),
-            ],
-          ),
+            const SizedBox(height: 40),
+            _buildBarChartCard(),
+          ],
         ),
       ),
     );
   }
 
+  // --- SECCIÓN DE TÍTULO ---
   Widget _buildTitleSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,6 +60,7 @@ class AdminHomePage extends StatelessWidget {
     );
   }
 
+  // --- BOTONES DE ACCIÓN RÁPIDA ---
   Widget _buildAdminActions(BuildContext context) {
     return Row(
       children: [
@@ -215,6 +110,7 @@ class AdminHomePage extends StatelessWidget {
     );
   }
 
+  // --- TARJETAS DE RESUMEN (MÉTRICAS) ---
   Widget _buildSummaryGrid() {
     return Row(
       children: [
@@ -331,6 +227,7 @@ class AdminHomePage extends StatelessWidget {
     );
   }
 
+  // --- GRÁFICOS (PAINTERS) ---
   Widget _buildLineChartCard() {
     return Container(
       padding: const EdgeInsets.all(32),
@@ -357,9 +254,7 @@ class AdminHomePage extends StatelessWidget {
               color: const Color(0xFF1A1A1A),
             ),
           ),
-          const SizedBox(height: 4),
           const Spacer(),
-          // Placeholder for Line Chart using CustomPaint or simple Row of widgets
           SizedBox(
             height: 250,
             width: double.infinity,
@@ -555,6 +450,7 @@ class AdminHomePage extends StatelessWidget {
   }
 }
 
+// --- CLASES PAINTER (SIN CAMBIOS) ---
 class LineChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -570,50 +466,25 @@ class LineChartPainter extends CustomPainter {
 
     final path1 = Path();
     path1.moveTo(0, size.height * 0.7);
-    path1.quadraticBezierTo(
-      size.width * 0.2,
-      size.height * 0.6,
-      size.width * 0.4,
-      size.height * 0.5,
-    );
-    path1.quadraticBezierTo(
-      size.width * 0.6,
-      size.height * 0.55,
-      size.width * 0.8,
-      size.height * 0.3,
-    );
+    path1.quadraticBezierTo(size.width * 0.2, size.height * 0.6, size.width * 0.4, size.height * 0.5);
+    path1.quadraticBezierTo(size.width * 0.6, size.height * 0.55, size.width * 0.8, size.height * 0.3);
     path1.lineTo(size.width, size.height * 0.2);
 
     final path2 = Path();
     path2.moveTo(0, size.height * 0.85);
-    path2.quadraticBezierTo(
-      size.width * 0.2,
-      size.height * 0.8,
-      size.width * 0.4,
-      size.height * 0.65,
-    );
-    path2.quadraticBezierTo(
-      size.width * 0.6,
-      size.height * 0.68,
-      size.width * 0.8,
-      size.height * 0.5,
-    );
+    path2.quadraticBezierTo(size.width * 0.2, size.height * 0.8, size.width * 0.4, size.height * 0.65);
+    path2.quadraticBezierTo(size.width * 0.6, size.height * 0.68, size.width * 0.8, size.height * 0.5);
     path2.lineTo(size.width, size.height * 0.4);
 
     canvas.drawPath(path1, paint1);
     canvas.drawPath(path2, paint2);
 
-    // Draw grid lines (horizontal)
-    final gridPaint = Paint()
-      ..color = Colors.black.withOpacity(0.05)
-      ..strokeWidth = 1;
-
+    final gridPaint = Paint()..color = Colors.black.withOpacity(0.05)..strokeWidth = 1;
     for (int i = 0; i <= 4; i++) {
       double y = size.height * (i / 4);
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
   }
-
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
@@ -624,7 +495,6 @@ class PieChartPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
-
     final paints = [
       Paint()..color = const Color(0xFF1976D2),
       Paint()..color = const Color(0xFF009688),
@@ -632,16 +502,13 @@ class PieChartPainter extends CustomPainter {
       Paint()..color = const Color(0xFF9C27B0),
       Paint()..color = const Color(0xFFE91E63),
     ];
-
     double startAngle = -0.5 * 3.14;
-    final angles = [1.2, 0.8, 1.0, 0.6, 0.6]; // In radians approximately
-
+    final angles = [1.2, 0.8, 1.0, 0.6, 0.6];
     for (int i = 0; i < angles.length; i++) {
       canvas.drawArc(rect, startAngle, angles[i], true, paints[i]);
       startAngle += angles[i];
     }
   }
-
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

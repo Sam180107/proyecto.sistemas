@@ -207,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const Text('¿Qué eres?', style: TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 10),
                           DropdownButtonFormField<String>(
-                            value: rolSeleccionado,
+                            initialValue: rolSeleccionado,
                             decoration: InputDecoration(
                               prefixIcon: const Icon(Icons.person_outline),
                               filled: true,
@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const Text('Carrera', style: TextStyle(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 10),
                             DropdownButtonFormField<String>(
-                              value: carreraSeleccionada,
+                              initialValue: carreraSeleccionada,
                               isExpanded: true,
                               decoration: InputDecoration(
                                 prefixIcon: const Icon(Icons.school_outlined),
@@ -381,9 +381,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 35),
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.lock_outline, size: 16, color: Colors.black38),
                       Text(' Protección de datos garantizada', style: TextStyle(color: Colors.black38, fontSize: 13)),
                     ],
