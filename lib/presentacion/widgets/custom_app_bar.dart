@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/cubits/profile_cubit.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key});
@@ -19,10 +21,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Column(
+          const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               Text(
                 "BookSwap",
                 style: TextStyle(
@@ -40,15 +42,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        _navItem(context, Icons.home, "Inicio", true, () {
-          Navigator.pushNamed(context, '/home');
+        _navItem(context, Icons.home, "Inicio", false, () {
+          final state = context.read<ProfileCubit>().state;
+          if (state is ProfileLoaded && state.userData['rol'] == 'Admin') {
+            Navigator.pushNamed(context, '/admin_home');
+          } else {
+            Navigator.pushNamed(context, '/home');
+          }
         }),
-        _navItem(context, Icons.search, "Buscar", false, () {
-          // Lógica de búsqueda
-        }),
-        _navItem(context, Icons.add_circle_outline, "Publicar", false, () {
-          // Lógica para subir libro
-        }),
+        _navItem(context, Icons.search, "Buscar", false, () {}),
+        _navItem(context, Icons.add_circle_outline, "Publicar", false, () {}),
         _navItem(context, Icons.person_outline, "Perfil", false, () {
           Navigator.pushNamed(context, '/perfil');
         }),
@@ -57,13 +60,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _navItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    bool active,
-    VoidCallback onTap,
-  ) {
+  Widget _navItem(BuildContext context, IconData icon, String label, bool active, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
@@ -72,19 +69,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: active ? const Color(0xFF003870) : Colors.black87,
-              size: 24,
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                color: active ? const Color(0xFF003870) : Colors.black87,
-                fontSize: 10,
-                fontWeight: active ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
+            Icon(icon, color: active ? const Color(0xFF003870) : Colors.black87, size: 24),
+            Text(label, style: TextStyle(color: active ? const Color(0xFF003870) : Colors.black87, fontSize: 10)),
           ],
         ),
       ),
