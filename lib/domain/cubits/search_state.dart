@@ -12,7 +12,7 @@ class SearchInitial extends SearchState {}
 class SearchLoading extends SearchState {}
 
 class SearchLoaded extends SearchState {
-  final List<dynamic> results; // Replace `dynamic` with your Book model
+  final List<dynamic> results; 
 
   const SearchLoaded(this.results);
 

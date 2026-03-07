@@ -35,7 +35,7 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 20),
                 BlocBuilder<SearchCubit, SearchState>(
                   builder: (context, state) {
-                    if (state is SearchLoading) {
+                    if (state is SearchInitial || state is SearchLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (state is SearchError) {
@@ -44,7 +44,19 @@ class HomePage extends StatelessWidget {
                     if (state is SearchLoaded) {
                       if (state.results.isEmpty) {
                         return const Center(
-                            child: Text('No se encontraron resultados.'));
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('No se encontraron publicaciones.'),
+                              SizedBox(height: 8),
+                              Text(
+                                'Esto puede deberse a un problema de permisos en Firebase.',
+                                style: TextStyle(color: Colors.grey),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        );
                       }
                       return GridView.builder(
                         shrinkWrap: true,
@@ -58,25 +70,13 @@ class HomePage extends StatelessWidget {
                         ),
                         itemCount: state.results.length,
                         itemBuilder: (context, index) {
-                          return _buildBookCard();
+                          final doc = state.results[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          return _buildBookCard(data);
                         },
                       );
                     }
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 0.65,
-                      ),
-                      itemCount: 8,
-                      itemBuilder: (context, index) {
-                        return _buildBookCard();
-                      },
-                    );
+                    return const SizedBox.shrink();
                   },
                 ),
               ],
@@ -87,7 +87,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBookCard() {
+  Widget _buildBookCard(Map<String, dynamic> data) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -129,9 +129,9 @@ class HomePage extends StatelessWidget {
                     color: const Color(0xFF003870),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: const Text(
-                    "Venta",
-                    style: TextStyle(
+                  child: Text(
+                    data['tipoTransaccion'] ?? 'N/A',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -141,34 +141,34 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.all(12),
+          Padding(
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "MATEMÁTICAS",
-                  style: TextStyle(
+                  (data['materia'] ?? 'Sin materia').toUpperCase(),
+                  style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  "Cálculo: Una Variable",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  data['titulo'] ?? 'Sin título',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  "James Stewart",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  data['autor'] ?? 'Sin autor',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  "\$ 45.00",
-                  style: TextStyle(
+                  "\$ ${data['precio']?.toStringAsFixed(2) ?? '0.00'}",
+                  style: const TextStyle(
                     color: Color(0xFF003870),
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -182,3 +182,4 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+

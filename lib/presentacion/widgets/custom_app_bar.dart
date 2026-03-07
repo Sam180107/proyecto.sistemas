@@ -50,9 +50,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           onTap: () {
             final state = context.read<ProfileCubit>().state;
             if (state is ProfileLoaded && state.userData['rol'] == 'Admin') {
-              Navigator.pushNamed(context, '/admin_home');
+              Navigator.pushReplacementNamed(context, '/admin_home');
             } else {
-              Navigator.pushNamed(context, '/home');
+              Navigator.pushReplacementNamed(context, '/home');
             }
           },
         ),
