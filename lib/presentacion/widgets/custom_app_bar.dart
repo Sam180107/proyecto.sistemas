@@ -47,9 +47,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         _HoverNavItem(
           icon: Icons.home,
           label: "Inicio",
+          isActive: true,
           onTap: () {
-            final state = context.read<ProfileCubit>().state;
-            if (state is ProfileLoaded && state.userData['rol'] == 'Admin') {
+            final profileState = context.read<ProfileCubit>().state;
+            if (profileState is ProfileLoaded &&
+                profileState.userData['rol'] == 'Admin') {
               Navigator.pushReplacementNamed(context, '/admin_home');
             } else {
               Navigator.pushReplacementNamed(context, '/home');
@@ -85,24 +87,26 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             Navigator.pushNamed(context, '/perfil');
           },
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 20),
       ],
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 10);
+  Size get preferredSize => const Size.fromHeight(85);
 }
 
 class _HoverNavItem extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool isActive;
 
   const _HoverNavItem({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.isActive = false,
   });
 
   @override
@@ -117,37 +121,45 @@ class _HoverNavItemState extends State<_HoverNavItem> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
-      child: InkWell(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
         onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: AnimatedScale(
-            scale: _isHovering ? 1.1 : 1.0,
-            duration: const Duration(milliseconds: 200),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  widget.icon,
-                  color: _isHovering ? const Color(0xFF0056b3) : Colors.black87,
-                  size: 26,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          decoration: BoxDecoration(
+            color: widget.isActive
+                ? const Color(0xFF003870).withOpacity(0.1)
+                : (_isHovering
+                      ? Colors.grey.withOpacity(0.1)
+                      : Colors.transparent),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.icon,
+                color: widget.isActive || _isHovering
+                    ? const Color(0xFF003870)
+                    : Colors.black87,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: widget.isActive || _isHovering
+                      ? const Color(0xFF003870)
+                      : Colors.black87,
+                  fontSize: 16,
+                  fontWeight: widget.isActive || _isHovering
+                      ? FontWeight.bold
+                      : FontWeight.w500,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    color: _isHovering
-                        ? const Color(0xFF0056b3)
-                        : Colors.black87,
-                    fontSize: 11,
-                    fontWeight: _isHovering
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

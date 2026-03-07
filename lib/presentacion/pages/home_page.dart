@@ -93,10 +93,10 @@ class HomePage extends StatelessWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: 0.65,
+                              crossAxisCount: 4,
+                              crossAxisSpacing: 20,
+                              mainAxisSpacing: 24,
+                              childAspectRatio: 0.68,
                             ),
                         itemCount: state.results.length,
                         itemBuilder: (context, index) {
@@ -118,137 +118,272 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildBookCard(BuildContext context, Map<String, dynamic> data) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/detalle_libro',
-          arguments: {
-            'titulo': data['titulo'] ?? 'Sin título',
-            'autor': data['autor'] ?? 'Sin autor',
-            'materia': data['materia'] ?? 'Sin materia',
-            'precio': data['precio']?.toStringAsFixed(2) ?? '0.00',
-            'descripcion': data['descripcion'] ?? 'Sin descripción',
-            'imagen': data['imageUrl'] ?? 'assets/images/book_placeholder.png',
-            'vendedor': data['vendedor'] ?? 'Vendedor Anónimo',
-            'carrera': data['carrera'] ?? 'Estudiante',
-            'iniciales': data['iniciales'] ?? 'UN',
-            'tipoTransaccion':
-                data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta',
-          },
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(15),
-                  ),
-                  child: Container(
-                    height: 140,
-                    width: double.infinity,
-                    color: Colors.grey[100],
-                    child: data['imageUrl'] != null
-                        ? Image.network(
-                            data['imageUrl'],
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Center(
-                                  child: Icon(
-                                    Icons.book,
-                                    size: 40,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                          )
-                        : const Center(
-                            child: Icon(
-                              Icons.book,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                          ),
-                  ),
-                ),
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF003870),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Text(
-                      data['tipoTransaccion'] ?? data['tipo'] ?? 'N/A',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isHovered = false;
+        return MouseRegion(
+          onEnter: (_) => setState(() => isHovered = true),
+          onExit: (_) => setState(() => isHovered = false),
+          cursor: SystemMouseCursors.click,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            transform: isHovered
+                ? (Matrix4.identity()..translate(0, -5, 0))
+                : Matrix4.identity(),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: isHovered
+                      ? Colors.black.withOpacity(0.15)
+                      : Colors.black.withOpacity(0.05),
+                  blurRadius: isHovered ? 15 : 10,
+                  spreadRadius: isHovered ? 4 : 2,
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(12),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  '/detalle_libro',
+                  arguments: {
+                    'titulo': data['titulo'] ?? 'Sin título',
+                    'autor': data['autor'] ?? 'Sin autor',
+                    'materia': data['materia'] ?? 'Sin materia',
+                    'precio': data['precio']?.toString() ?? '0.00',
+                    'descripcion': data['descripcion'] ?? 'Sin descripción',
+                    'imagen':
+                        data['imageUrl'] ??
+                        'assets/images/book_placeholder.png',
+                    'vendedor': data['vendedor'] ?? 'Vendedor Anónimo',
+                    'carrera': data['carrera'] ?? 'Estudiante',
+                    'iniciales': data['iniciales'] ?? 'UN',
+                    'tipoTransaccion':
+                        data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta',
+                  },
+                );
+              },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    (data['materia'] ?? 'Sin materia').toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.grey[100],
+                            child: data['imageUrl'] != null
+                                ? Image.network(
+                                    data['imageUrl'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Center(
+                                              child: Icon(
+                                                Icons.book,
+                                                size: 40,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                  )
+                                : const Center(
+                                    child: Icon(
+                                      Icons.book,
+                                      size: 40,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        // Badge (Venta / Intercambio)
+                        Positioned(
+                          top: 15,
+                          left: 15,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  (data['tipoTransaccion'] ?? data['tipo']) ==
+                                      'Intercambio'
+                                  ? const Color(0xFF4CAF50).withOpacity(0.9)
+                                  : const Color(0xFF1976D2).withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              (data['tipoTransaccion'] ??
+                                      data['tipo'] ??
+                                      'Venta')
+                                  .toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Botón de Like con Hover
+                        Positioned(
+                          top: 15,
+                          right: 15,
+                          child: _HoverIconButton(
+                            icon: Icons.favorite_border,
+                            activeIcon: Icons.favorite,
+                            activeColor: Colors.red,
+                            onPressed: () {},
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    data['titulo'] ?? 'Sin título',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    data['autor'] ?? 'Sin autor',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "\$ ${data['precio']?.toStringAsFixed(2) ?? '0.00'}",
-                    style: const TextStyle(
-                      color: Color(0xFF003870),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          (data['materia'] ?? 'Sin materia').toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          data['titulo'] ?? 'Sin título',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          data['autor'] ?? 'Sin autor',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              (data['tipoTransaccion'] ?? data['tipo']) ==
+                                      'Intercambio'
+                                  ? 'Trueque'
+                                  : "\$ ${data['precio']?.toString() ?? '0.00'}",
+                              style: TextStyle(
+                                color:
+                                    (data['tipoTransaccion'] ?? data['tipo']) ==
+                                        'Intercambio'
+                                    ? const Color(0xFF4CAF50)
+                                    : const Color(0xFF1976D2),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on_outlined,
+                                  size: 14,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Campus',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Widget auxiliar para los botones de icono con efecto hover
+class _HoverIconButton extends StatefulWidget {
+  final IconData icon;
+  final IconData? activeIcon;
+  final Color? activeColor;
+  final VoidCallback onPressed;
+
+  const _HoverIconButton({
+    required this.icon,
+    required this.onPressed,
+    this.activeIcon,
+    this.activeColor,
+  });
+
+  @override
+  State<_HoverIconButton> createState() => _HoverIconButtonState();
+}
+
+class _HoverIconButtonState extends State<_HoverIconButton> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _isPressed = !_isPressed);
+          widget.onPressed();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _isHovered ? Colors.white : Colors.white.withOpacity(0.9),
+            shape: BoxShape.circle,
+            boxShadow: [
+              if (_isHovered)
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+            ],
+          ),
+          child: Icon(
+            _isPressed && widget.activeIcon != null
+                ? widget.activeIcon
+                : widget.icon,
+            size: 20,
+            color: _isPressed && widget.activeColor != null
+                ? widget.activeColor
+                : (_isHovered ? Colors.black87 : Colors.grey[700]),
+          ),
         ),
       ),
     );
