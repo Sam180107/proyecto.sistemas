@@ -291,7 +291,7 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
     );
   }
 
-  // --- WIDGETS DE INTERFAZ REINTEGRADOS ---
+  // --- WIDGETS DE INTERFAZ ACTUALIZADOS ---
 
   Widget _buildUserCard(Map<String, dynamic> userData, String? photoURL) {
     String nombre = userData['nombre'] ?? "Usuario";
@@ -303,24 +303,23 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.black12)),
       child: Column(children: [
-        Stack(alignment: Alignment.bottomRight, children: [
-          InkWell(
-            onTap: _funcionCambiarFoto,
-            child: CircleAvatar(radius: 45, backgroundColor: const Color(0xFF0089A7), 
-              backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
-              child: photoURL == null ? Text(nombre.isNotEmpty ? nombre[0].toUpperCase() : "U", style: const TextStyle(color: Colors.white, fontSize: 34)) : null),
+        InkWell(
+          onTap: _funcionCambiarFoto,
+          child: CircleAvatar(
+            radius: 45, 
+            backgroundColor: const Color(0xFF0089A7), 
+            backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
+            child: photoURL == null 
+              ? Text(nombre.isNotEmpty ? nombre[0].toUpperCase() : "U", style: const TextStyle(color: Colors.white, fontSize: 34)) 
+              : null
           ),
-          Container(padding: const EdgeInsets.all(6), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: const Icon(Icons.camera_alt, size: 16, color: Color(0xFF007BFF))),
-        ]),
+        ),
         const SizedBox(height: 15),
         Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         Text("$espec\n$rol", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         const Divider(height: 30),
         _infoLine(Icons.phone_outlined, tlf),
         _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
-        const SizedBox(height: 20),
-        ElevatedButton.icon(onPressed: () => _lanzarMensaje("Próximamente", Colors.blue), icon: const Icon(Icons.chat_bubble_outline, size: 16), label: const Text("Enviar Mensaje"),
-        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF007BFF), foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 45), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)))),
       ]),
     );
   }
