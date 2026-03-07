@@ -15,7 +15,8 @@ final List<Map<String, String>> libros = [
     'vendedor': 'María González',
     'carrera': 'Ingeniería Civil',
     'iniciales': 'MG',
-    'descripcion': 'Libro en excelente estado, edición 8va. Incluye todos los capítulos sin marcas ni subrayados. Perfecto para cursos de Cálculo I y II.',
+    'descripcion':
+        'Libro en excelente estado, edición 8va. Incluye todos los capítulos sin marcas ni subrayados. Perfecto para cursos de Cálculo I y II.',
   },
   {
     'titulo': 'Física Universitaria',
@@ -26,7 +27,8 @@ final List<Map<String, String>> libros = [
     'vendedor': 'Ricardo Pérez',
     'carrera': 'Ingeniería de Sistemas',
     'iniciales': 'RP',
-    'descripcion': 'Casi nuevo, incluye el solucionario impreso. Muy útil para los laboratorios de Física I.',
+    'descripcion':
+        'Casi nuevo, incluye el solucionario impreso. Muy útil para los laboratorios de Física I.',
   },
   // Puedes añadir más mapas aquí y el Grid se actualizará solo
 ];
@@ -100,7 +102,7 @@ class HomePage extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final doc = state.results[index];
                           final data = doc.data() as Map<String, dynamic>;
-                          return _buildBookCard(data);
+                          return _buildBookCard(context, data);
                         },
                       );
                     }
@@ -115,114 +117,139 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBookCard(Map<String, dynamic> data) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(15),
-                ),
-                child: Container(
-                  height: 140,
-                  width: double.infinity,
-                  color: Colors.grey[100],
-                  child: data['imageUrl'] != null
-                      ? Image.network(
-                          data['imageUrl'],
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Center(
-                                child: Icon(
-                                  Icons.book,
-                                  size: 40,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                        )
-                      : const Center(
-                          child: Icon(Icons.book, size: 40, color: Colors.grey),
-                        ),
-                ),
-              ),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF003870),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    data['tipoTransaccion'] ?? data['tipo'] ?? 'N/A',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildBookCard(BuildContext context, Map<String, dynamic> data) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detalle_libro',
+          arguments: {
+            'titulo': data['titulo'] ?? 'Sin título',
+            'autor': data['autor'] ?? 'Sin autor',
+            'materia': data['materia'] ?? 'Sin materia',
+            'precio': data['precio']?.toStringAsFixed(2) ?? '0.00',
+            'descripcion': data['descripcion'] ?? 'Sin descripción',
+            'imagen': data['imageUrl'] ?? 'assets/images/book_placeholder.png',
+            'vendedor': data['vendedor'] ?? 'Vendedor Anónimo',
+            'carrera': data['carrera'] ?? 'Estudiante',
+            'iniciales': data['iniciales'] ?? 'UN',
+            'tipoTransaccion':
+                data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta',
+          },
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
               children: [
-                Text(
-                  (data['materia'] ?? 'Sin materia').toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(15),
+                  ),
+                  child: Container(
+                    height: 140,
+                    width: double.infinity,
+                    color: Colors.grey[100],
+                    child: data['imageUrl'] != null
+                        ? Image.network(
+                            data['imageUrl'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                                  child: Icon(
+                                    Icons.book,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.book,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  data['titulo'] ?? 'Sin título',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  data['autor'] ?? 'Sin autor',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "\$ ${data['precio']?.toStringAsFixed(2) ?? '0.00'}",
-                  style: const TextStyle(
-                    color: Color(0xFF003870),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF003870),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      data['tipoTransaccion'] ?? data['tipo'] ?? 'N/A',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (data['materia'] ?? 'Sin materia').toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    data['titulo'] ?? 'Sin título',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    data['autor'] ?? 'Sin autor',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "\$ ${data['precio']?.toStringAsFixed(2) ?? '0.00'}",
+                    style: const TextStyle(
+                      color: Color(0xFF003870),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
