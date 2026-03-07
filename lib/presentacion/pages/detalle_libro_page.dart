@@ -1,9 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
 
 class DetalleLibroPage extends StatelessWidget {
   const DetalleLibroPage({super.key});
+
+  void _solicitarLibro(BuildContext context, Map<String, dynamic> arguments) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debes iniciar sesión para solicitar un libro')),
+      );
+      return;
+    }
+
+    if (currentUser.uid == arguments['userId']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No puedes solicitar tu propio libro')),
+      );
+      return;
+    }
+
+    try {
+      await context.read<OrderCubit>().createOrder(
+        sellerId: arguments['userId'],
+        bookId: arguments['id'] ?? '',
+        bookTitle: arguments['titulo'],
+        bookAuthor: arguments['autor'] ?? '',
+        price: double.tryParse(arguments['precio'].toString()) ?? 0.0,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Solicitud enviada exitosamente')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al enviar solicitud: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +121,7 @@ class DetalleLibroPage extends StatelessWidget {
             top: 45,
             left: 20,
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.9),
+              backgroundColor: Colors.white.withValues(alpha: 0.9),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () => Navigator.pop(context),
@@ -97,7 +134,7 @@ class DetalleLibroPage extends StatelessWidget {
             bottom: 20,
             left: 20,
             right: 20,
-            child: _buildBottomButton(),
+            child: _buildBottomButton(context, arguments),
           ),
         ],
       ),
@@ -153,7 +190,7 @@ class DetalleLibroPage extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
                     Colors.transparent,
                   ],
@@ -172,7 +209,7 @@ class DetalleLibroPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 8,
                   ),
                 ],
@@ -199,7 +236,7 @@ class DetalleLibroPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10),
         ],
       ),
       child: Row(
@@ -370,21 +407,19 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomButton() {
+  Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E88E5).withOpacity(0.3),
+            color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
       ),
       child: ElevatedButton(
-        onPressed: () {
-          // Lógica para solicitar el libro
-        },
+        onPressed: () => _solicitarLibro(context, arguments),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF1E88E5),
           minimumSize: const Size(double.infinity, 60),

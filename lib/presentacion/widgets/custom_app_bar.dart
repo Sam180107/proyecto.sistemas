@@ -81,6 +81,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           },
         ),
         _HoverNavItem(
+          icon: Icons.receipt_long,
+          label: "Órdenes",
+          onTap: () {
+            Navigator.pushNamed(context, '/orders');
+          },
+        ),
+        _HoverNavItem(
           icon: Icons.person_outline,
           label: "Perfil",
           onTap: () {
