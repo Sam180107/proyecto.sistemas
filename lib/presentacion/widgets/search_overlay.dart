@@ -28,79 +28,116 @@ class _SearchOverlayState extends State<SearchOverlay> {
         child: Container(
           width: double.infinity,
           height: double.infinity,
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withOpacity(0.6),
           child: Center(
             child: GestureDetector(
-              onTap: () {}, // To prevent dialog from closing when clicking inside
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.8,
-                constraints: const BoxConstraints(maxWidth: 1200),
-                padding: const EdgeInsets.all(32.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            autofocus: true,
-                            decoration: InputDecoration(
-                              hintText: "Buscar libros, materias, autores...",
-                              prefixIcon: const Icon(Icons.search),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Colors.grey),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF003870)),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[200],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        IconButton(
-                          icon: const Icon(Icons.tune, size: 30),
-                          onPressed: () {
-                            _showFilterDialog(context);
-                          },
-                          tooltip: 'Filtros',
-                          style: IconButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            backgroundColor: Colors.grey[200],
-                          )
+              onTap: () {},
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.topCenter,
+                children: [
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    constraints: const BoxConstraints(maxWidth: 700),
+                    padding: const EdgeInsets.fromLTRB(32, 48, 32, 32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 32),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        context.read<SearchCubit>().search(query: _searchController.text);
-                        Navigator.pop(context); // Close overlay after search
-                      },
-                      icon: const Icon(Icons.search),
-                      label: const Text('Buscar', style: TextStyle(fontSize: 18)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF003870),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  hintText: "Buscar por título, autor...",
+                                  prefixIcon:
+                                      const Icon(Icons.search, color: Colors.grey),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF003870), width: 2),
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF2F4F7),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            IconButton(
+                              icon: const Icon(Icons.filter_list_rounded,
+                                  size: 28),
+                              onPressed: () => _showFilterDialog(context),
+                              tooltip: 'Filtros',
+                              style: IconButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  backgroundColor: const Color(0xFFF2F4F7),
+                                  foregroundColor: const Color(0xFF003870)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            context
+                                .read<SearchCubit>()
+                                .search(query: _searchController.text);
+                            Navigator.pop(context);
+                          },
+                          icon: const Icon(Icons.search_rounded),
+                          label:
+                              const Text('Buscar', style: TextStyle(fontSize: 18)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF003870),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 48, vertical: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 5,
+                            shadowColor:
+                                const Color(0xFF003870).withOpacity(0.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: -20,
+                    right: -20,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded,
+                            color: Colors.white, size: 30),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.black.withOpacity(0.5),
+                          shape: const CircleBorder(),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  )
+                ],
               ),
             ),
           ),
@@ -130,51 +167,74 @@ class _FilterDialog extends StatefulWidget {
 }
 
 class _FilterDialogState extends State<_FilterDialog> {
-    String? _selectedCarrera;
+  String? _selectedCarrera;
   String? _selectedMateria;
   String _selectedTransaccion = 'Todos';
 
-  final List<String> _carreras = ['Ingeniería Informática', 'Ingeniería Civil', 'Derecho', 'Psicología'];
-  final List<String> _materias = ['Cálculo I', 'Programación II', 'Derecho Romano', 'Psicología General'];
-  final List<String> _transacciones = ['Todos', 'Venta', 'Intercambio', 'Donación'];
-
+  // In a real app, these would come from a remote source
+  final List<String> _carreras = [
+    'Ingeniería Informática',
+    'Ingeniería Civil',
+    'Derecho',
+    'Psicología'
+  ];
+  final List<String> _materias = [
+    'Cálculo I',
+    'Programación II',
+    'Derecho Romano',
+    'Psicología General'
+  ];
+  final List<String> _transacciones = [
+    'Todos',
+    'Venta',
+    'Intercambio',
+    'Donación'
+  ];
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text('Filtros de Búsqueda', textAlign: TextAlign.center),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.filter_list_rounded, color: Color(0xFF003870)),
+          SizedBox(width: 8),
+          Text('Filtros de Búsqueda'),
+        ],
+      ),
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.4,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDropdown('Carrera', _carreras, _selectedCarrera, (val) {
-              setState(() => _selectedCarrera = val);
-            }),
+            _buildDropdown('Carrera', Icons.school_outlined, _carreras,
+                _selectedCarrera, (val) => setState(() => _selectedCarrera = val)),
             const SizedBox(height: 16),
-            _buildDropdown('Materia', _materias, _selectedMateria, (val) {
-              setState(() => _selectedMateria = val);
-            }),
+            _buildDropdown('Materia', Icons.book_outlined, _materias,
+                _selectedMateria, (val) => setState(() => _selectedMateria = val)),
             const SizedBox(height: 16),
-            _buildDropdown('Tipo de Transacción', _transacciones, _selectedTransaccion, (val) {
-              if (val != null) {
-                setState(() => _selectedTransaccion = val);
-              }
-            }, isRequired: true),
+            _buildDropdown(
+                'Tipo de Transacción',
+                Icons.swap_horiz_outlined,
+                _transacciones,
+                _selectedTransaccion,
+                (val) => setState(() => _selectedTransaccion = val ?? 'Todos')),
           ],
         ),
       ),
       actions: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: ElevatedButton(
             onPressed: () {
               context.read<SearchCubit>().search(
-                carrera: _selectedCarrera,
-                materia: _selectedMateria,
-                transaccion: _selectedTransaccion == 'Todos' ? null : _selectedTransaccion,
-              );
+                    carrera: _selectedCarrera,
+                    materia: _selectedMateria,
+                    transaccion: _selectedTransaccion == 'Todos'
+                        ? null
+                        : _selectedTransaccion,
+                  );
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(
@@ -182,25 +242,29 @@ class _FilterDialogState extends State<_FilterDialog> {
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 50),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
+              elevation: 5,
+              shadowColor: const Color(0xFF003870).withOpacity(0.4),
             ),
-            child: const Text('Aplicar Filtros'),
+            child: const Text('Aplicar Filtros', style: TextStyle(fontSize: 16)),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDropdown(String label, List<String> items, String? selectedValue, ValueChanged<String?> onChanged, {bool isRequired = false}) {
+  Widget _buildDropdown(String label, IconData icon, List<String> items,
+      String? selectedValue, ValueChanged<String?> onChanged) {
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: Text('Seleccionar ${label.toLowerCase()}'),
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        prefixIcon: Icon(icon, color: Colors.grey[600]),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         filled: true,
-        fillColor: Colors.grey[100],
+        fillColor: const Color(0xFFF2F4F7),
       ),
       items: items.map((String value) {
         return DropdownMenuItem<String>(
@@ -209,7 +273,6 @@ class _FilterDialogState extends State<_FilterDialog> {
         );
       }).toList(),
       onChanged: onChanged,
-      validator: isRequired ? (value) => value == null ? 'Campo requerido' : null : null,
     );
   }
 }
