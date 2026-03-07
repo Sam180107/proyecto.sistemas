@@ -111,10 +111,24 @@ class HomePage extends StatelessWidget {
                 ),
                 child: Container(
                   height: 140,
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: Icon(Icons.book, size: 40, color: Colors.grey),
-                  ),
+                  width: double.infinity,
+                  color: Colors.grey[100],
+                  child: data['imageUrl'] != null
+                      ? Image.network(
+                          data['imageUrl'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(
+                                child: Icon(
+                                  Icons.book,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                        )
+                      : const Center(
+                          child: Icon(Icons.book, size: 40, color: Colors.grey),
+                        ),
                 ),
               ),
               Positioned(

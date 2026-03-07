@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:unimet_marketplace/firebase_options.dart';
 
@@ -21,8 +22,15 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    // Inicialización de Supabase para el almacenamiento de imágenes
+    await Supabase.initialize(
+      url: 'https://gcwnvqkubwxwkgeazqmc.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdjd252cWt1Ynd4d2tnZWF6cW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4ODg0MzYsImV4cCI6MjA4ODQ2NDQzNn0.Sa69AieyGPTuH0IcFbid5Ezb57-tcguGghDIxJNmdZs',
+    );
   } catch (e) {
-    print("Error Firebase: $e");
+    print("Error inicialización: $e");
   }
   runApp(const MyApp());
 }
