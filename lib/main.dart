@@ -19,7 +19,7 @@ import 'package:unimet_marketplace/presentacion/pages/login_screen.dart';
 import 'package:unimet_marketplace/presentacion/pages/perfil_admin_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/perfil_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/detalle_libro_page.dart'; // Importación necesaria
-
+import 'package:unimet_marketplace/presentacion/pages/publicar_libro_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
