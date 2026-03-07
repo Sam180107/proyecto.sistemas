@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/cubits/search_cubit.dart';
 import '../widgets/custom_app_bar.dart';
 
 class HomePage extends StatelessWidget {
@@ -6,75 +8,79 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
-      appBar: const CustomAppBar(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Explorar Material Académico',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+    return BlocProvider(
+      create: (context) => SearchCubit(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF2F4F7),
+        appBar: const CustomAppBar(),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Explorar Material Académico',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Encuentra libros y material de estudio para tus cursos',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Buscar libros, materias, autores...",
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                const SizedBox(height: 8),
+                const Text(
+                  'Encuentra libros y material de estudio para tus cursos',
+                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                ),
+                const SizedBox(height: 20),
+                BlocBuilder<SearchCubit, SearchState>(
+                  builder: (context, state) {
+                    if (state is SearchLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (state is SearchError) {
+                      return Center(child: Text(state.message));
+                    }
+                    if (state is SearchLoaded) {
+                      if (state.results.isEmpty) {
+                        return const Center(
+                            child: Text('No se encontraron resultados.'));
+                      }
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.65,
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
+                        itemCount: state.results.length,
+                        itemBuilder: (context, index) {
+                          return _buildBookCard();
+                        },
+                      );
+                    }
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.65,
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.tune, color: Color(0xFF003870)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.65,
+                      itemCount: 8,
+                      itemBuilder: (context, index) {
+                        return _buildBookCard();
+                      },
+                    );
+                  },
                 ),
-                itemCount: 8,
-                itemBuilder: (context, index) {
-                  return _buildBookCard();
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

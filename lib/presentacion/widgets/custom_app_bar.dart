@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/cubits/profile_cubit.dart';
+import '../../domain/cubits/search_cubit.dart';
+import 'search_overlay.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key});
@@ -42,41 +44,106 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        _navItem(context, Icons.home, "Inicio", false, () {
-          final state = context.read<ProfileCubit>().state;
-          if (state is ProfileLoaded && state.userData['rol'] == 'Admin') {
-            Navigator.pushNamed(context, '/admin_home');
-          } else {
-            Navigator.pushNamed(context, '/home');
-          }
-        }),
-        _navItem(context, Icons.search, "Buscar", false, () {}),
-        _navItem(context, Icons.add_circle_outline, "Publicar", false, () {}),
-        _navItem(context, Icons.person_outline, "Perfil", false, () {
-          Navigator.pushNamed(context, '/perfil');
-        }),
+        _HoverNavItem(
+          icon: Icons.home,
+          label: "Inicio",
+          onTap: () {
+            final state = context.read<ProfileCubit>().state;
+            if (state is ProfileLoaded && state.userData['rol'] == 'Admin') {
+              Navigator.pushNamed(context, '/admin_home');
+            } else {
+              Navigator.pushNamed(context, '/home');
+            }
+          },
+        ),
+        _HoverNavItem(
+          icon: Icons.search,
+          label: "Buscar",
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (dialogContext) {
+                return BlocProvider.value(
+                  value: context.read<SearchCubit>(),
+                  child: const SearchOverlay(),
+                );
+              },
+            );
+          },
+        ),
+        _HoverNavItem(
+            icon: Icons.add_circle_outline, label: "Publicar", onTap: () {}),
+        _HoverNavItem(
+          icon: Icons.person_outline,
+          label: "Perfil",
+          onTap: () {
+            Navigator.pushNamed(context, '/perfil');
+          },
+        ),
         const SizedBox(width: 8),
       ],
     );
   }
 
-  Widget _navItem(BuildContext context, IconData icon, String label, bool active, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: active ? const Color(0xFF003870) : Colors.black87, size: 24),
-            Text(label, style: TextStyle(color: active ? const Color(0xFF003870) : Colors.black87, fontSize: 10)),
-          ],
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 10);
+}
+
+class _HoverNavItem extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _HoverNavItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverNavItem> createState() => _HoverNavItemState();
+}
+
+class _HoverNavItemState extends State<_HoverNavItem> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: AnimatedScale(
+            scale: _isHovering ? 1.1 : 1.0,
+            duration: const Duration(milliseconds: 200),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(widget.icon,
+                    color: _isHovering
+                        ? const Color(0xFF0056b3)
+                        : Colors.black87,
+                    size: 26),
+                const SizedBox(height: 2),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: _isHovering
+                        ? const Color(0xFF0056b3)
+                        : Colors.black87,
+                    fontSize: 11,
+                    fontWeight: _isHovering ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 10);
 }
