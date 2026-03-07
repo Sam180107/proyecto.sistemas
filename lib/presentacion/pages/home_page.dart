@@ -150,7 +150,7 @@ class HomePage extends StatelessWidget {
                   '/detalle_libro',
                   arguments: {
                     'titulo': data['titulo'] ?? 'Sin título',
-                    'autor': data['autor'] ?? 'Sin autor',
+                    'autor': data['autor'] ?? '',
                     'materia': data['materia'] ?? 'Sin materia',
                     'precio': data['precio']?.toString() ?? '0.00',
                     'descripcion': data['descripcion'] ?? 'Sin descripción',
@@ -160,6 +160,8 @@ class HomePage extends StatelessWidget {
                     'vendedor': data['vendedor'] ?? 'Vendedor Anónimo',
                     'carrera': data['carrera'] ?? 'Estudiante',
                     'iniciales': data['iniciales'] ?? 'UN',
+                    'userId': data['userId'] ?? '', // ID del vendedor
+                    'rol': data['rol'] ?? 'Estudiante', // Rol del vendedor
                     'tipoTransaccion':
                         data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta',
                   },

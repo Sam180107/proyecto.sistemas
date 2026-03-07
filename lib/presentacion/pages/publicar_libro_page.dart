@@ -55,6 +55,13 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         throw Exception('Debes iniciar sesión para publicar');
       }
 
+      // Obtener datos del perfil del usuario
+      final userDoc = await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('Perfil de usuario no encontrado. Completa tu perfil primero.');
+      }
+      final userData = userDoc.data()!;
+
       final double? precio = double.tryParse(
         _precioController.text.replaceAll(',', ''),
       );
@@ -87,6 +94,10 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
           .getPublicUrl(fileName);
       // --- FIN SUBIDA ---
 
+      // Generar iniciales del nombre
+      String nombre = userData['nombre'] ?? 'Usuario';
+      String iniciales = nombre.isNotEmpty ? nombre.split(' ').map((e) => e[0]).take(2).join('').toUpperCase() : 'UN';
+
       await FirebaseFirestore.instance.collection('libros').add({
         'titulo': _tituloController.text.trim(),
         'autor': _autorController.text.trim(),
@@ -98,6 +109,10 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         'imageUrl': imageUrl, // Guardamos la URL de la imagen
         'userEmail': user.email,
         'userId': user.uid,
+        'vendedor': nombre,
+        'carrera': userData['carrera'] ?? 'Estudiante',
+        'rol': userData['rol'] ?? 'Estudiante', // Nuevo campo
+        'iniciales': iniciales,
         'fechaCreacion': FieldValue.serverTimestamp(),
         'estado': 'Pendiente',
       });

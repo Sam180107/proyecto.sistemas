@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 
 class DetalleLibroPage extends StatelessWidget {
   const DetalleLibroPage({super.key});
@@ -8,6 +10,11 @@ class DetalleLibroPage extends StatelessWidget {
     // 1. Extraemos los argumentos de forma segura
     final arguments =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+
+    // Cargar valoraciones del vendedor
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<RatingCubit>().cargarValoraciones(arguments['userId']);
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
@@ -36,7 +43,7 @@ class DetalleLibroPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        arguments['autor']!,
+                        arguments['autor'] == null || arguments['autor'].isEmpty ? 'Anónimo' : arguments['autor']!,
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
@@ -59,9 +66,8 @@ class DetalleLibroPage extends StatelessWidget {
 
                       const SizedBox(height: 25),
                       _buildSellerCard(
-                        arguments['vendedor']!,
-                        arguments['carrera']!,
-                        arguments['iniciales']!,
+                        context,
+                        arguments,
                       ),
 
                       // Espacio final para que el scroll permita ver todo antes del botón
@@ -263,59 +269,104 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSellerCard(String nombre, String carrera, String iniciales) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: const Color(0xFF003870),
-            child: Text(
-              iniciales,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+  Widget _buildSellerCard(BuildContext context, Map<String, dynamic> arguments) {
+    String nombre = arguments['vendedor']!;
+    String carrera = arguments['carrera']!;
+    String iniciales = arguments['iniciales']!;
+    return BlocBuilder<RatingCubit, RatingState>(
+      builder: (context, state) {
+        return Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
           ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  nombre,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: const Color(0xFF003870),
+                child: Text(
+                  iniciales,
                   style: const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
                   ),
                 ),
-                Text(
-                  carrera,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              // Aquí podrías navegar al perfil del vendedor
-            },
-            child: const Text(
-              "Ver Perfil",
-              style: TextStyle(
-                color: Color(0xFF1E88E5),
-                fontWeight: FontWeight.bold,
               ),
-            ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nombre,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      carrera,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    if (state is RatingLoaded && state.totalValoraciones > 0) ...[
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          _buildStarRating(state.promedio),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})',
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/perfil',
+                    arguments: {
+                      'vendedor': arguments['vendedor'],
+                      'carrera': arguments['carrera'],
+                      'iniciales': arguments['iniciales'],
+                      'userId': arguments['userId'],
+                      'rol': arguments['rol'],
+                      'isOtherUser': true,
+                    },
+                  );
+                },
+                child: const Text(
+                  "Ver Perfil",
+                  style: TextStyle(
+                    color: Color(0xFF1E88E5),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStarRating(double rating) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating.floor() ? Icons.star :
+          (index < rating && rating % 1 != 0) ? Icons.star_half : Icons.star_border,
+          color: Colors.amber,
+          size: 14,
+        );
+      }),
     );
   }
 

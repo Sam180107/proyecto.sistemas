@@ -10,6 +10,7 @@ import 'package:unimet_marketplace/data/repositories/auth_repository.dart';
 // Cubits
 import 'package:unimet_marketplace/domain/cubits/auth_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 
 // Páginas
 import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
@@ -27,8 +28,14 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    // Inicialización de Supabase
+    await Supabase.initialize(
+      url: 'https://gcwnvqkubwxwkgeazqmc.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdjd252cWt1Ynd4d2tnZWF6cW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4ODg0MzYsImV4cCI6MjA4ODQ2NDQzNn0.Sa69AieyGPTuH0IcFbid5Ezb57-tcguGghDIxJNmdZs',
+    );
   } catch (e) {
-    print("Error al inicializar Firebase: $e");
+    print("Error al inicializar Firebase o Supabase: $e");
   }
   runApp(const MyApp());
 }
@@ -50,6 +57,10 @@ class MyApp extends StatelessWidget {
           // Gestión del estado del perfil del usuario
           BlocProvider(
             create: (context) => ProfileCubit(), 
+          ),
+          // Gestión del estado de valoraciones
+          BlocProvider(
+            create: (context) => RatingCubit(),
           ),
         ],
         child: MaterialApp(

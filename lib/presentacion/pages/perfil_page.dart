@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'perfil_admin_page.dart';
 
 class PerfilPage extends StatelessWidget {
@@ -210,6 +213,12 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
 
   @override
   Widget build(BuildContext context) {
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    if (arguments != null && arguments['isOtherUser'] == true) {
+      return _buildOtherUserProfile(arguments);
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F3F6),
       appBar: AppBar(
@@ -291,7 +300,197 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
     );
   }
 
-  // --- WIDGETS DE INTERFAZ ACTUALIZADOS ---
+  Widget _buildOtherUserProfile(Map<String, dynamic> arguments) {
+    String nombre = arguments['vendedor'] ?? 'Usuario';
+    String carrera = arguments['carrera'] ?? 'Estudiante';
+    String iniciales = arguments['iniciales'] ?? 'U';
+    String rol = arguments['rol'] ?? 'Estudiante';
+    String userId = arguments['userId'] ?? '';
+
+    // Inicializar el RatingCubit para este usuario
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<RatingCubit>().cargarValoraciones(userId);
+    });
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F3F6),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        title: const Text('BookSwap', style: TextStyle(color: Color(0xFF007BFF), fontWeight: FontWeight.bold)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Perfil del Vendedor", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+            const Text("Información del usuario", style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.black12)),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 45,
+                    backgroundColor: const Color(0xFF0089A7),
+                    child: Text(iniciales, style: const TextStyle(color: Colors.white, fontSize: 34)),
+                  ),
+                  const SizedBox(height: 15),
+                  Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text("$carrera\n$rol", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Divider(height: 30),
+                  _buildRatingSection(),
+                  const SizedBox(height: 20),
+                  _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Placeholder for send message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Función de enviar mensaje próximamente')),
+                      );
+                    },
+                    icon: const Icon(Icons.message),
+                    label: const Text('Enviar Mensaje'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E88E5),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Estadísticas del vendedor
+            Row(children: [
+              _buildStatCard("18", "Ventas"), const SizedBox(width: 10),
+              _buildStatCard("6", "Intercambios"), const SizedBox(width: 10),
+              _buildStatCard("24", "Reseñas"),
+            ]),
+            const SizedBox(height: 20),
+            _buildReputationCard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingSection() {
+    return BlocBuilder<RatingCubit, RatingState>(
+      builder: (context, state) {
+        if (state is RatingLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state is RatingError) {
+          return Text('Error: ${state.mensaje}', style: const TextStyle(color: Colors.red));
+        }
+        if (state is RatingLoaded) {
+          return Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildStarRating(state.promedio),
+                  const SizedBox(width: 10),
+                  Text(
+                    state.promedio > 0 ? '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})' : 'Sin valoraciones',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: () => _mostrarDialogoValoracion(context),
+                icon: const Icon(Icons.star_rate),
+                label: const Text('Calificar Usuario'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size(double.infinity, 40),
+                ),
+              ),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildStarRating(double rating) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating.floor() ? Icons.star :
+          (index < rating && rating % 1 != 0) ? Icons.star_half : Icons.star_border,
+          color: Colors.amber,
+          size: 24,
+        );
+      }),
+    );
+  }
+
+  void _mostrarDialogoValoracion(BuildContext context) {
+    int estrellasSeleccionadas = 0;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Calificar Usuario'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('¿Cuántas estrellas le das a este vendedor?'),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return IconButton(
+                    icon: Icon(
+                      index < estrellasSeleccionadas ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                      size: 32,
+                    ),
+                    onPressed: () {
+                      setState(() => estrellasSeleccionadas = index + 1);
+                    },
+                  );
+                }),
+              ),
+              Text(
+                estrellasSeleccionadas > 0 ? '$estrellasSeleccionadas estrella${estrellasSeleccionadas > 1 ? 's' : ''}' : 'Selecciona estrellas',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: estrellasSeleccionadas > 0 ? () async {
+                final success = await context.read<RatingCubit>().enviarValoracion(estrellasSeleccionadas);
+                if (mounted) {
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(success ? '¡Valoración guardada!' : 'Error al guardar valoración')),
+                  );
+                }
+              } : null,
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildUserCard(Map<String, dynamic> userData, String? photoURL) {
     String nombre = userData['nombre'] ?? "Usuario";
@@ -330,14 +529,40 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
   }
 
   Widget _buildReputationCard() {
-    return Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.black12)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Row(children: [Icon(Icons.shield_outlined, color: Colors.teal, size: 18), SizedBox(width: 8), Text("Reputación", style: TextStyle(fontWeight: FontWeight.bold))]),
-      const SizedBox(height: 15),
-      _progressRow("Calificación General", 0.9, "4.8"),
-      const SizedBox(height: 15),
-      _progressRow("Tasa de Respuesta", 0.95, "95%"),
-    ]));
+    return BlocBuilder<RatingCubit, RatingState>(
+      builder: (context, state) {
+        double calificacion = 0.0;
+        String calificacionText = "0.0";
+        if (state is RatingLoaded && state.totalValoraciones > 0) {
+          calificacion = state.promedio / 5.0; // Para el progress, normalizar a 0-1
+          calificacionText = state.promedio.toStringAsFixed(1);
+        }
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.black12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.shield_outlined, color: Colors.teal, size: 18),
+                  SizedBox(width: 8),
+                  Text("Reputación", style: TextStyle(fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 15),
+              _progressRow("Calificación General", calificacion, calificacionText),
+              const SizedBox(height: 15),
+              _progressRow("Tasa de Respuesta", 0.95, "95%"),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildSettingsList(Map<String, dynamic> userData) {
