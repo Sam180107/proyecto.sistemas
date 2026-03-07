@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:unimet_marketplace/firebase_options.dart';
 
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
             '/': (context) => const LandingPage(),
             '/login': (context) => const LoginScreen(),
             '/home': (context) => const HomePage(),
+            '/publicar': (context) => const PublicarLibroPage(),
             '/admin_home': (context) => const AdminHomePage(),
             '/perfil_admin': (context) => const PerfilAdminPage(),
             '/perfil': (context) => const PerfilPage(),
