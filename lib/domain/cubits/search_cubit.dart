@@ -15,7 +15,7 @@ class SearchCubit extends Cubit<SearchState> {
     try {
       emit(SearchLoading());
       final querySnapshot = await _firestore
-          .collection('publicaciones')
+          .collection('libros')
           .orderBy('fechaCreacion', descending: true)
           .limit(10)
           .get();
@@ -25,8 +25,11 @@ class SearchCubit extends Cubit<SearchState> {
     } on FirebaseException catch (e) {
       if (isClosed) return;
       if (e.code == 'permission-denied') {
-        emit(const SearchError(
-            'Error de permisos. Revisa las reglas de seguridad de Firestore.'));
+        emit(
+          const SearchError(
+            'Error de permisos. Revisa las reglas de seguridad de Firestore.',
+          ),
+        );
       } else {
         emit(SearchError('Error de Firestore: ${e.message}'));
       }
@@ -45,7 +48,7 @@ class SearchCubit extends Cubit<SearchState> {
     try {
       emit(SearchLoading());
 
-      Query collectionQuery = _firestore.collection('publicaciones');
+      Query collectionQuery = _firestore.collection('libros');
 
       if (carrera != null && carrera.isNotEmpty) {
         collectionQuery = collectionQuery.where('carrera', isEqualTo: carrera);
@@ -56,8 +59,10 @@ class SearchCubit extends Cubit<SearchState> {
       if (transaccion != null &&
           transaccion.isNotEmpty &&
           transaccion != 'Todos') {
-        collectionQuery =
-            collectionQuery.where('tipoTransaccion', isEqualTo: transaccion);
+        collectionQuery = collectionQuery.where(
+          'tipoTransaccion',
+          isEqualTo: transaccion,
+        );
       }
 
       final querySnapshot = await collectionQuery.get();
@@ -69,7 +74,7 @@ class SearchCubit extends Cubit<SearchState> {
           final data = doc.data() as Map<String, dynamic>;
           final titulo = (data['titulo'] as String? ?? '').toLowerCase();
           final autor = (data['autor'] as String? ?? '').toLowerCase();
-          
+
           return titulo.contains(searchQuery) || autor.contains(searchQuery);
         }).toList();
       }
@@ -79,8 +84,11 @@ class SearchCubit extends Cubit<SearchState> {
     } on FirebaseException catch (e) {
       if (isClosed) return;
       if (e.code == 'permission-denied') {
-        emit(const SearchError(
-            'Error de permisos. Revisa las reglas de seguridad de Firestore.'));
+        emit(
+          const SearchError(
+            'Error de permisos. Revisa las reglas de seguridad de Firestore.',
+          ),
+        );
       } else {
         emit(SearchError('Error de Firestore: ${e.message}'));
       }

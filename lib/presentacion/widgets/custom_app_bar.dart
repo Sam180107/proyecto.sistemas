@@ -72,7 +72,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           },
         ),
         _HoverNavItem(
-            icon: Icons.add_circle_outline, label: "Publicar", onTap: () {}),
+          icon: Icons.add_circle_outline,
+          label: "Publicar",
+          onTap: () {
+            Navigator.pushNamed(context, '/publicar');
+          },
+        ),
         _HoverNavItem(
           icon: Icons.person_outline,
           label: "Perfil",
@@ -123,11 +128,11 @@ class _HoverNavItemState extends State<_HoverNavItem> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(widget.icon,
-                    color: _isHovering
-                        ? const Color(0xFF0056b3)
-                        : Colors.black87,
-                    size: 26),
+                Icon(
+                  widget.icon,
+                  color: _isHovering ? const Color(0xFF0056b3) : Colors.black87,
+                  size: 26,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   widget.label,
@@ -136,7 +141,9 @@ class _HoverNavItemState extends State<_HoverNavItem> {
                         ? const Color(0xFF0056b3)
                         : Colors.black87,
                     fontSize: 11,
-                    fontWeight: _isHovering ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: _isHovering
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ],

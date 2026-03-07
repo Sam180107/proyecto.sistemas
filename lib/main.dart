@@ -13,11 +13,14 @@ import 'package:unimet_marketplace/presentacion/pages/admin_home_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/login_screen.dart';
 import 'package:unimet_marketplace/presentacion/pages/perfil_admin_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/perfil_page.dart'; // Asegúrate de que esta ruta sea correcta
+import 'package:unimet_marketplace/presentacion/pages/publicar_libro_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (e) {
     print("Error Firebase: $e");
   }
@@ -36,9 +39,7 @@ class MyApp extends StatelessWidget {
           BlocProvider(
             create: (context) => AuthCubit(context.read<AuthRepository>()),
           ),
-          BlocProvider(
-            create: (context) => ProfileCubit(), 
-          ),
+          BlocProvider(create: (context) => ProfileCubit()),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -48,9 +49,11 @@ class MyApp extends StatelessWidget {
             '/': (context) => const LandingPage(),
             '/login': (context) => const LoginScreen(),
             '/home': (context) => const HomePage(),
+            '/publicar': (context) => const PublicarLibroPage(),
             '/admin_home': (context) => const AdminHomePage(),
             '/perfil_admin': (context) => const PerfilAdminPage(),
-            '/perfil': (context) => const PerfilPage(), // Ruta para usuarios normales
+            '/perfil': (context) =>
+                const PerfilPage(), // Ruta para usuarios normales
           },
         ),
       ),

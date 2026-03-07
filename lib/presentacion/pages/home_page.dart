@@ -63,11 +63,11 @@ class HomePage extends StatelessWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.65,
-                        ),
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: 0.65,
+                            ),
                         itemCount: state.results.length,
                         itemBuilder: (context, index) {
                           final doc = state.results[index];
@@ -130,7 +130,7 @@ class HomePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Text(
-                    data['tipoTransaccion'] ?? 'N/A',
+                    data['tipoTransaccion'] ?? data['tipo'] ?? 'N/A',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -157,7 +157,10 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   data['titulo'] ?? 'Sin título',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -182,4 +185,3 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-
