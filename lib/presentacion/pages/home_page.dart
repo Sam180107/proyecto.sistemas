@@ -30,31 +30,7 @@ final List<Map<String, String>> libros = [
     'descripcion':
         'Casi nuevo, incluye el solucionario impreso. Muy útil para los laboratorios de Física I.',
   },
-  {
-    'titulo': 'Física Universitaria',
-    'autor': 'Sears & Zemansky',
-    'precio': '50.00',
-    'categoria': 'FÍSICA',
-    'imagen': 'assets/fisica.jpg',
-    'vendedor': 'Ricardo Pérez',
-    'carrera': 'Ingeniería de Sistemas',
-    'iniciales': 'RP',
-    'descripcion':
-        'Casi nuevo, incluye el solucionario impreso. Muy útil para los laboratorios de Física I.',
-  },
-  {
-    'titulo': 'Física Universitaria',
-    'autor': 'Sears & Zemansky',
-    'precio': '50.00',
-    'categoria': 'FÍSICA',
-    'imagen': 'assets/fisica.jpg',
-    'vendedor': 'Ricardo Pérez',
-    'carrera': 'Ingeniería de Sistemas',
-    'iniciales': 'RP',
-    'descripcion':
-        'Casi nuevo, incluye el solucionario impreso. Muy útil para los laboratorios de Física I.',
-  },
-  // Puedes añadir más mapas aquí y el Grid se actualizará solo...
+  // Puedes añadir más mapas aquí y el Grid se actualizará solo.
 ];
 
 class HomePage extends StatelessWidget {
