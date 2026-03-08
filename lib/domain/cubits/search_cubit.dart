@@ -16,13 +16,17 @@ class SearchCubit extends Cubit<SearchState> {
       emit(SearchLoading());
       final querySnapshot = await _firestore
           .collection('libros')
-          .where('estado', isEqualTo: 'Disponible')
-          .limit(50)
+          .limit(100) // Aumentamos el límite para filtrar en memoria
           .get();
 
       if (isClosed) return;
 
-      List<QueryDocumentSnapshot> docs = querySnapshot.docs.toList();
+      // Filtramos en memoria para incluir libros sin el campo 'estado' o con estado 'Pendiente'/'Disponible'
+      // Solo excluimos los que explícitamente dicen 'Vendido'
+      List<QueryDocumentSnapshot> docs = querySnapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return data['estado'] != 'Vendido';
+      }).toList();
 
       docs.sort((a, b) {
         final dataA = a.data() as Map<String, dynamic>;
@@ -64,9 +68,7 @@ class SearchCubit extends Cubit<SearchState> {
     try {
       emit(SearchLoading());
 
-      Query collectionQuery = _firestore
-          .collection('libros')
-          .where('estado', isEqualTo: 'Disponible');
+      Query collectionQuery = _firestore.collection('libros');
 
       if (carrera != null && carrera.isNotEmpty) {
         collectionQuery = collectionQuery.where('carrera', isEqualTo: carrera);
@@ -87,7 +89,12 @@ class SearchCubit extends Cubit<SearchState> {
       }
 
       final querySnapshot = await collectionQuery.get();
-      List<QueryDocumentSnapshot> results = querySnapshot.docs;
+      
+      // Filtrar en memoria para asegurar que se incluyan libros antiguos
+      List<QueryDocumentSnapshot> results = querySnapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return data['estado'] != 'Vendido';
+      }).toList();
 
       if (query != null && query.isNotEmpty) {
         String searchQuery = query.toLowerCase();
