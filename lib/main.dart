@@ -30,6 +30,8 @@ import 'package:unimet_marketplace/presentacion/pages/gestion_publicaciones_page
 import 'package:unimet_marketplace/presentacion/pages/gestion_usuarios_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/solicitudes_carrera_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/gestion_reportes_page.dart';
+import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
+import 'package:share_plus/share_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +67,7 @@ class MyApp extends StatelessWidget {
           BlocProvider(create: (context) => RatingCubit()),
           BlocProvider(create: (context) => SearchCubit()),
           BlocProvider(create: (context) => OrderCubit(OrderRepository())),
+          BlocProvider(create: (context) => CoraCubit()),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,

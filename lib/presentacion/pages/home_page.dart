@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/cubits/search_cubit.dart';
 import '../widgets/custom_app_bar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Para StreamBuilder y Firestore
+import 'package:firebase_auth/firebase_auth.dart';    // Para el ID del usuario actual
+import 'package:flutter/material.dart';              // Para Positioned y widgets básicos
+
+import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
+import 'package:share_plus/share_plus.dart';
 
 // 1. Modelo de datos (Data)
 // Esta lista centraliza la información para que sea fácil de mantener o conectar a Firebase luego.
@@ -100,6 +106,7 @@ class HomePage extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final doc = state.results[index];
                         final data = doc.data() as Map<String, dynamic>;
+                        data['id'] = doc.id;
                         return _buildBookCard(context, data);
                       },
                     );
@@ -117,7 +124,11 @@ class HomePage extends StatelessWidget {
   Widget _buildBookCard(BuildContext context, Map<String, dynamic> data) {
     return StatefulBuilder(
       builder: (context, setState) {
+
+        final String libroId = data['id'] ?? ''; // Extrae el ID del libro
+        bool esFavorito = false; // Estado inicial del corazón
         bool isHovered = false;
+        
         return MouseRegion(
           onEnter: (_) => setState(() => isHovered = true),
           onExit: (_) => setState(() => isHovered = false),
@@ -146,6 +157,7 @@ class HomePage extends StatelessWidget {
                   context,
                   '/detalle_libro',
                   arguments: {
+                    'id': data['id'] ?? '',
                     'titulo': data['titulo'] ?? 'Sin título',
                     'autor': data['autor'] ?? '',
                     'materia': data['materia'] ?? 'Sin materia',
@@ -230,15 +242,44 @@ class HomePage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // Botón de Like con Hover
+                        
+                        // REEMPLAZA TU POSITIONED DEL CORAZÓN POR ESTE:
                         Positioned(
                           top: 15,
                           right: 15,
-                          child: _HoverIconButton(
-                            icon: Icons.favorite_border,
-                            activeIcon: Icons.favorite,
-                            activeColor: Colors.red,
-                            onPressed: () {},
+                          child: StreamBuilder<DocumentSnapshot>(
+                            // Escucha en tiempo real la colección de favoritos del usuario actual
+                            stream: FirebaseFirestore.instance
+                                .collection('usuarios')
+                                .doc(FirebaseAuth.instance.currentUser?.uid)
+                                .collection('favoritos')
+                                .doc(libroId) // Usa el libroId que definimos arriba
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              // Si el documento existe en la colección, es porque es favorito
+                              final bool estaEnFavoritos = snapshot.hasData && snapshot.data!.exists;
+                        
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: _HoverIconButton(
+                                  icon: Icons.favorite_border,
+                                  activeIcon: Icons.favorite,
+                                  activeColor: Colors.red,
+                                  isSelected: estaEnFavoritos, // Ahora es reactivo
+                                  onPressed: () => context.read<CoraCubit>().toggleFavorito(libroId, estaEnFavoritos),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],
@@ -332,12 +373,14 @@ class _HoverIconButton extends StatefulWidget {
   final IconData icon;
   final IconData? activeIcon;
   final Color? activeColor;
+  final bool isSelected;
   final VoidCallback onPressed;
 
   const _HoverIconButton({
     required this.icon,
     required this.onPressed,
     this.activeIcon,
+    required this.isSelected,
     this.activeColor,
   });
 
@@ -347,7 +390,6 @@ class _HoverIconButton extends StatefulWidget {
 
 class _HoverIconButtonState extends State<_HoverIconButton> {
   bool _isHovered = false;
-  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -355,10 +397,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: () {
-          setState(() => _isPressed = !_isPressed);
-          widget.onPressed();
-        },
+        onTap: widget.onPressed, // Llama directamente a la función que pasamos
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(8),
@@ -375,13 +414,10 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
             ],
           ),
           child: Icon(
-            _isPressed && widget.activeIcon != null
-                ? widget.activeIcon
-                : widget.icon,
+            // Ahora usa widget.isSelected para decidir el icono y color
+            widget.isSelected ? (widget.activeIcon ?? widget.icon) : widget.icon,
             size: 20,
-            color: _isPressed && widget.activeColor != null
-                ? widget.activeColor
-                : (_isHovered ? Colors.black87 : Colors.grey[700]),
+            color: widget.isSelected ? (widget.activeColor ?? Colors.red) : (_isHovered ? Colors.black87 : Colors.grey[700]),
           ),
         ),
       ),

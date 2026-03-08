@@ -3,6 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
+import 'package:share_plus/share_plus.dart'; // Para la funcionalidad del botón de compartir
+
 
 class DetalleLibroPage extends StatelessWidget {
   const DetalleLibroPage({super.key});
@@ -65,6 +70,7 @@ class DetalleLibroPage extends StatelessWidget {
                   context,
                   arguments['precio']!,
                   arguments['imagen']!,
+                  arguments,
                 ),
 
                 Padding(
@@ -143,91 +149,134 @@ class DetalleLibroPage extends StatelessWidget {
 
   // --- WIDGETS DE APOYO OPTIMIZADOS ---
 
-  Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen) {
-    return SizedBox(
-      height: 320,
-      width: double.infinity,
-      child: Stack(
-        children: [
-          // Imagen con respaldo por si falla la ruta
-          Positioned.fill(
-            child: Container(
-              color: Colors.grey[300],
-              child: rutaImagen.startsWith('http')
-                  ? Image.network(
-                      rutaImagen,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
-                        );
-                      },
-                    )
-                  : Image.asset(
-                      rutaImagen,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
-                        );
-                      },
-                    ),
-            ),
+  Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen, Map<String, dynamic> arguments) {
+  final String libroId = arguments['id'] ?? ''; // Asegúrate de pasar el ID del libro en los argumentos
+
+  return SizedBox(
+    height: 320,
+    width: double.infinity,
+    child: Stack(
+      children: [
+        // 1. Imagen de fondo
+        Positioned.fill(
+          child: Container(
+            color: Colors.grey[300],
+            child: rutaImagen.startsWith('http')
+                ? Image.network(rutaImagen, fit: BoxFit.cover)
+                : Image.asset(rutaImagen, fit: BoxFit.cover),
           ),
-          // Gradiente para que el botón de volver se vea mejor
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.transparent,
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Etiqueta de precio
-          Positioned(
-            bottom: 20,
-            left: 20,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E88E5),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                  ),
+        ),
+        
+        // 2. Gradiente superior para visibilidad de botones
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.3),
+                  Colors.transparent,
+                  Colors.transparent,
                 ],
               ),
-              child: Text(
-                "VENTA - \$ ${precio.toString()}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+            ),
+          ),
+        ),
+
+        // 3. BOTONES DE ACCIÓN (Favorito y Compartir)
+        Positioned(
+          top: 45, // Alineado con el botón de retroceder
+          right: 20,
+          child: Row(
+            children: [
+              // --- BOTÓN DE FAVORITO CON FIREBASE ---
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('usuarios')
+                    .doc(FirebaseAuth.instance.currentUser?.uid)
+                    .collection('favoritos')
+                    .doc(libroId)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  bool esFavorito = snapshot.hasData && snapshot.data!.exists;
+
+                  return _buildCircularAction(
+                    icon: esFavorito ? Icons.favorite : Icons.favorite_border,
+                    color: esFavorito ? Colors.red : Colors.black,
+                    onPressed: () => context.read<CoraCubit>().toggleFavorito(libroId, esFavorito),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+              
+              // --- BOTÓN DE COMPARTIR ---
+              _buildCircularAction(
+                icon: Icons.share_outlined,
+                color: Colors.black,
+                onPressed: () {
+                  // Necesitas importar 'package:share_plus/share_plus.dart'
+                  Share.share(
+                    '¡Mira este material en BookSwap! "${arguments['titulo']}" por \$${precio.toString()}. Encuéntralo en el campus de la UNIMET.',
+                    subject: 'Material Académico BookSwap',
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+
+        // 4. Etiqueta de precio (Tu código original)
+        Positioned(
+          bottom: 20,
+          left: 20,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E88E5),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 8,
                 ),
+              ],
+            ),
+            child: Text(
+              "VENTA - \$ ${precio.toString()}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
+// Widget auxiliar para mantener el estilo circular y la sombra
+Widget _buildCircularAction({required IconData icon, required Color color, required VoidCallback onPressed}) {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.9),
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: IconButton(
+      icon: Icon(icon, color: color, size: 22),
+      onPressed: onPressed,
+    ),
+  );
+}
 
   Widget _buildStatusTimeline() {
     return Container(
