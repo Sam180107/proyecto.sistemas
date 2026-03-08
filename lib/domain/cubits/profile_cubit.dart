@@ -47,11 +47,19 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<bool> actualizarTelefono(String nuevoTelefono) async {
-    try {
-      await _firestore.collection('usuarios').doc(_auth.currentUser!.uid).update({'telefono': nuevoTelefono});
-      return true;
-    } catch (e) { return false; }
+  try {
+    // Limpiamos un poco el input antes de guardarlo para que sea estándar
+    String tlfLimpio = nuevoTelefono.trim();
+    
+    await _firestore
+        .collection('usuarios')
+        .doc(_auth.currentUser!.uid)
+        .update({'telefono': tlfLimpio}); // Asegúrate que en Firestore la llave sea 'telefono'
+    return true;
+  } catch (e) {
+    return false;
   }
+}
 
   Future<bool> solicitarCambioCarrera(String carreraActual, String nuevaCarrera) async {
     try {

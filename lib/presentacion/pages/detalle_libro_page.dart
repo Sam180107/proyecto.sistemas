@@ -307,91 +307,97 @@ class DetalleLibroPage extends StatelessWidget {
   }
 
   Widget _buildSellerCard(BuildContext context, Map<String, dynamic> arguments) {
-    String nombre = arguments['vendedor']!;
-    String carrera = arguments['carrera']!;
-    String iniciales = arguments['iniciales']!;
-    return BlocBuilder<RatingCubit, RatingState>(
-      builder: (context, state) {
-        return Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 25,
-                backgroundColor: const Color(0xFF003870),
-                child: Text(
-                  iniciales,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+  String nombre = arguments['vendedor']!;
+  String carrera = arguments['carrera']!;
+  String iniciales = arguments['iniciales']!;
+  
+  return BlocBuilder<RatingCubit, RatingState>(
+    builder: (context, state) {
+      return Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: const Color(0xFF003870),
+              child: Text(
+                iniciales,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      nombre,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nombre,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
-                    Text(
-                      carrera,
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  Text(
+                    carrera,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  if (state is RatingLoaded && state.totalValoraciones > 0) ...[
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        _buildStarRating(state.promedio),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
                     ),
-                    if (state is RatingLoaded && state.totalValoraciones > 0) ...[
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          _buildStarRating(state.promedio),
-                          const SizedBox(width: 5),
-                          Text(
-                            '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
+                ],
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/perfil',
+                  arguments: {
+                    'vendedor': arguments['vendedor'],
+                    'carrera': arguments['carrera'],
+                    'iniciales': arguments['iniciales'],
+                    'userId': arguments['userId'],
+                    'rol': arguments['rol'],
+                    'isOtherUser': true,
+                    // --- CORRECCIÓN AQUÍ ---
+                    // Si en la lista de libros el campo viene como 'telefono', pásalo directamente
+                   // En el Navigator.pushNamed de _buildSellerCard
+                    'telefono': arguments['telefonoVendedor'] ?? arguments['telefono'] ?? arguments['celular'] ?? '',
+                    'libro': arguments['titulo'] ?? 'un libro', 
+                  },
+                );
+              },
+              child: const Text(
+                "Ver Perfil",
+                style: TextStyle(
+                  color: Color(0xFF1E88E5),
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/perfil',
-                    arguments: {
-                      'vendedor': arguments['vendedor'],
-                      'carrera': arguments['carrera'],
-                      'iniciales': arguments['iniciales'],
-                      'userId': arguments['userId'],
-                      'rol': arguments['rol'],
-                      'isOtherUser': true,
-                    },
-                  );
-                },
-                child: const Text(
-                  "Ver Perfil",
-                  style: TextStyle(
-                    color: Color(0xFF1E88E5),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildStarRating(double rating) {
     return Row(
