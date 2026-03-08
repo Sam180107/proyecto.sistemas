@@ -16,12 +16,26 @@ class SearchCubit extends Cubit<SearchState> {
       emit(SearchLoading());
       final querySnapshot = await _firestore
           .collection('libros')
-          .orderBy('fechaCreacion', descending: true)
-          .limit(10)
+          .limit(50)
           .get();
 
       if (isClosed) return;
-      emit(SearchLoaded(querySnapshot.docs));
+
+      List<QueryDocumentSnapshot> docs = querySnapshot.docs.toList();
+
+      docs.sort((a, b) {
+        final dataA = a.data() as Map<String, dynamic>;
+        final dataB = b.data() as Map<String, dynamic>;
+        final dateA = dataA['fechaCreacion'] as Timestamp?;
+        final dateB = dataB['fechaCreacion'] as Timestamp?;
+
+        if (dateA == null && dateB == null) return 0;
+        if (dateA == null) return 1;
+        if (dateB == null) return -1;
+        return dateB.compareTo(dateA);
+      });
+
+      emit(SearchLoaded(docs));
     } on FirebaseException catch (e) {
       if (isClosed) return;
       if (e.code == 'permission-denied') {

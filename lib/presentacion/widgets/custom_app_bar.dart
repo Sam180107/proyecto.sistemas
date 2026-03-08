@@ -49,13 +49,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           label: "Inicio",
           isActive: true,
           onTap: () {
-            final profileState = context.read<ProfileCubit>().state;
-            if (profileState is ProfileLoaded &&
-                profileState.userData['rol'] == 'Admin') {
-              Navigator.pushReplacementNamed(context, '/admin_home');
-            } else {
-              Navigator.pushReplacementNamed(context, '/home');
-            }
+            Navigator.pushReplacementNamed(context, '/home');
           },
         ),
         _HoverNavItem(
@@ -84,7 +78,28 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           icon: Icons.person_outline,
           label: "Perfil",
           onTap: () {
-            Navigator.pushNamed(context, '/perfil');
+            final profileState = context.read<ProfileCubit>().state;
+            if (profileState is ProfileLoaded &&
+                profileState.userData['rol'] == 'Admin') {
+              Navigator.pushNamed(context, '/perfil_admin');
+            } else {
+              Navigator.pushNamed(context, '/perfil');
+            }
+          },
+        ),
+        // Botón Dashboard solo visible para Admin
+        BlocBuilder<ProfileCubit, ProfileState>(
+          builder: (context, state) {
+            if (state is ProfileLoaded && state.userData['rol'] == 'Admin') {
+              return _HoverNavItem(
+                icon: Icons.dashboard_outlined,
+                label: "Dashboard",
+                onTap: () {
+                  Navigator.pushReplacementNamed(context, '/admin_home');
+                },
+              );
+            }
+            return const SizedBox.shrink();
           },
         ),
         const SizedBox(width: 20),

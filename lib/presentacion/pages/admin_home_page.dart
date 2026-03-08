@@ -1,44 +1,116 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../widgets/custom_app_bar.dart'; // Asegúrate de que la ruta a tu widget sea correcta
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../widgets/custom_app_bar.dart';
+import 'gestion_publicaciones_page.dart';
+import 'gestion_usuarios_page.dart';
+import 'solicitudes_carrera_page.dart';
+import 'gestion_reportes_page.dart';
 
-class AdminHomePage extends StatelessWidget {
+class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
+
+  @override
+  State<AdminHomePage> createState() => _AdminHomePageState();
+}
+
+class _AdminHomePageState extends State<AdminHomePage> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  int _totalLibros = 0;
+  int _totalUsuarios = 0;
+  int _totalIntercambios = 0;
+  int _totalVentas = 0;
+  Map<String, int> _categorias = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    try {
+      final librosSnapshot = await _firestore.collection('libros').get();
+      final usuariosSnapshot = await _firestore.collection('usuarios').get();
+      final usersSnapshot = await _firestore.collection('users').get();
+
+      // Combinar ambos conteos para diagnóstico
+      final totalUsuarios =
+          usuariosSnapshot.docs.length + usersSnapshot.docs.length;
+
+      int intercambios = 0;
+      int ventas = 0;
+      Map<String, int> categorias = {};
+
+      for (final doc in librosSnapshot.docs) {
+        final data = doc.data();
+        final tipo = data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta';
+        if (tipo == 'Intercambio') {
+          intercambios++;
+        } else {
+          ventas++;
+        }
+
+        final materia = data['materia'] as String? ?? 'Otros';
+        categorias[materia] = (categorias[materia] ?? 0) + 1;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _totalLibros = librosSnapshot.docs.length;
+        _totalUsuarios = totalUsuarios;
+        _totalIntercambios = intercambios;
+        _totalVentas = ventas;
+        _categorias = categorias;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      debugPrint('Error al obtener datos del dashboard: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FB),
-      // USAMOS TU CUSTOM APP BAR CON CEREBRO DE NAVEGACIÓN
-      appBar: const CustomAppBar(), 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTitleSection(),
-            const SizedBox(height: 32),
-            _buildAdminActions(context),
-            const SizedBox(height: 40),
-            _buildSummaryGrid(),
-            const SizedBox(height: 40),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 3, child: _buildLineChartCard()),
-                const SizedBox(width: 24),
-                Expanded(flex: 2, child: _buildPieChartCard()),
-              ],
+      appBar: const CustomAppBar(),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF003870)),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTitleSection(),
+                  const SizedBox(height: 32),
+                  _buildAdminActions(context),
+                  const SizedBox(height: 40),
+                  _buildSummaryGrid(),
+                  const SizedBox(height: 40),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 3, child: _buildRecentActivityCard()),
+                      const SizedBox(width: 24),
+                      Expanded(flex: 2, child: _buildPieChartCard()),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+                  _buildTopCategoriasCard(),
+                ],
+              ),
             ),
-            const SizedBox(height: 40),
-            _buildBarChartCard(),
-          ],
-        ),
-      ),
     );
   }
 
-  // --- SECCIÓN DE TÍTULO ---
   Widget _buildTitleSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,29 +125,73 @@ class AdminHomePage extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Estadísticas y análisis de la plataforma BookSwap',
+          'Estadísticas y análisis en tiempo real de la plataforma BookSwap',
           style: GoogleFonts.inter(fontSize: 16, color: Colors.black54),
         ),
       ],
     );
   }
 
-  // --- BOTONES DE ACCIÓN RÁPIDA ---
   Widget _buildAdminActions(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 16,
+      runSpacing: 12,
       children: [
         _buildActionButton(
           context,
           'Gestionar Publicaciones',
           Icons.library_books_outlined,
           const Color(0xFF1976D2),
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const GestionPublicacionesPage(),
+              ),
+            );
+          },
         ),
-        const SizedBox(width: 16),
         _buildActionButton(
           context,
           'Gestionar Usuarios',
           Icons.people_outline,
           const Color(0xFF2E7D32),
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const GestionUsuariosPage(),
+              ),
+            );
+          },
+        ),
+        _buildActionButton(
+          context,
+          'Solicitudes de Carrera',
+          Icons.assignment_ind_outlined,
+          Colors.orange,
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SolicitudesCarreraPage(),
+              ),
+            );
+          },
+        ),
+        _buildActionButton(
+          context,
+          'Gestión de Reportes',
+          Icons.flag_outlined,
+          Colors.redAccent,
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const GestionReportesPage(),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -86,13 +202,10 @@ class AdminHomePage extends StatelessWidget {
     String label,
     IconData icon,
     Color color,
+    VoidCallback onPressed,
   ) {
     return ElevatedButton.icon(
-      onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Acción: $label (No implementado)')),
-        );
-      },
+      onPressed: onPressed,
       icon: Icon(icon, color: Colors.white),
       label: Text(
         label,
@@ -110,15 +223,14 @@ class AdminHomePage extends StatelessWidget {
     );
   }
 
-  // --- TARJETAS DE RESUMEN (MÉTRICAS) ---
   Widget _buildSummaryGrid() {
     return Row(
       children: [
         Expanded(
           child: _buildSummaryCard(
-            '324',
+            _totalLibros.toString(),
             'Total Libros',
-            '+12% este mes',
+            'Publicaciones activas',
             Icons.book_outlined,
             const Color(0xFFE3F2FD),
             const Color(0xFF1976D2),
@@ -127,9 +239,9 @@ class AdminHomePage extends StatelessWidget {
         const SizedBox(width: 24),
         Expanded(
           child: _buildSummaryCard(
-            '1,249',
-            'Usuarios Activos',
-            '+8% este mes',
+            _totalUsuarios.toString(),
+            'Usuarios Registrados',
+            'Usuarios en plataforma',
             Icons.people_outline,
             const Color(0xFFE8F5E9),
             const Color(0xFF2E7D32),
@@ -138,9 +250,9 @@ class AdminHomePage extends StatelessWidget {
         const SizedBox(width: 24),
         Expanded(
           child: _buildSummaryCard(
-            '\$8.4M',
-            'Valor Transaccionado',
-            '+24% este mes',
+            _totalVentas.toString(),
+            'Publicaciones de Venta',
+            'Libros en venta',
             Icons.attach_money,
             const Color(0xFFE1F5FE),
             const Color(0xFF0288D1),
@@ -149,9 +261,9 @@ class AdminHomePage extends StatelessWidget {
         const SizedBox(width: 24),
         Expanded(
           child: _buildSummaryCard(
-            '567',
-            'Intercambios Realizados',
-            '+18% este mes',
+            _totalIntercambios.toString(),
+            'Intercambios',
+            'Libros para intercambio',
             Icons.sync,
             const Color(0xFFFBE9E7),
             const Color(0xFFD84315),
@@ -210,14 +322,17 @@ class AdminHomePage extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.trending_up, color: Colors.green, size: 16),
+              Icon(Icons.info_outline, color: iconColor, size: 16),
               const SizedBox(width: 4),
-              Text(
-                trend,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.green,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  trend,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: iconColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -227,11 +342,9 @@ class AdminHomePage extends StatelessWidget {
     );
   }
 
-  // --- GRÁFICOS (PAINTERS) ---
-  Widget _buildLineChartCard() {
+  Widget _buildRecentActivityCard() {
     return Container(
       padding: const EdgeInsets.all(32),
-      height: 400,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -247,27 +360,129 @@ class AdminHomePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tendencia Mensual',
+            'Actividad Reciente',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF1A1A1A),
             ),
           ),
-          const Spacer(),
-          SizedBox(
-            height: 250,
-            width: double.infinity,
-            child: CustomPaint(painter: LineChartPainter()),
+          const SizedBox(height: 8),
+          Text(
+            'Últimas publicaciones en la plataforma',
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.black45),
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem('Intercambios', const Color(0xFF009688)),
-              const SizedBox(width: 24),
-              _buildLegendItem('Ventas', const Color(0xFF1976D2)),
-            ],
+          StreamBuilder<QuerySnapshot>(
+            stream: _firestore
+                .collection('libros')
+                .orderBy('fechaCreacion', descending: true)
+                .limit(5)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    'No hay publicaciones recientes.',
+                    style: GoogleFonts.inter(color: Colors.black45),
+                  ),
+                );
+              }
+
+              return Column(
+                children: snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final tipo =
+                      data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta';
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FB),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: tipo == 'Intercambio'
+                                ? const Color(0xFFE8F5E9)
+                                : const Color(0xFFE3F2FD),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            tipo == 'Intercambio'
+                                ? Icons.swap_horiz
+                                : Icons.sell_outlined,
+                            color: tipo == 'Intercambio'
+                                ? const Color(0xFF2E7D32)
+                                : const Color(0xFF1976D2),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['titulo'] ?? 'Sin título',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '${data['autor'] ?? 'Sin autor'} • $tipo',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.black45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (data['precio'] != null && tipo != 'Intercambio')
+                          Text(
+                            '\$ ${data['precio']}',
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1976D2),
+                            ),
+                          ),
+                        if (tipo == 'Intercambio')
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Trueque',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: const Color(0xFF2E7D32),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
@@ -275,9 +490,21 @@ class AdminHomePage extends StatelessWidget {
   }
 
   Widget _buildPieChartCard() {
+    final sortedCategorias = _categorias.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final topCategorias = sortedCategorias.take(5).toList();
+
+    final List<Color> colores = [
+      const Color(0xFF1976D2),
+      const Color(0xFF009688),
+      const Color(0xFFFFA000),
+      const Color(0xFF9C27B0),
+      const Color(0xFFE91E63),
+    ];
+
     return Container(
       padding: const EdgeInsets.all(32),
-      height: 400,
+      height: 420,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -301,31 +528,49 @@ class AdminHomePage extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          Center(
-            child: SizedBox(
-              width: 220,
-              height: 220,
-              child: CustomPaint(painter: PieChartPainter()),
+          if (topCategorias.isEmpty)
+            Center(
+              child: Text(
+                'Sin datos disponibles',
+                style: GoogleFonts.inter(color: Colors.black45),
+              ),
+            )
+          else ...[
+            Center(
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: CustomPaint(
+                  painter: PieChartPainter(
+                    values: topCategorias
+                        .map((e) => e.value.toDouble())
+                        .toList(),
+                    colors: colores,
+                  ),
+                ),
+              ),
             ),
-          ),
-          const Spacer(),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              _buildSimpleLegend('Matemáticas', const Color(0xFF1976D2)),
-              _buildSimpleLegend('Física', const Color(0xFF009688)),
-              _buildSimpleLegend('Informática', const Color(0xFFFFA000)),
-              _buildSimpleLegend('Química', const Color(0xFF9C27B0)),
-              _buildSimpleLegend('Otros', const Color(0xFFE91E63)),
-            ],
-          ),
+            const Spacer(),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: List.generate(topCategorias.length, (i) {
+                return _buildSimpleLegend(
+                  '${topCategorias[i].key} (${topCategorias[i].value})',
+                  colores[i % colores.length],
+                );
+              }),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildBarChartCard() {
+  Widget _buildTopCategoriasCard() {
+    final sortedCategorias = _categorias.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -343,91 +588,78 @@ class AdminHomePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Top 5 Libros Más Vendidos',
+            'Resumen por Materia',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF1A1A1A),
             ),
           ),
-          const SizedBox(height: 32),
-          SizedBox(
-            height: 300,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildBar('Cálculo', 45, 22),
-                _buildBar('Física', 38, 30),
-                _buildBar('Química', 32, 18),
-                _buildBar('Algoritmos', 28, 25),
-                _buildBar('Literatura', 22, 35),
-              ],
-            ),
+          const SizedBox(height: 8),
+          Text(
+            'Cantidad de publicaciones por cada materia registrada',
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.black45),
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem('Intercambios', const Color(0xFF009688)),
-              const SizedBox(width: 24),
-              _buildLegendItem('Ventas', const Color(0xFF1976D2)),
-            ],
-          ),
+          const SizedBox(height: 24),
+          if (sortedCategorias.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  'No hay datos de materias disponibles.',
+                  style: GoogleFonts.inter(color: Colors.black45),
+                ),
+              ),
+            )
+          else
+            ...sortedCategorias.map((entry) {
+              final percentage = _totalLibros > 0
+                  ? (entry.value / _totalLibros * 100).toStringAsFixed(1)
+                  : '0.0';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          entry.key,
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          '${entry.value} publicaciones ($percentage%)',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: _totalLibros > 0
+                            ? entry.value / _totalLibros
+                            : 0,
+                        backgroundColor: const Color(0xFFE8EAF0),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF1976D2),
+                        ),
+                        minHeight: 8,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
-    );
-  }
-
-  Widget _buildBar(String label, double val1, double val2) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              width: 40,
-              height: val1 * 5,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1976D2),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 40,
-              height: val2 * 5,
-              decoration: const BoxDecoration(
-                color: Color(0xFF009688),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          label,
-          style: GoogleFonts.inter(fontSize: 12, color: Colors.black54),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: GoogleFonts.inter(fontSize: 12, color: Colors.black54),
-        ),
-      ],
     );
   }
 
@@ -450,65 +682,30 @@ class AdminHomePage extends StatelessWidget {
   }
 }
 
-// --- CLASES PAINTER (SIN CAMBIOS) ---
-class LineChartPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint1 = Paint()
-      ..color = const Color(0xFF1976D2)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    final paint2 = Paint()
-      ..color = const Color(0xFF009688)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    final path1 = Path();
-    path1.moveTo(0, size.height * 0.7);
-    path1.quadraticBezierTo(size.width * 0.2, size.height * 0.6, size.width * 0.4, size.height * 0.5);
-    path1.quadraticBezierTo(size.width * 0.6, size.height * 0.55, size.width * 0.8, size.height * 0.3);
-    path1.lineTo(size.width, size.height * 0.2);
-
-    final path2 = Path();
-    path2.moveTo(0, size.height * 0.85);
-    path2.quadraticBezierTo(size.width * 0.2, size.height * 0.8, size.width * 0.4, size.height * 0.65);
-    path2.quadraticBezierTo(size.width * 0.6, size.height * 0.68, size.width * 0.8, size.height * 0.5);
-    path2.lineTo(size.width, size.height * 0.4);
-
-    canvas.drawPath(path1, paint1);
-    canvas.drawPath(path2, paint2);
-
-    final gridPaint = Paint()..color = Colors.black.withOpacity(0.05)..strokeWidth = 1;
-    for (int i = 0; i <= 4; i++) {
-      double y = size.height * (i / 4);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-  }
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class PieChartPainter extends CustomPainter {
+  final List<double> values;
+  final List<Color> colors;
+
+  PieChartPainter({required this.values, required this.colors});
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
-    final paints = [
-      Paint()..color = const Color(0xFF1976D2),
-      Paint()..color = const Color(0xFF009688),
-      Paint()..color = const Color(0xFFFFA000),
-      Paint()..color = const Color(0xFF9C27B0),
-      Paint()..color = const Color(0xFFE91E63),
-    ];
-    double startAngle = -0.5 * 3.14;
-    final angles = [1.2, 0.8, 1.0, 0.6, 0.6];
-    for (int i = 0; i < angles.length; i++) {
-      canvas.drawArc(rect, startAngle, angles[i], true, paints[i]);
-      startAngle += angles[i];
+
+    final total = values.fold(0.0, (a, b) => a + b);
+    if (total == 0) return;
+
+    double startAngle = -0.5 * 3.14159;
+    for (int i = 0; i < values.length; i++) {
+      final sweepAngle = (values[i] / total) * 2 * 3.14159;
+      final paint = Paint()..color = colors[i % colors.length];
+      canvas.drawArc(rect, startAngle, sweepAngle, true, paint);
+      startAngle += sweepAngle;
     }
   }
+
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

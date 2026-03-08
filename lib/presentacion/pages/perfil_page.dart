@@ -27,13 +27,25 @@ class _PerfilPageView extends StatefulWidget {
 
 class _PerfilPageViewState extends State<_PerfilPageView> {
   final List<String> opcionesCarrera = [
-    'Ingeniería Civil', 'Ingeniería Eléctrica', 'Ingeniería Mecánica',
-    'Ingeniería de Producción', 'Ingeniería Química', 'Ingeniería de Sistemas',
-    'TSU en Desarrollo de Sistemas Inteligentes', 'Ciencias Administrativas',
-    'Contaduría Pública', 'Economía Empresarial', 'Turismo Sostenible',
-    'Derecho', 'Estudios Liberales', 'Estudios Internacionales',
-    'Comunicación Social y Empresarial', 'Idiomas Modernos', 'Educación',
-    'Psicología', 'Matemáticas Industriales',
+    'Ingeniería Civil',
+    'Ingeniería Eléctrica',
+    'Ingeniería Mecánica',
+    'Ingeniería de Producción',
+    'Ingeniería Química',
+    'Ingeniería de Sistemas',
+    'TSU en Desarrollo de Sistemas Inteligentes',
+    'Ciencias Administrativas',
+    'Contaduría Pública',
+    'Economía Empresarial',
+    'Turismo Sostenible',
+    'Derecho',
+    'Estudios Liberales',
+    'Estudios Internacionales',
+    'Comunicación Social y Empresarial',
+    'Idiomas Modernos',
+    'Educación',
+    'Psicología',
+    'Matemáticas Industriales',
   ];
 
   void _lanzarMensaje(String texto, Color color) {
@@ -47,10 +59,10 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
     );
   }
 
-  // --- FUNCIONES QUE LE HABLAN AL CUBIT ---
-
   void _funcionCambiarTelefono(String telefonoActual) {
-    TextEditingController telefonoCtrl = TextEditingController(text: telefonoActual);
+    TextEditingController telefonoCtrl = TextEditingController(
+      text: telefonoActual,
+    );
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -58,16 +70,26 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
         content: TextField(
           controller: telefonoCtrl,
           keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(labelText: "Nuevo número", prefixIcon: Icon(Icons.phone)),
+          decoration: const InputDecoration(
+            labelText: "Nuevo número",
+            prefixIcon: Icon(Icons.phone),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             onPressed: () async {
-              bool exito = await context.read<ProfileCubit>().actualizarTelefono(telefonoCtrl.text);
+              bool exito = await context
+                  .read<ProfileCubit>()
+                  .actualizarTelefono(telefonoCtrl.text);
               if (!mounted) return;
               Navigator.pop(dialogContext);
-              exito ? _lanzarMensaje("Teléfono actualizado", Colors.green) : _lanzarMensaje("Error", Colors.red);
+              exito
+                  ? _lanzarMensaje("Teléfono actualizado", Colors.green)
+                  : _lanzarMensaje("Error", Colors.red);
             },
             child: const Text("Guardar"),
           ),
@@ -85,25 +107,45 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Esta solicitud será enviada a un administrador.", style: TextStyle(fontSize: 13, color: Colors.black54)),
+            const Text(
+              "Esta solicitud será enviada a un administrador.",
+              style: TextStyle(fontSize: 13, color: Colors.black54),
+            ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Nueva Carrera', border: OutlineInputBorder()),
-              items: opcionesCarrera.map((c) => DropdownMenuItem(value: c, child: Text(c, overflow: TextOverflow.ellipsis))).toList(),
+              decoration: const InputDecoration(
+                labelText: 'Nueva Carrera',
+                border: OutlineInputBorder(),
+              ),
+              items: opcionesCarrera
+                  .map(
+                    (c) => DropdownMenuItem(
+                      value: c,
+                      child: Text(c, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
               onChanged: (valor) => nuevaCarrera = valor,
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (nuevaCarrera != null) {
-                bool exito = await context.read<ProfileCubit>().solicitarCambioCarrera(carreraActual, nuevaCarrera!);
+                bool exito = await context
+                    .read<ProfileCubit>()
+                    .solicitarCambioCarrera(carreraActual, nuevaCarrera!);
                 if (!mounted) return;
                 Navigator.pop(dialogContext);
-                exito ? _lanzarMensaje("Solicitud enviada", Colors.blue) : _lanzarMensaje("Error", Colors.red);
+                exito
+                    ? _lanzarMensaje("Solicitud enviada", Colors.blue)
+                    : _lanzarMensaje("Error", Colors.red);
               }
             },
             child: const Text("Enviar Solicitud"),
@@ -114,7 +156,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
   }
 
   void _funcionCambiarNombre(String nombreActual) {
-    TextEditingController nombreCtrl = TextEditingController(text: nombreActual);
+    TextEditingController nombreCtrl = TextEditingController(
+      text: nombreActual,
+    );
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -125,13 +169,20 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
           decoration: const InputDecoration(labelText: "Nuevo nombre público"),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             onPressed: () async {
-              bool exito = await context.read<ProfileCubit>().actualizarNombre(nombreCtrl.text);
+              bool exito = await context.read<ProfileCubit>().actualizarNombre(
+                nombreCtrl.text,
+              );
               if (!mounted) return;
               Navigator.pop(dialogContext);
-              exito ? _lanzarMensaje("Nombre actualizado", Colors.green) : _lanzarMensaje("Error", Colors.red);
+              exito
+                  ? _lanzarMensaje("Nombre actualizado", Colors.green)
+                  : _lanzarMensaje("Error", Colors.red);
             },
             child: const Text("Guardar"),
           ),
@@ -147,8 +198,22 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
         title: const Text("Cambiar Foto de Perfil"),
         content: const Text("¿Desde dónde quieres seleccionar la imagen?"),
         actions: [
-          TextButton.icon(icon: const Icon(Icons.photo_library), label: const Text("Galería"), onPressed: () { Navigator.pop(context); _lanzarMensaje("Próximamente", Colors.blue); }),
-          TextButton.icon(icon: const Icon(Icons.camera_alt), label: const Text("Cámara"), onPressed: () { Navigator.pop(context); _lanzarMensaje("Próximamente", Colors.blue); }),
+          TextButton.icon(
+            icon: const Icon(Icons.photo_library),
+            label: const Text("Galería"),
+            onPressed: () {
+              Navigator.pop(context);
+              _lanzarMensaje("Próximamente", Colors.blue);
+            },
+          ),
+          TextButton.icon(
+            icon: const Icon(Icons.camera_alt),
+            label: const Text("Cámara"),
+            onPressed: () {
+              Navigator.pop(context);
+              _lanzarMensaje("Próximamente", Colors.blue);
+            },
+          ),
         ],
       ),
     );
@@ -156,7 +221,12 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
 
   void _funcionPassword() async {
     bool exito = await context.read<ProfileCubit>().enviarCorreoPassword();
-    exito ? _lanzarMensaje("Correo de restablecimiento enviado", Colors.blueAccent) : _lanzarMensaje("Error", Colors.red);
+    exito
+        ? _lanzarMensaje(
+            "Correo de restablecimiento enviado",
+            Colors.blueAccent,
+          )
+        : _lanzarMensaje("Error", Colors.red);
   }
 
   void _funcionLogout() {
@@ -167,14 +237,20 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
         title: const Text("Cerrar Sesión"),
         content: const Text("¿Estás seguro de que quieres salir?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
             onPressed: () async {
               Navigator.pop(dialogContext);
               await context.read<ProfileCubit>().cerrarSesion();
               if (!mounted) return;
-              Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamedAndRemoveUntil('/', (route) => false);
             },
             child: const Text("Salir", style: TextStyle(color: Colors.white)),
           ),
@@ -187,10 +263,16 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text("Eliminar Cuenta", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Eliminar Cuenta",
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
         content: const Text("Esta acción es irreversible."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -198,13 +280,20 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
               if (!mounted) return;
               if (exito) {
                 Navigator.pop(dialogContext);
-                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/',
+                  (route) => false,
+                );
                 _lanzarMensaje("Cuenta eliminada", Colors.red);
               } else {
                 _lanzarMensaje("Error de seguridad al eliminar", Colors.red);
               }
             },
-            child: const Text("Confirmar", style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "Confirmar",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -213,7 +302,8 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     if (arguments != null && arguments['isOtherUser'] == true) {
       return _buildOtherUserProfile(arguments);
@@ -224,14 +314,24 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        title: const Text('BookSwap', style: TextStyle(color: Color(0xFF007BFF), fontWeight: FontWeight.bold)),
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
+        title: const Text(
+          'BookSwap',
+          style: TextStyle(
+            color: Color(0xFF007BFF),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
-          if (state is ProfileLoading) return const Center(child: CircularProgressIndicator());
+          if (state is ProfileLoading)
+            return const Center(child: CircularProgressIndicator());
           if (state is ProfileError) return Center(child: Text(state.mensaje));
-          
+
           if (state is ProfileLoaded) {
             final userData = state.userData;
             final userAuth = state.currentUser;
@@ -243,27 +343,32 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Mi Perfil", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                  const Text("Gestiona tu cuenta y preferencias", style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    "Mi Perfil",
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    "Gestiona tu cuenta y preferencias",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 30),
-                  
+
                   LayoutBuilder(
                     builder: (context, constraints) {
                       bool isDesktop = constraints.maxWidth > 800;
                       Widget content = Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(flex: 1, child: _buildUserCard(userData, userAuth.photoURL)),
+                          Expanded(
+                            flex: 1,
+                            child: _buildUserCard(userData, userAuth.photoURL),
+                          ),
                           const SizedBox(width: 20),
                           Expanded(
                             flex: 2,
                             child: Column(
                               children: [
-                                Row(children: [
-                                  _buildStatCard("18", "Ventas"), const SizedBox(width: 10),
-                                  _buildStatCard("6", "Intercambios"), const SizedBox(width: 10),
-                                  _buildStatCard("24", "Reseñas"),
-                                ]),
+                                _buildRealStatCards(userAuth.uid),
                                 const SizedBox(height: 20),
                                 _buildReputationCard(),
                               ],
@@ -271,19 +376,17 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                           ),
                         ],
                       );
-                      
+
                       if (!isDesktop) {
-                        content = Column(children: [
-                          _buildUserCard(userData, userAuth.photoURL),
-                          const SizedBox(height: 20),
-                          Row(children: [
-                            _buildStatCard("18", "Ventas"), const SizedBox(width: 10),
-                            _buildStatCard("6", "Intercambios"), const SizedBox(width: 10),
-                            _buildStatCard("24", "Reseñas"),
-                          ]),
-                          const SizedBox(height: 20),
-                          _buildReputationCard(),
-                        ]);
+                        content = Column(
+                          children: [
+                            _buildUserCard(userData, userAuth.photoURL),
+                            const SizedBox(height: 20),
+                            _buildRealStatCards(userAuth.uid),
+                            const SizedBox(height: 20),
+                            _buildReputationCard(),
+                          ],
+                        );
                       }
                       return content;
                     },
@@ -307,7 +410,6 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
     String rol = arguments['rol'] ?? 'Estudiante';
     String userId = arguments['userId'] ?? '';
 
-    // Inicializar el RatingCubit para este usuario
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<RatingCubit>().cargarValoraciones(userId);
     });
@@ -317,30 +419,62 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        title: const Text('BookSwap', style: TextStyle(color: Color(0xFF007BFF), fontWeight: FontWeight.bold)),
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
+        title: const Text(
+          'BookSwap',
+          style: TextStyle(
+            color: Color(0xFF007BFF),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Perfil del Vendedor", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-            const Text("Información del usuario", style: TextStyle(color: Colors.grey)),
+            const Text(
+              "Perfil del Vendedor",
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            ),
+            const Text(
+              "Información del usuario",
+              style: TextStyle(color: Colors.grey),
+            ),
             const SizedBox(height: 30),
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.black12)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.black12),
+              ),
               child: Column(
                 children: [
                   CircleAvatar(
                     radius: 45,
                     backgroundColor: const Color(0xFF0089A7),
-                    child: Text(iniciales, style: const TextStyle(color: Colors.white, fontSize: 34)),
+                    child: Text(
+                      iniciales,
+                      style: const TextStyle(color: Colors.white, fontSize: 34),
+                    ),
                   ),
                   const SizedBox(height: 15),
-                  Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  Text("$carrera\n$rol", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    nombre,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    "$carrera\n$rol",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                   const Divider(height: 30),
                   _buildRatingSection(),
                   const SizedBox(height: 20),
@@ -350,7 +484,11 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                     onPressed: () {
                       // Placeholder for send message
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Función de enviar mensaje próximamente')),
+                        const SnackBar(
+                          content: Text(
+                            'Función de enviar mensaje próximamente',
+                          ),
+                        ),
                       );
                     },
                     icon: const Icon(Icons.message),
@@ -366,11 +504,7 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
             ),
             const SizedBox(height: 20),
             // Estadísticas del vendedor
-            Row(children: [
-              _buildStatCard("18", "Ventas"), const SizedBox(width: 10),
-              _buildStatCard("6", "Intercambios"), const SizedBox(width: 10),
-              _buildStatCard("24", "Reseñas"),
-            ]),
+            _buildRealStatCards(userId),
             const SizedBox(height: 20),
             _buildReputationCard(),
           ],
@@ -386,7 +520,10 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
           return const Center(child: CircularProgressIndicator());
         }
         if (state is RatingError) {
-          return Text('Error: ${state.mensaje}', style: const TextStyle(color: Colors.red));
+          return Text(
+            'Error: ${state.mensaje}',
+            style: const TextStyle(color: Colors.red),
+          );
         }
         if (state is RatingLoaded) {
           return Column(
@@ -397,8 +534,13 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                   _buildStarRating(state.promedio),
                   const SizedBox(width: 10),
                   Text(
-                    state.promedio > 0 ? '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})' : 'Sin valoraciones',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    state.promedio > 0
+                        ? '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})'
+                        : 'Sin valoraciones',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -426,8 +568,11 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
         return Icon(
-          index < rating.floor() ? Icons.star :
-          (index < rating && rating % 1 != 0) ? Icons.star_half : Icons.star_border,
+          index < rating.floor()
+              ? Icons.star
+              : (index < rating && rating % 1 != 0)
+              ? Icons.star_half
+              : Icons.star_border,
           color: Colors.amber,
           size: 24,
         );
@@ -453,7 +598,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                 children: List.generate(5, (index) {
                   return IconButton(
                     icon: Icon(
-                      index < estrellasSeleccionadas ? Icons.star : Icons.star_border,
+                      index < estrellasSeleccionadas
+                          ? Icons.star
+                          : Icons.star_border,
                       color: Colors.amber,
                       size: 32,
                     ),
@@ -464,7 +611,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                 }),
               ),
               Text(
-                estrellasSeleccionadas > 0 ? '$estrellasSeleccionadas estrella${estrellasSeleccionadas > 1 ? 's' : ''}' : 'Selecciona estrellas',
+                estrellasSeleccionadas > 0
+                    ? '$estrellasSeleccionadas estrella${estrellasSeleccionadas > 1 ? 's' : ''}'
+                    : 'Selecciona estrellas',
                 style: const TextStyle(fontSize: 16),
               ),
             ],
@@ -475,15 +624,25 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
-              onPressed: estrellasSeleccionadas > 0 ? () async {
-                final success = await context.read<RatingCubit>().enviarValoracion(estrellasSeleccionadas);
-                if (mounted) {
-                  Navigator.pop(dialogContext);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(success ? '¡Valoración guardada!' : 'Error al guardar valoración')),
-                  );
-                }
-              } : null,
+              onPressed: estrellasSeleccionadas > 0
+                  ? () async {
+                      final success = await context
+                          .read<RatingCubit>()
+                          .enviarValoracion(estrellasSeleccionadas);
+                      if (mounted) {
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? '¡Valoración guardada!'
+                                  : 'Error al guardar valoración',
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  : null,
               child: const Text('Guardar'),
             ),
           ],
@@ -495,37 +654,132 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
   Widget _buildUserCard(Map<String, dynamic> userData, String? photoURL) {
     String nombre = userData['nombre'] ?? "Usuario";
     String rol = userData['rol'] ?? "Estudiante";
-    String espec = rol == 'Estudiante' ? (userData['carrera'] ?? "") : (userData['departamento'] ?? "");
+    String espec = rol == 'Estudiante'
+        ? (userData['carrera'] ?? "")
+        : (userData['departamento'] ?? "");
     String tlf = userData['telefono'] ?? "Sin teléfono";
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.black12)),
-      child: Column(children: [
-        InkWell(
-          onTap: _funcionCambiarFoto,
-          child: CircleAvatar(
-            radius: 45, 
-            backgroundColor: const Color(0xFF0089A7), 
-            backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
-            child: photoURL == null 
-              ? Text(nombre.isNotEmpty ? nombre[0].toUpperCase() : "U", style: const TextStyle(color: Colors.white, fontSize: 34)) 
-              : null
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: _funcionCambiarFoto,
+            child: CircleAvatar(
+              radius: 45,
+              backgroundColor: const Color(0xFF0089A7),
+              backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
+              child: photoURL == null
+                  ? Text(
+                      nombre.isNotEmpty ? nombre[0].toUpperCase() : "U",
+                      style: const TextStyle(color: Colors.white, fontSize: 34),
+                    )
+                  : null,
+            ),
           ),
-        ),
-        const SizedBox(height: 15),
-        Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        Text("$espec\n$rol", textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        const Divider(height: 30),
-        _infoLine(Icons.phone_outlined, tlf),
-        _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
-      ]),
+          const SizedBox(height: 15),
+          Text(
+            nombre,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          Text(
+            "$espec\n$rol",
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          const Divider(height: 30),
+          _infoLine(Icons.phone_outlined, tlf),
+          _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
+        ],
+      ),
     );
   }
 
+  Widget _buildRealStatCards(String userId) {
+    return FutureBuilder<Map<String, int>>(
+      future: _fetchUserStats(userId),
+      builder: (context, snapshot) {
+        final ventas = snapshot.data?['ventas'] ?? 0;
+        final intercambios = snapshot.data?['intercambios'] ?? 0;
+        final resenas = snapshot.data?['resenas'] ?? 0;
+
+        return Row(
+          children: [
+            _buildStatCard(ventas.toString(), "Ventas"),
+            const SizedBox(width: 10),
+            _buildStatCard(intercambios.toString(), "Intercambios"),
+            const SizedBox(width: 10),
+            _buildStatCard(resenas.toString(), "Reseñas"),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<Map<String, int>> _fetchUserStats(String userId) async {
+    int ventas = 0;
+    int intercambios = 0;
+    int resenas = 0;
+
+    try {
+      final librosSnapshot = await FirebaseFirestore.instance
+          .collection('libros')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      for (final doc in librosSnapshot.docs) {
+        final data = doc.data();
+        final tipo = data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta';
+        if (tipo == 'Intercambio') {
+          intercambios++;
+        } else {
+          ventas++;
+        }
+      }
+      final valoracionesSnapshot = await FirebaseFirestore.instance
+          .collection('valoraciones')
+          .where('vendedorId', isEqualTo: userId)
+          .get();
+      resenas = valoracionesSnapshot.docs.length;
+    } catch (e) {
+      debugPrint('Error al obtener estadísticas del usuario: $e');
+    }
+
+    return {'ventas': ventas, 'intercambios': intercambios, 'resenas': resenas};
+  }
+
   Widget _buildStatCard(String val, String label) {
-    return Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 20), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.black12)),
-    child: Column(children: [Text(val, style: const TextStyle(fontSize: 22, color: Color(0xFF007BFF), fontWeight: FontWeight.bold)), Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11))])));
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Column(
+          children: [
+            Text(
+              val,
+              style: const TextStyle(
+                fontSize: 22,
+                color: Color(0xFF007BFF),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.grey, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildReputationCard() {
@@ -534,7 +788,7 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
         double calificacion = 0.0;
         String calificacionText = "0.0";
         if (state is RatingLoaded && state.totalValoraciones > 0) {
-          calificacion = state.promedio / 5.0; // Para el progress, normalizar a 0-1
+          calificacion = state.promedio / 5.0;
           calificacionText = state.promedio.toStringAsFixed(1);
         }
         return Container(
@@ -551,11 +805,18 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                 children: [
                   Icon(Icons.shield_outlined, color: Colors.teal, size: 18),
                   SizedBox(width: 8),
-                  Text("Reputación", style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    "Reputación",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
               const SizedBox(height: 15),
-              _progressRow("Calificación General", calificacion, calificacionText),
+              _progressRow(
+                "Calificación General",
+                calificacion,
+                calificacionText,
+              ),
               const SizedBox(height: 15),
               _progressRow("Tasa de Respuesta", 0.95, "95%"),
             ],
@@ -567,38 +828,106 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
 
   Widget _buildSettingsList(Map<String, dynamic> userData) {
     String rol = userData['rol'] ?? "Estudiante";
-    return Container(decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.black12)),
-    child: Column(children: [
-      _buildOption(Icons.person_outline, "Cambiar Nombre", () => _funcionCambiarNombre(userData['nombre'] ?? "")),
-      const Divider(height: 1),
-      _buildOption(Icons.phone_android, "Cambiar Teléfono", () => _funcionCambiarTelefono(userData['telefono'] ?? "")),
-      const Divider(height: 1),
-      if (rol == 'Estudiante') ...[
-        _buildOption(Icons.school_outlined, "Solicitar Cambio de Carrera", () => _funcionCambiarCarrera(userData['carrera'] ?? "")),
-        const Divider(height: 1),
-      ],
-      _buildOption(Icons.lock_outline, "Cambiar Contraseña", _funcionPassword),
-      const Divider(height: 1),
-      _buildOption(Icons.logout, "Cerrar Sesión", _funcionLogout, color: Colors.orange),
-      const Divider(height: 1),
-      _buildOption(Icons.delete_forever_outlined, "Eliminar Cuenta", _funcionEliminar, color: Colors.red),
-    ]));
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        children: [
+          _buildOption(
+            Icons.person_outline,
+            "Cambiar Nombre",
+            () => _funcionCambiarNombre(userData['nombre'] ?? ""),
+          ),
+          const Divider(height: 1),
+          _buildOption(
+            Icons.phone_android,
+            "Cambiar Teléfono",
+            () => _funcionCambiarTelefono(userData['telefono'] ?? ""),
+          ),
+          const Divider(height: 1),
+          if (rol == 'Estudiante') ...[
+            _buildOption(
+              Icons.school_outlined,
+              "Solicitar Cambio de Carrera",
+              () => _funcionCambiarCarrera(userData['carrera'] ?? ""),
+            ),
+            const Divider(height: 1),
+          ],
+          _buildOption(
+            Icons.lock_outline,
+            "Cambiar Contraseña",
+            _funcionPassword,
+          ),
+          const Divider(height: 1),
+          _buildOption(
+            Icons.logout,
+            "Cerrar Sesión",
+            _funcionLogout,
+            color: Colors.orange,
+          ),
+          const Divider(height: 1),
+          _buildOption(
+            Icons.delete_forever_outlined,
+            "Eliminar Cuenta",
+            _funcionEliminar,
+            color: Colors.red,
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildOption(IconData icon, String title, VoidCallback tap, {Color color = Colors.black87}) {
-    return ListTile(leading: Icon(icon, color: color, size: 20), title: Text(title, style: TextStyle(color: color, fontSize: 15)), trailing: const Icon(Icons.chevron_right, size: 18), onTap: tap);
+  Widget _buildOption(
+    IconData icon,
+    String title,
+    VoidCallback tap, {
+    Color color = Colors.black87,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: color, size: 20),
+      title: Text(title, style: TextStyle(color: color, fontSize: 15)),
+      trailing: const Icon(Icons.chevron_right, size: 18),
+      onTap: tap,
+    );
   }
 
   Widget _infoLine(IconData icon, String txt) => Padding(
     padding: const EdgeInsets.only(bottom: 8.0),
-    child: Row(children: [Icon(icon, size: 16, color: Colors.grey), const SizedBox(width: 8), Text(txt, style: const TextStyle(fontSize: 12, color: Colors.grey))]),
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 8),
+        Text(txt, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    ),
   );
 
   Widget _progressRow(String label, double val, String txt) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontSize: 13)), Text(txt, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))]),
-      const SizedBox(height: 8),
-      LinearProgressIndicator(value: val, backgroundColor: Colors.blue[50], color: const Color(0xFF007BFF), minHeight: 8, borderRadius: BorderRadius.circular(5))
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 13)),
+            Text(
+              txt,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: val,
+          backgroundColor: Colors.blue[50],
+          color: const Color(0xFF007BFF),
+          minHeight: 8,
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ],
+    );
   }
 }

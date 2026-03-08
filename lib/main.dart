@@ -11,6 +11,7 @@ import 'package:unimet_marketplace/data/repositories/auth_repository.dart';
 import 'package:unimet_marketplace/domain/cubits/auth_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/search_cubit.dart';
 
 // Páginas
 import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
@@ -19,8 +20,13 @@ import 'package:unimet_marketplace/presentacion/pages/admin_home_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/login_screen.dart';
 import 'package:unimet_marketplace/presentacion/pages/perfil_admin_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/perfil_page.dart';
-import 'package:unimet_marketplace/presentacion/pages/detalle_libro_page.dart'; // Importación necesaria
+import 'package:unimet_marketplace/presentacion/pages/detalle_libro_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/publicar_libro_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/gestion_publicaciones_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/gestion_usuarios_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/solicitudes_carrera_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/gestion_reportes_page.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -62,12 +68,16 @@ class MyApp extends StatelessWidget {
           BlocProvider(
             create: (context) => RatingCubit(),
           ),
+          // SearchCubit global para que la búsqueda funcione en toda la app
+          BlocProvider(
+            create: (context) => SearchCubit(),
+          ),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'BookSwap Unimet',
           
-          // Tema de la aplicación (opcional, puedes personalizarlo aquí)
+          // Tema de la aplicación
           theme: ThemeData(
             primaryColor: const Color(0xFF003870),
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E88E5)),
@@ -84,7 +94,11 @@ class MyApp extends StatelessWidget {
             '/admin_home': (context) => const AdminHomePage(),
             '/perfil_admin': (context) => const PerfilAdminPage(),
             '/perfil': (context) => const PerfilPage(),
-            '/detalle_libro': (context) => const DetalleLibroPage(), // Ruta para ver el libro a detalle
+            '/detalle_libro': (context) => const DetalleLibroPage(),
+            '/gestion_publicaciones': (context) => const GestionPublicacionesPage(),
+            '/gestion_usuarios': (context) => const GestionUsuariosPage(),
+            '/solicitudes_carrera': (context) => const SolicitudesCarreraPage(),
+            '/gestion_reportes': (context) => const GestionReportesPage(),
           },
         ),
       ),

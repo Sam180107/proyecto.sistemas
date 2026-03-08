@@ -38,79 +38,76 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SearchCubit(),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF2F4F7),
-        appBar: const CustomAppBar(),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Explorar Material Académico',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF2F4F7),
+      appBar: const CustomAppBar(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Explorar Material Académico',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Encuentra libros y material de estudio para tus cursos',
-                  style: TextStyle(fontSize: 16, color: Colors.black54),
-                ),
-                const SizedBox(height: 20),
-                BlocBuilder<SearchCubit, SearchState>(
-                  builder: (context, state) {
-                    if (state is SearchInitial || state is SearchLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (state is SearchError) {
-                      return Center(child: Text(state.message));
-                    }
-                    if (state is SearchLoaded) {
-                      if (state.results.isEmpty) {
-                        return const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('No se encontraron publicaciones.'),
-                              SizedBox(height: 8),
-                              Text(
-                                'Esto puede deberse a un problema de permisos en Firebase.',
-                                style: TextStyle(color: Colors.grey),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 4,
-                              crossAxisSpacing: 20,
-                              mainAxisSpacing: 24,
-                              childAspectRatio: 0.68,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Encuentra libros y material de estudio para tus cursos',
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+              ),
+              const SizedBox(height: 20),
+              BlocBuilder<SearchCubit, SearchState>(
+                builder: (context, state) {
+                  if (state is SearchInitial || state is SearchLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is SearchError) {
+                    return Center(child: Text(state.message));
+                  }
+                  if (state is SearchLoaded) {
+                    if (state.results.isEmpty) {
+                      return const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('No se encontraron publicaciones.'),
+                            SizedBox(height: 8),
+                            Text(
+                              'Esto puede deberse a un problema de permisos en Firebase.',
+                              style: TextStyle(color: Colors.grey),
+                              textAlign: TextAlign.center,
                             ),
-                        itemCount: state.results.length,
-                        itemBuilder: (context, index) {
-                          final doc = state.results[index];
-                          final data = doc.data() as Map<String, dynamic>;
-                          return _buildBookCard(context, data);
-                        },
+                          ],
+                        ),
                       );
                     }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ],
-            ),
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 20,
+                            mainAxisSpacing: 24,
+                            childAspectRatio: 0.68,
+                          ),
+                      itemCount: state.results.length,
+                      itemBuilder: (context, index) {
+                        final doc = state.results[index];
+                        final data = doc.data() as Map<String, dynamic>;
+                        return _buildBookCard(context, data);
+                      },
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
         ),
       ),
