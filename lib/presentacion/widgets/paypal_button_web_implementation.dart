@@ -1,36 +1,21 @@
-// ignore_for_file: avoid_web_libraries_in_flutter, undefined_function, undefined_method, uri_does_not_exist
+﻿// ignore_for_file: avoid_web_libraries_in_flutter, undefined_function, undefined_method, uri_does_not_exist
 import 'dart:html' as html;
 import 'dart:js_util'; 
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
-import 'package:js/js.dart';
 
-@JS('paypal.Buttons')
-class PaypalButtons {
-  external factory PaypalButtons(PaypalButtonsOptions options);
-  external dynamic render(dynamic selector);
-}
-
-@JS()
-@anonymous
 class PaypalButtonsOptions {
-  external factory PaypalButtonsOptions({
-    dynamic Function(dynamic, dynamic) createOrder,
-    dynamic Function(dynamic, dynamic) onApprove,
-  });
-}
+  final dynamic Function(dynamic, dynamic)? createOrder;
+  final dynamic Function(dynamic, dynamic)? onApprove;
 
-@JS()
-@anonymous
-class PaypalActions {
-  external PaypalOrder get order;
-}
-
-@JS()
-@anonymous
-class PaypalOrder {
-  external dynamic create(dynamic options);
-  external dynamic capture();
+  PaypalButtonsOptions({this.createOrder, this.onApprove});
+  
+  dynamic toJs() {
+    return jsify({
+      if (createOrder != null) 'createOrder': allowInterop(createOrder!),
+      if (onApprove != null) 'onApprove': allowInterop(onApprove!),
+    });
+  }
 }
 
 class PaypalButtonWebImplementation extends StatefulWidget {
@@ -48,90 +33,55 @@ class PaypalButtonWebImplementation extends StatefulWidget {
 }
 
 class _PaypalButtonWebImplementationState extends State<PaypalButtonWebImplementation> {
-  late final String viewID;
-  bool _isRendered = false;
+  final String _viewId = 'paypal-button-container';
 
   @override
   void initState() {
     super.initState();
-    viewID = 'paypal-button-$hashCode';
-
-    ui_web.platformViewRegistry.registerViewFactory(
-      viewID,
-      (int viewId) => html.DivElement()
-        ..id = viewID
+    // ignore: undefined_prefixed_name
+    ui_web.platformViewRegistry.registerViewFactory(_viewId, (int viewId) {
+      final div = html.DivElement()
+        ..id = _viewId
         ..style.width = '100%'
-        ..style.height = '100%'
-        ..style.display = 'block',
-    );
+        ..style.height = '100%';
+      return div;
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _renderPaypalButton();
+      _initPaypalButton();
     });
   }
 
-  void _renderPaypalButton() {
-    if (_isRendered) return;
-
-    final element = html.document.getElementById(viewID);
-    if (element == null) {
-      Future.delayed(const Duration(milliseconds: 200), _renderPaypalButton);
-      return;
-    }
-
-    // Check if PayPal SDK is loaded
-    if (getProperty(html.window, 'paypal') == null) {
-      debugPrint('PayPal SDK not loaded yet, retrying...');
-      Future.delayed(const Duration(milliseconds: 500), _renderPaypalButton);
-      return;
-    }
-
-    _isRendered = true;
-
-    // Ensure amount has 2 decimal places
-    String formattedAmount = widget.amount.replaceAll('\$', '').trim();
-    if (!formattedAmount.contains('.')) {
-      formattedAmount = '$formattedAmount.00';
-    }
-
-    try {
-      final options = PaypalButtonsOptions(
-        createOrder: allowInterop((data, actions) {
-          final paypalActions = actions as PaypalActions;
-          return paypalActions.order.create(jsify({
-            'purchase_units': [
-              {
-                'amount': {'value': formattedAmount}
-              }
-            ]
-          }));
+  void _initPaypalButton() {
+    final paypal = getProperty(html.window, 'paypal');
+    if (paypal != null) {
+      final options = jsify({
+        'createOrder': allowInterop((data, actions) {
+          return callMethod(getProperty(actions, 'order'), 'create', [
+            jsify({
+              'purchase_units': [
+                {
+                  'amount': {
+                    'value': widget.amount,
+                  }
+                }
+              ]
+            })
+          ]);
         }),
-        onApprove: allowInterop((data, actions) async {
-          final paypalActions = actions as PaypalActions;
-          try {
-            final result = await promiseToFuture(paypalActions.order.capture());
-            widget.onPaymentSuccess(result);
-          } catch (e) {
-            debugPrint('Error capturing PayPal payment: $e');
-          }
+        'onApprove': allowInterop((data, actions) async {
+          final result = await promiseToFuture(callMethod(getProperty(actions, 'order'), 'capture', []));
+          widget.onPaymentSuccess(result);
         }),
-      );
+      });
 
-      PaypalButtons(options).render('#$viewID');
-    } catch (e) {
-      _isRendered = false;
-      debugPrint('PayPal render error: $e');
+      final buttons = callMethod(paypal, 'Buttons', [options]);
+      callMethod(buttons, 'render', ['#$_viewId']);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: 300,
-        height: 150,
-        child: HtmlElementView(viewType: viewID),
-      ),
-    );
+    return HtmlElementView(viewType: _viewId);
   }
 }

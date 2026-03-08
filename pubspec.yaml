@@ -1,4 +1,4 @@
-name: unimet_marketplace
+﻿name: unimet_marketplace
 description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
@@ -12,7 +12,7 @@ dependencies:
   firebase_core: ^3.10.1
   firebase_auth: ^5.4.1
   cloud_firestore: ^5.6.0
-  flutter_bloc: ^8.1.3
+  flutter_bloc: ^8.1.6
   equatable: ^2.0.5
   cupertino_icons: ^1.0.2
   google_fonts: ^6.1.0
@@ -21,7 +21,7 @@ dependencies:
   supabase_flutter: ^2.12.0
   url_launcher: ^6.3.1
   js: ^0.7.2
-  bloc: ^8.1.4
+  share_plus: ^12.0.1
 
 dev_dependencies:
   flutter_test:
@@ -33,4 +33,4 @@ flutter:
   assets:
     - assets/sdi.assets.jpg
     - assets/imagen1_landingpage.jpeg
-    - assets/imagen2_landingpage.jpeg 
+    - assets/imagen2_landingpage.jpeg
