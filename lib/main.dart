@@ -14,6 +14,7 @@ import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/search_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/cart_cubit.dart';
 
 // Páginas
 import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
@@ -24,6 +25,7 @@ import 'package:unimet_marketplace/presentacion/pages/payment_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/perfil_admin_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/perfil_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/detalle_libro_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/cart_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/publicar_libro_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/orders_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/gestion_publicaciones_page.dart';
@@ -65,6 +67,7 @@ class MyApp extends StatelessWidget {
           BlocProvider(create: (context) => RatingCubit()),
           BlocProvider(create: (context) => SearchCubit()),
           BlocProvider(create: (context) => OrderCubit(OrderRepository())),
+          BlocProvider(create: (context) => CartCubit()),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -87,6 +90,7 @@ class MyApp extends StatelessWidget {
             '/admin_home': (context) => const AdminHomePage(),
             '/perfil_admin': (context) => const PerfilAdminPage(),
             '/perfil': (context) => const PerfilPage(),
+            '/cart': (context) => const CartPage(),
             '/detalle_libro': (context) => const DetalleLibroPage(),
             '/orders': (context) => const OrdersPage(),
             '/payment': (context) => const PaymentPage(),
