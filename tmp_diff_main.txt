@@ -1,0 +1,56 @@
+diff --git a/lib/main.dart b/lib/main.dart
+index 695e1cf..8af54b6 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -6,11 +6,13 @@ import 'package:unimet_marketplace/firebase_options.dart';
+ 
+ // Repositorios
+ import 'package:unimet_marketplace/data/repositories/auth_repository.dart';
++import 'package:unimet_marketplace/data/repositories/order_repository.dart';
+ 
+ // Cubits
+ import 'package:unimet_marketplace/domain/cubits/auth_cubit.dart';
+ import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
+ import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
++import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
+ 
+ // Páginas
+ import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
+@@ -21,6 +23,8 @@ import 'package:unimet_marketplace/presentacion/pages/perfil_admin_page.dart';
+ import 'package:unimet_marketplace/presentacion/pages/perfil_page.dart';
+ import 'package:unimet_marketplace/presentacion/pages/detalle_libro_page.dart'; // Importación necesaria
+ import 'package:unimet_marketplace/presentacion/pages/publicar_libro_page.dart';
++import 'package:unimet_marketplace/presentacion/pages/payment_page.dart';
++import 'package:unimet_marketplace/presentacion/pages/orders_page.dart';
+ void main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+   try {
+@@ -35,7 +39,7 @@ void main() async {
+       anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdjd252cWt1Ynd4d2tnZWF6cW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4ODg0MzYsImV4cCI6MjA4ODQ2NDQzNn0.Sa69AieyGPTuH0IcFbid5Ezb57-tcguGghDIxJNmdZs',
+     );
+   } catch (e) {
+-    print("Error al inicializar Firebase o Supabase: $e");
++    debugPrint("Error al inicializar Firebase o Supabase: $e");
+   }
+   runApp(const MyApp());
+ }
+@@ -62,6 +66,10 @@ class MyApp extends StatelessWidget {
+           BlocProvider(
+             create: (context) => RatingCubit(),
+           ),
++          // Gestión del estado de órdenes
++          BlocProvider(
++            create: (context) => OrderCubit(OrderRepository()),
++          ),
+         ],
+         child: MaterialApp(
+           debugShowCheckedModeBanner: false,
+@@ -85,6 +93,8 @@ class MyApp extends StatelessWidget {
+             '/perfil_admin': (context) => const PerfilAdminPage(),
+             '/perfil': (context) => const PerfilPage(),
+             '/detalle_libro': (context) => const DetalleLibroPage(), // Ruta para ver el libro a detalle
++            '/orders': (context) => OrdersPage(),
++            '/payment': (context) => const PaymentPage(),
+           },
+         ),
+       ),
