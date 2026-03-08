@@ -237,11 +237,14 @@ class _FilterDialogState extends State<_FilterDialog> {
     'OTROS',
   ];
   final List<String> _materias = [
-    'Cálculo',
+    'Matemática',
     'Programación',
+    'Psicología',
+    'Comunicación',
+    'Cálculo',
     'Derecho Romano',
-    'Psicología General',
     'Literatura',
+    'Economía',
   ];
   final List<String> _transacciones = [
     'Todos',
