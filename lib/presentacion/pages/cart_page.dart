@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:unimet_marketplace/domain/cubits/cart_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
 import 'package:unimet_marketplace/presentacion/widgets/paypal_button.dart';
 
 class CartPage extends StatelessWidget {
@@ -121,6 +122,9 @@ class CartPage extends StatelessWidget {
                     PaypalButton(
                       amount: state.totalAmount.toStringAsFixed(2),
                       onPaymentSuccess: (data) {
+                        for (final item in state.items) {
+                          context.read<OrderCubit>().markBookAsSold(item.bookId);
+                        }
                         context.read<CartCubit>().clearCart();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

@@ -135,6 +135,16 @@ class OrderCubit extends Cubit<OrderState> {
     }
   }
 
+  // Marcar libro como vendido después de pago exitoso
+  Future<void> markBookAsSold(String bookId) async {
+    if (bookId.isEmpty) return;
+    try {
+      await _orderRepository.markBookAsSold(bookId);
+    } catch (e) {
+      print('Error en Cubit al marcar libro: $e');
+    }
+  }
+
   @override
   Future<void> close() {
     _ordersSubscription?.cancel();

@@ -220,8 +220,10 @@ class ProductDetailPage extends StatelessWidget {
               const SizedBox(height: 12),
               PaypalButton(
                 amount: price,
-                onPaymentSuccess: (data) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                onPaymentSuccess: (data) {                  final bookId = productData['id'] ?? '';
+                  if (bookId.isNotEmpty) {
+                    context.read<OrderCubit>().markBookAsSold(bookId);
+                  }                  ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('!Pago realizado con exito!'),
                       backgroundColor: Colors.green,

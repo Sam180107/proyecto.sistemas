@@ -44,11 +44,21 @@ class OrderRepository {
       if (orderDoc.exists) {
         final orderData = orderDoc.data()!;
         final bookId = orderData['bookId'];
-        await _firestore.collection('books').doc(bookId).update({
-          'disponible': false,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        if (bookId != null && bookId.isNotEmpty) {
+          await markBookAsSold(bookId);
+        }
       }
+    }
+  }
+
+  Future<void> markBookAsSold(String bookId) async {
+    try {
+      await _firestore.collection('libros').doc(bookId).update({
+        'estado': 'Vendido',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error al marcar libro como vendido: $e');
     }
   }
 
