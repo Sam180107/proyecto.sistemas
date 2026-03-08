@@ -22,6 +22,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
 
   String _tipoTransaccion = 'Venta';
   String _categoria = 'LITERATURA';
+  String _estadoLibro = 'Usado';
   bool _isLoading = false;
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
@@ -106,6 +107,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         'tipo': _tipoTransaccion,
         'tipoTransaccion': _tipoTransaccion,
         'categoria': _categoria,
+        'condicion': _estadoLibro,
         'imageUrl': imageUrl, // Guardamos la URL de la imagen
         'userEmail': user.email,
         'userId': user.uid,
@@ -114,7 +116,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         'rol': userData['rol'] ?? 'Estudiante', // Nuevo campo
         'iniciales': iniciales,
         'fechaCreacion': FieldValue.serverTimestamp(),
-        'estado': 'Pendiente',
+        'estado': 'Disponible',
       });
 
       if (mounted) {
@@ -308,26 +310,45 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _categoria,
-                      decoration: const InputDecoration(
-                        labelText: 'Categoría',
-                        border: OutlineInputBorder(),
-                      ),
-                      items:
-                          [
-                                'LITERATURA',
-                                'INGENIERÍA',
-                                'DERECHO',
-                                'ECONOMÍA',
-                                'OTROS',
-                              ]
-                              .map(
-                                (e) =>
-                                    DropdownMenuItem(value: e, child: Text(e)),
-                              )
-                              .toList(),
-                      onChanged: (val) => setState(() => _categoria = val!),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _categoria,
+                            decoration: const InputDecoration(
+                              labelText: 'Categoría',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: [
+                              'LITERATURA',
+                              'INGENIERÍA',
+                              'DERECHO',
+                              'ECONOMÍA',
+                              'OTROS',
+                            ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                            onChanged: (val) => setState(() => _categoria = val!),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _estadoLibro,
+                            decoration: const InputDecoration(
+                              labelText: 'Estado del Libro',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: ['Nuevo', 'Usado']
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(e),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) => setState(() => _estadoLibro = val!),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
