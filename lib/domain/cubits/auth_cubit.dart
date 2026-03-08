@@ -3,14 +3,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../entities/auth_state.dart';
+import 'package:unimet_marketplace/data/models/user_model.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _authRepository;
 
   AuthCubit(this._authRepository) : super(AuthLoading()) {
-    _authRepository.authStateChanges.listen((user) {
-      if (user != null) {
-        emit(AuthAuthenticated(user));
+    _authRepository.authStateChanges.listen((userModel) {
+      if (userModel != null) {
+        emit(AuthAuthenticated(userModel));
       } else {
         emit(AuthUnauthenticated());
       }
@@ -56,11 +57,10 @@ class AuthCubit extends Cubit<AuthState> {
         await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).set(datosUsuario);
       }
 
-      // 6. Cerramos sesión
-      await _authRepository.logOut();
-      
-      // 7. Emitimos el estado desautenticado para que la pantalla sepa que terminó
-      emit(AuthUnauthenticated());
+      // 6. Emitimos el estado autenticado para que la pantalla sepa que terminó
+      if (user != null) {
+        emit(AuthAuthenticated(UserModel.fromFirebaseUser(user)));
+      }
     } catch (e) {
       emit(AuthError(e.toString()));
     }
@@ -69,11 +69,11 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> login(String email, String password) async {
     emit(AuthLoading());
     try {
-      final user = await _authRepository.logIn(
+      final userModel = await _authRepository.logIn(
         email: email,
         password: password,
       );
-      emit(AuthAuthenticated(user));
+      emit(AuthAuthenticated(userModel));
     } catch (e) {
       emit(AuthError(e.toString()));
       emit(AuthError(e.toString()));

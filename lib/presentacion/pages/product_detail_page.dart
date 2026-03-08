@@ -5,13 +5,15 @@ import 'package:unimet_marketplace/domain/cubits/cart_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
 import 'package:unimet_marketplace/domain/entities/cart_item.dart';
 import '../widgets/paypal_button.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final Map<String, dynamic> productData;
 
   const ProductDetailPage({super.key, required this.productData});
 
-  void _solicitarLibro(BuildContext context, String price) async {
+  void _solicitarLibro(BuildContext context, String price, String tipoTransaccion) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -33,14 +35,12 @@ class ProductDetailPage extends StatelessWidget {
         bookId: productData['id'] ?? '',
         bookTitle: productData['titulo'] ?? 'Sin Titulo',
         bookAuthor: productData['autor'] ?? 'Anonimo',
-        price: double.tryParse(price) ?? 0.0,
+        price: tipoTransaccion == 'Venta' ? (double.tryParse(price) ?? 0.0) : 0.0,
+        tipoTransaccion: tipoTransaccion,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Solicitud enviada exitosamente. El vendedor se pondra en contacto contigo.'),
-          backgroundColor: Colors.green,
-        ),
+        SnackBar(content: Text('Solicitud de $tipoTransaccion enviada exitosamente. El vendedor se pondra en contacto contigo.')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,8 +122,21 @@ class ProductDetailPage extends StatelessWidget {
               )
             ],
           ),
-          child: const Center(
-            child: Icon(Icons.book_rounded, size: 100, color: Colors.grey),
+          child: Center(
+            child: (productData['imageUrl'] != null || productData['imagen'] != null)
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.network(
+                      productData['imageUrl'] ?? productData['imagen'],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.book_rounded,
+                              size: 100, color: Colors.grey),
+                    ),
+                  )
+                : const Icon(Icons.book_rounded, size: 100, color: Colors.grey),
           ),
         );
 
@@ -171,6 +184,38 @@ class ProductDetailPage extends StatelessWidget {
                 fontStyle: FontStyle.italic,
               ),
             ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/perfil',
+                  arguments: {
+                    'vendedor': productData['vendedor'] ?? productData['nombreVendedor'] ?? 'Vendedor',
+                    'carrera': productData['carrera'] ?? 'Estudiante',
+                    'iniciales': (productData['vendedor'] ?? productData['nombreVendedor'] ?? 'U').toString().substring(0, 1),
+                    'userId': productData['userId'],
+                    'rol': 'Estudiante',
+                    'isOtherUser': true,
+                    'libro': productData['titulo'] ?? 'un libro',
+                  },
+                );
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                alignment: Alignment.centerLeft,
+              ),
+              child: const Text(
+                "Ver Perfil del Vendedor",
+                style: TextStyle(
+                  color: Color(0xFF1E88E5),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             Text(
               '\$ $price',
@@ -193,6 +238,7 @@ class ProductDetailPage extends StatelessWidget {
                           author: productData['autor'] ?? 'Autor Desconocido',
                           price: double.tryParse(price) ?? 0.0,
                           sellerId: productData['userId'] ?? 'system',
+                          imageUrl: productData['imageUrl'] ?? productData['imagen'],
                         );
                         context.read<CartCubit>().addItem(item);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -220,10 +266,12 @@ class ProductDetailPage extends StatelessWidget {
               const SizedBox(height: 12),
               PaypalButton(
                 amount: price,
-                onPaymentSuccess: (data) {                  final bookId = productData['id'] ?? '';
+                onPaymentSuccess: (data) {
+                  final bookId = productData['id'] ?? '';
                   if (bookId.isNotEmpty) {
                     context.read<OrderCubit>().markBookAsSold(bookId);
-                  }                  ScaffoldMessenger.of(context).showSnackBar(
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('!Pago realizado con exito!'),
                       backgroundColor: Colors.green,
@@ -232,25 +280,83 @@ class ProductDetailPage extends StatelessWidget {
                 },
               ),
             ] else ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _solicitarLibro(context, price),
-                  icon: Icon(tipoTransaccion == 'Intercambio'
-                      ? Icons.swap_horiz
-                      : Icons.volunteer_activism),
-                  label: Text(tipoTransaccion == 'Intercambio'
-                      ? 'Solicitar Intercambio'
-                      : 'Solicitar Donacion'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003870),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _solicitarLibro(context, price, tipoTransaccion),
+                      icon: Icon(tipoTransaccion == 'Intercambio'
+                          ? Icons.swap_horiz
+                          : Icons.volunteer_activism),
+                      label: Text(tipoTransaccion == 'Intercambio'
+                          ? 'Solicitar Intercambio'
+                          : 'Solicitar Donacion'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003870),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('usuarios')
+                        .doc(productData['userId'])
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      String telefonoFirebase = "";
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final data = snapshot.data!.data() as Map<String, dynamic>;
+                        telefonoFirebase = data['telefono'] ?? "";
+                      }
+                      
+                      if (telefonoFirebase.isEmpty) {
+                         telefonoFirebase = productData['telefonoVendedor'] ?? "";
+                      }
+
+                      if (telefonoFirebase.isEmpty) return const SizedBox.shrink();
+
+                      return IconButton(
+                        icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 30),
+                        onPressed: () async {
+                          String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
+                          if (cleanPhone.startsWith('0')) {
+                            cleanPhone = '58${cleanPhone.substring(1)}';
+                          } else if (cleanPhone.length == 10 && (
+                              cleanPhone.startsWith('412') || 
+                              cleanPhone.startsWith('414') || 
+                              cleanPhone.startsWith('424') || 
+                              cleanPhone.startsWith('422'))) {
+                            cleanPhone = '58$cleanPhone';
+                          }
+
+                          final String mensaje =
+                              "Hola, estoy interesado en tu libro '${productData['titulo']}' que vi en BookSwap.";
+                          final Uri whatsappUri = Uri.parse(
+                              "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
+
+                          try {
+                            if (await canLaunchUrl(whatsappUri)) {
+                              await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+                              );
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ],

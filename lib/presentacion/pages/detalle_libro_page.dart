@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DetalleLibroPage extends StatelessWidget {
   const DetalleLibroPage({super.key});
@@ -23,17 +24,20 @@ class DetalleLibroPage extends StatelessWidget {
       return;
     }
 
+    final tipoTransaccion = arguments['tipoTransaccion'] ?? 'Venta';
+
     try {
       await context.read<OrderCubit>().createOrder(
         sellerId: arguments['userId'],
         bookId: arguments['id'] ?? '',
         bookTitle: arguments['titulo'],
         bookAuthor: arguments['autor'] ?? '',
-        price: double.tryParse(arguments['precio'].toString()) ?? 0.0,
+        price: tipoTransaccion == 'Venta' ? (double.tryParse(arguments['precio'].toString()) ?? 0.0) : 0.0, // Price is 0 for exchanges
+        tipoTransaccion: tipoTransaccion,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solicitud enviada exitosamente')),
+        SnackBar(content: Text('Solicitud de $tipoTransaccion enviada exitosamente')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -65,6 +69,7 @@ class DetalleLibroPage extends StatelessWidget {
                   context,
                   arguments['precio']!,
                   arguments['imagen']!,
+                  arguments['tipoTransaccion'] ?? 'Venta',
                 ),
 
                 Padding(
@@ -143,7 +148,7 @@ class DetalleLibroPage extends StatelessWidget {
 
   // --- WIDGETS DE APOYO OPTIMIZADOS ---
 
-  Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen) {
+  Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen, String tipoTransaccion) {
     return SizedBox(
       height: 320,
       width: double.infinity,
@@ -215,7 +220,9 @@ class DetalleLibroPage extends StatelessWidget {
                 ],
               ),
               child: Text(
-                "VENTA - \$ ${precio.toString()}",
+                tipoTransaccion == 'Intercambio'
+                    ? "INTERCAMBIO"
+                    : "VENTA - \$ ${precio.toString()}",
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -392,6 +399,22 @@ class DetalleLibroPage extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(width: 8),
+            if (arguments['telefonoVendedor'] != null && arguments['telefonoVendedor'].isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 30),
+                onPressed: () async {
+                  final telefono = arguments['telefonoVendedor'];
+                  final url = 'https://wa.me/+' + telefono;
+                  if (await canLaunchUrl(Uri.parse(url))) {
+                    await launchUrl(Uri.parse(url));
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+                    );
+                  }
+                },
+              ),
           ],
         ),
       );
@@ -414,11 +437,16 @@ class DetalleLibroPage extends StatelessWidget {
   }
 
   Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
+    final tipoTransaccion = arguments['tipoTransaccion'] ?? 'Venta';
+    final buttonText = tipoTransaccion == 'Intercambio'
+        ? "Solicitar Intercambio"
+        : "Agregar al Carrito";
+
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+            color: const Color(0xFF1E88E5).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -434,9 +462,9 @@ class DetalleLibroPage extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: const Text(
-          "Solicitar Material",
-          style: TextStyle(
+        child: Text(
+          buttonText,
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,

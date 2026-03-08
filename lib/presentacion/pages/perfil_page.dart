@@ -406,171 +406,189 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
   }
 
   Widget _buildOtherUserProfile(Map<String, dynamic> arguments) {
-  String nombre = arguments['vendedor'] ?? 'Usuario';
-  String carrera = arguments['carrera'] ?? 'Estudiante';
-  String iniciales = arguments['iniciales'] ?? 'U';
-  String rol = arguments['rol'] ?? 'Estudiante';
-  String userId = arguments['userId'] ?? '';
-  String nombreLibro = arguments['libro'] ?? 'un libro';
+    String nombre = arguments['vendedor'] ?? 'Usuario';
+    String carrera = arguments['carrera'] ?? 'Estudiante';
+    String iniciales = arguments['iniciales'] ?? 'U';
+    String rol = arguments['rol'] ?? 'Estudiante';
+    String userId = arguments['userId'] ?? '';
+    String nombreLibro = arguments['libro'] ?? 'un libro';
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    context.read<RatingCubit>().cargarValoraciones(userId);
-  });
+    // Cargar valoraciones del vendedor
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<RatingCubit>().cargarValoraciones(userId);
+    });
 
-  return Scaffold(
-    backgroundColor: const Color(0xFFF1F3F6),
-    appBar: AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0.5,
-      title: const Text(
-        'BookSwap',
-        style: TextStyle(
-          color: Color(0xFF007BFF),
-          fontWeight: FontWeight.bold,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F3F6),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        title: const Text(
+          'BookSwap',
+          style: TextStyle(
+            color: Color(0xFF007BFF),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black),
-        onPressed: () => Navigator.pop(context),
-      ),
-    ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Perfil del Vendedor",
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          ),
-          const Text(
-            "Información del usuario",
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 30),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.black12),
-            ),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 45,
-                  backgroundColor: const Color(0xFF0089A7),
-                  child: Text(
-                    iniciales,
-                    style: const TextStyle(color: Colors.white, fontSize: 34),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  nombre,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                Text(
-                  "$carrera\n$rol",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const Divider(height: 30),
-                _buildRatingSection(),
-                const SizedBox(height: 20),
-                _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
-                const SizedBox(height: 20),
+      body: userId.isEmpty
+          ? const Center(child: Text('ID de usuario no proporcionado.'))
+          : StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('usuarios').doc(userId).snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return const Center(child: Text('Usuario no encontrado en base de datos.'));
+                }
 
-                // --- BOTÓN DE WHATSAPP CON DATOS EN TIEMPO REAL ---
-                StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('usuarios')
-                      .doc(userId)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    // Obtenemos el teléfono directamente de la base de datos
-                    String telefonoFirebase = "";
-                    if (snapshot.hasData && snapshot.data!.exists) {
-                      final data = snapshot.data!.data() as Map<String, dynamic>;
-                      telefonoFirebase = data['telefono'] ?? "";
-                    }
+                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                final displayNombre = userData['nombre'] ?? nombre;
+                final displayCarrera = userData['carrera'] ?? carrera;
+                final displayRol = userData['rol'] ?? rol;
+                final displayIniciales = (displayNombre.isNotEmpty)
+                    ? displayNombre[0].toUpperCase()
+                    : iniciales;
 
-                    return ElevatedButton.icon(
-                      onPressed: () async {
-                        // Validación con el dato fresco de Firebase
-                        if (telefonoFirebase.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'El vendedor no tiene teléfono registrado en su perfil')),
-                          );
-                          return;
-                        }
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Perfil del Vendedor",
+                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                      ),
+                      const Text(
+                        "Información del usuario",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 30),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.black12),
+                        ),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 45,
+                              backgroundColor: const Color(0xFF0089A7),
+                              child: Text(
+                                displayIniciales,
+                                style: const TextStyle(color: Colors.white, fontSize: 34),
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            Text(
+                              displayNombre,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            Text(
+                              "$displayCarrera\n$displayRol",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                            const Divider(height: 30),
+                            _buildRatingSection(),
+                            const SizedBox(height: 20),
+                            _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
+                            const SizedBox(height: 20),
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('usuarios')
+                                  .doc(userId)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                String telefonoFirebase = "";
+                                if (snapshot.hasData && snapshot.data!.exists) {
+                                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                                  telefonoFirebase = data['telefono'] ?? "";
+                                }
 
-                        // 1. Limpieza total (solo quedan dígitos)
-                        String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
+                                return ElevatedButton.icon(
+                                  onPressed: () async {
+                                    if (telefonoFirebase.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'El vendedor no tiene teléfono registrado en su perfil')),
+                                      );
+                                      return;
+                                    }
+                                    String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
+                                    if (cleanPhone.startsWith('0')) {
+                                      cleanPhone = '58${cleanPhone.substring(1)}';
+                                    } else if (cleanPhone.length == 10 && (
+                                        cleanPhone.startsWith('412') ||
+                                        cleanPhone.startsWith('414') ||
+                                        cleanPhone.startsWith('424') ||
+                                        cleanPhone.startsWith('422'))) {
+                                      cleanPhone = '58$cleanPhone';
+                                    }
 
-                        // 2. Estandarización para Venezuela (0412, 0414, 0424, 0422, +58)
-                        if (cleanPhone.startsWith('0')) {
-                          cleanPhone = '58${cleanPhone.substring(1)}';
-                        } else if (cleanPhone.length == 10 && (
-                            cleanPhone.startsWith('412') || 
-                            cleanPhone.startsWith('414') || 
-                            cleanPhone.startsWith('424') || 
-                            cleanPhone.startsWith('422'))) {
-                          cleanPhone = '58$cleanPhone';
-                        }
+                                    final String mensaje =
+                                        "Hola $displayNombre, estoy interesado en tu libro '$nombreLibro' que vi en BookSwap.";
+                                    final Uri whatsappUri = Uri.parse(
+                                        "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
 
-                        final String mensaje =
-                            "Hola $nombre, estoy interesado en tu libro '$nombreLibro' que vi en BookSwap.";
-                        final Uri whatsappUri = Uri.parse(
-                            "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
-
-                        try {
-                          if (await canLaunchUrl(whatsappUri)) {
-                            await launchUrl(
-                              whatsappUri,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          } else {
-                            throw 'No se pudo abrir WhatsApp';
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error al contactar: $e')),
-                            );
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.message),
-                      label: const Text('Enviar Mensaje'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E88E5),
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                                    try {
+                                      if (await canLaunchUrl(whatsappUri)) {
+                                        await launchUrl(
+                                          whatsappUri,
+                                          mode: LaunchMode.externalApplication,
+                                        );
+                                      } else {
+                                        throw 'No se pudo abrir WhatsApp';
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Error al contactar: $e')),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.message),
+                                  label: const Text('Enviar Mensaje'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1E88E5),
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size(double.infinity, 50),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  },
-                ),
-              ],
+                      const SizedBox(height: 20),
+                      _buildRealStatCards(userId),
+                      const SizedBox(height: 20),
+                      _buildReputationCard(),
+                    ],
+                  ),
+                );
+              },
             ),
-          ),
-          const SizedBox(height: 20),
-          _buildRealStatCards(userId),
-          const SizedBox(height: 20),
-          _buildReputationCard(),
-        ],
-      ),
-    ),
-  );
-}
+    );
+  }
   
 
   Widget _buildRatingSection() {

@@ -73,22 +73,23 @@ class HomePage extends StatelessWidget {
                           );
                         },
                       );
+                    } else if (state is SearchLoaded) { // Check for empty results explicitly
+                      return const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('No se encontraron publicaciones.'),
+                            SizedBox(height: 8),
+                            Text(
+                              'Intenta con otros filtros o revisa los permisos en Firebase.',
+                              style: TextStyle(color: Colors.grey),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
                     }
-                    // This will handle the case of SearchLoaded with empty results
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('No se encontraron publicaciones.'),
-                          SizedBox(height: 8),
-                          Text(
-                            'Intenta con otros filtros o revisa los permisos en Firebase.',
-                            style: TextStyle(color: Colors.grey),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    );
+                    return const SizedBox.shrink(); // Default fallback
                   },
                 ),
               ],
@@ -132,10 +133,20 @@ class HomePage extends StatelessWidget {
                   ),
                   child: Container(
                     height: 140,
+                    width: double.infinity,
                     color: Colors.grey[200],
-                    child: const Center(
-                      child: Icon(Icons.book, size: 40, color: Colors.grey),
-                    ),
+                    child: data['imageUrl'] != null || data['imagen'] != null
+                        ? Image.network(
+                            data['imageUrl'] ?? data['imagen'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.book,
+                                    size: 40, color: Colors.grey),
+                          )
+                        : const Center(
+                            child:
+                                Icon(Icons.book, size: 40, color: Colors.grey),
+                          ),
                   ),
                 ),
                 Positioned(
