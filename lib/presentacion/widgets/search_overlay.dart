@@ -10,7 +10,18 @@ class SearchOverlay extends StatefulWidget {
 }
 
 class _SearchOverlayState extends State<SearchOverlay> {
-  final TextEditingController _searchController = TextEditingController();
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    final searchState = context.read<SearchCubit>().state;
+    String initialQuery = '';
+    if (searchState is SearchLoaded) {
+      initialQuery = searchState.lastQuery ?? '';
+    }
+    _searchController = TextEditingController(text: initialQuery);
+  }
 
   @override
   void dispose() {
@@ -104,8 +115,25 @@ class _SearchOverlayState extends State<SearchOverlay> {
                         const SizedBox(height: 32),
                         ElevatedButton.icon(
                           onPressed: () {
+                            final state = context.read<SearchCubit>().state;
+                            String? currentCarrera;
+                            String? currentMateria;
+                            String? currentTransaccion;
+                            String? currentCondicion;
+                            
+                            if (state is SearchLoaded) {
+                              currentCarrera = state.lastCarrera;
+                              currentMateria = state.lastMateria;
+                              currentTransaccion = state.lastTransaccion;
+                              currentCondicion = state.lastCondicion;
+                            }
+
                             context.read<SearchCubit>().search(
                               query: _searchController.text,
+                              carrera: currentCarrera,
+                              materia: currentMateria,
+                              transaccion: currentTransaccion,
+                              condicion: currentCondicion,
                             );
                             Navigator.pop(context);
                           },
@@ -186,25 +214,45 @@ class _FilterDialogState extends State<_FilterDialog> {
   String? _selectedCarrera;
   String? _selectedMateria;
   String _selectedTransaccion = 'Todos';
+  String _selectedCondicion = 'Todos';
+
+  @override
+  void initState() {
+    super.initState();
+    final searchState = context.read<SearchCubit>().state;
+    if (searchState is SearchLoaded) {
+      _selectedCarrera = searchState.lastCarrera;
+      _selectedMateria = searchState.lastMateria;
+      _selectedTransaccion = searchState.lastTransaccion ?? 'Todos';
+      _selectedCondicion = searchState.lastCondicion ?? 'Todos';
+    }
+  }
 
   // In a real app, these would come from a remote source
   final List<String> _carreras = [
-    'Ingeniería Informática',
-    'Ingeniería Civil',
-    'Derecho',
-    'Psicología',
+    'INGENIERÍA',
+    'DERECHO',
+    'ECONOMÍA',
+    'PSICOLOGÍA',
+    'OTROS',
   ];
   final List<String> _materias = [
-    'Cálculo I',
-    'Programación II',
+    'Cálculo',
+    'Programación',
     'Derecho Romano',
     'Psicología General',
+    'Literatura',
   ];
   final List<String> _transacciones = [
     'Todos',
     'Venta',
     'Intercambio',
     'Donación',
+  ];
+  final List<String> _condiciones = [
+    'Todos',
+    'Nuevo',
+    'Usado',
   ];
 
   @override
@@ -259,6 +307,14 @@ class _FilterDialogState extends State<_FilterDialog> {
               _selectedTransaccion,
               (val) => setState(() => _selectedTransaccion = val ?? 'Todos'),
             ),
+            const SizedBox(height: 16),
+            _buildDropdown(
+              'Estado del Libro',
+              Icons.stars_outlined,
+              _condiciones,
+              _selectedCondicion,
+              (val) => setState(() => _selectedCondicion = val ?? 'Todos'),
+            ),
           ],
         ),
       ),
@@ -267,12 +323,20 @@ class _FilterDialogState extends State<_FilterDialog> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: ElevatedButton(
             onPressed: () {
+              final searchState = context.read<SearchCubit>().state;
+              String? currentQuery;
+              if (searchState is SearchLoaded) {
+                currentQuery = searchState.lastQuery;
+              }
+
               context.read<SearchCubit>().search(
+                query: currentQuery,
                 carrera: _selectedCarrera,
                 materia: _selectedMateria,
                 transaccion: _selectedTransaccion == 'Todos'
                     ? null
                     : _selectedTransaccion,
+                condicion: _selectedCondicion == 'Todos' ? null : _selectedCondicion,
               );
               Navigator.of(context).pop();
             },

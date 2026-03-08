@@ -16,6 +16,7 @@ class SearchCubit extends Cubit<SearchState> {
       emit(SearchLoading());
       final querySnapshot = await _firestore
           .collection('libros')
+          .where('estado', isEqualTo: 'Disponible')
           .limit(50)
           .get();
 
@@ -58,11 +59,14 @@ class SearchCubit extends Cubit<SearchState> {
     String? carrera,
     String? materia,
     String? transaccion,
+    String? condicion,
   }) async {
     try {
       emit(SearchLoading());
 
-      Query collectionQuery = _firestore.collection('libros');
+      Query collectionQuery = _firestore
+          .collection('libros')
+          .where('estado', isEqualTo: 'Disponible');
 
       if (carrera != null && carrera.isNotEmpty) {
         collectionQuery = collectionQuery.where('carrera', isEqualTo: carrera);
@@ -77,6 +81,9 @@ class SearchCubit extends Cubit<SearchState> {
           'tipoTransaccion',
           isEqualTo: transaccion,
         );
+      }
+      if (condicion != null && condicion.isNotEmpty && condicion != 'Todos') {
+        collectionQuery = collectionQuery.where('condicion', isEqualTo: condicion);
       }
 
       final querySnapshot = await collectionQuery.get();
@@ -94,7 +101,14 @@ class SearchCubit extends Cubit<SearchState> {
       }
 
       if (isClosed) return;
-      emit(SearchLoaded(results));
+      emit(SearchLoaded(
+        results,
+        lastQuery: query,
+        lastCarrera: carrera,
+        lastMateria: materia,
+        lastTransaccion: transaccion,
+        lastCondicion: condicion,
+      ));
     } on FirebaseException catch (e) {
       if (isClosed) return;
       if (e.code == 'permission-denied') {
