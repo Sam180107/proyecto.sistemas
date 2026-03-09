@@ -92,7 +92,7 @@ class _GestionUsuariosPageState extends State<GestionUsuariosPage> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: rol,
+                        initialValue: rol,
                         decoration: InputDecoration(
                           labelText: 'Rol',
                           prefixIcon: const Icon(

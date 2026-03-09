@@ -34,13 +34,13 @@ class BookOrder {
   factory BookOrder.fromMap(String id, Map<String, dynamic> data) {
     return BookOrder(
       id: id,
-      buyerId: data['buyerId'],
-      sellerId: data['sellerId'],
-      bookId: data['bookId'],
-      bookTitle: data['bookTitle'],
+      buyerId: data['buyerId'] ?? '',
+      sellerId: data['sellerId'] ?? '',
+      bookId: data['bookId'] ?? '',
+      bookTitle: data['bookTitle'] ?? '',
       bookAuthor: data['bookAuthor'] ?? '',
       price: double.tryParse(data['price'].toString()) ?? 0.0,
-      tipoTransaccion: data['tipoTransaccion'] ?? 'Venta', // Default to 'Venta' if not specified
+      tipoTransaccion: data['tipoTransaccion'] ?? 'Venta',
       status: data['status'] ?? 'pending',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: data['updatedAt'] != null ? (data['updatedAt'] as Timestamp).toDate() : null,
@@ -49,6 +49,7 @@ class BookOrder {
     );
   }
 
+  // SOLO UN MÉTODO toMap Y BIEN CERRADO
   Map<String, dynamic> toMap() {
     return {
       'buyerId': buyerId,
@@ -63,6 +64,6 @@ class BookOrder {
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       'buyerName': buyerName,
       'sellerName': sellerName,
-    };
+    }; // <--- Aquí estaba el error, antes tenías );
   }
 }
