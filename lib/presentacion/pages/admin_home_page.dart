@@ -407,24 +407,37 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: tipo == 'Intercambio'
-                                ? const Color(0xFFE8F5E9)
-                                : const Color(0xFFE3F2FD),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            tipo == 'Intercambio'
-                                ? Icons.swap_horiz
-                                : Icons.sell_outlined,
-                            color: tipo == 'Intercambio'
-                                ? const Color(0xFF2E7D32)
-                                : const Color(0xFF1976D2),
-                            size: 20,
-                          ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: (data['imageUrl'] != null &&
+                                  (data['imageUrl'] as String).isNotEmpty)
+                              ? Image.network(
+                                  data['imageUrl'] as String,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                    width: 50,
+                                    height: 50,
+                                    color: Colors.grey[300],
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey[600],
+                                      size: 24,
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.grey[300],
+                                  child: Icon(
+                                    Icons.book,
+                                    color: Colors.grey[600],
+                                    size: 24,
+                                  ),
+                                ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

@@ -1,4 +1,5 @@
-import '../../data/models/user_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:unimet_marketplace/data/models/user_model.dart';
 
 abstract class AuthState {}
 

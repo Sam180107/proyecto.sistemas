@@ -12,12 +12,31 @@ class SearchInitial extends SearchState {}
 class SearchLoading extends SearchState {}
 
 class SearchLoaded extends SearchState {
-  final List<dynamic> results; 
+  final List<dynamic> results;
+  final String? lastQuery;
+  final String? lastCarrera;
+  final String? lastMateria;
+  final String? lastTransaccion;
+  final String? lastCondicion;
 
-  const SearchLoaded(this.results);
+  const SearchLoaded(
+    this.results, {
+    this.lastQuery,
+    this.lastCarrera,
+    this.lastMateria,
+    this.lastTransaccion,
+    this.lastCondicion,
+  });
 
   @override
-  List<Object> get props => [results];
+  List<Object> get props => [
+        results,
+        lastQuery ?? '',
+        lastCarrera ?? '',
+        lastMateria ?? '',
+        lastTransaccion ?? '',
+        lastCondicion ?? '',
+      ];
 }
 
 class SearchError extends SearchState {

@@ -8,6 +8,7 @@ class BookOrder {
   final String bookTitle;
   final String bookAuthor;
   final double price;
+  final String tipoTransaccion; // 'Venta' or 'Intercambio'
   final String status; // 'pending', 'accepted', 'paid', 'rejected', 'completed'
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -22,6 +23,7 @@ class BookOrder {
     required this.bookTitle,
     required this.bookAuthor,
     required this.price,
+    required this.tipoTransaccion,
     required this.status,
     required this.createdAt,
     this.updatedAt,
@@ -38,11 +40,29 @@ class BookOrder {
       bookTitle: data['bookTitle'],
       bookAuthor: data['bookAuthor'] ?? '',
       price: double.tryParse(data['price'].toString()) ?? 0.0,
+      tipoTransaccion: data['tipoTransaccion'] ?? 'Venta', // Default to 'Venta' if not specified
       status: data['status'] ?? 'pending',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: data['updatedAt'] != null ? (data['updatedAt'] as Timestamp).toDate() : null,
       buyerName: data['buyerName'],
       sellerName: data['sellerName'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'buyerId': buyerId,
+      'sellerId': sellerId,
+      'bookId': bookId,
+      'bookTitle': bookTitle,
+      'bookAuthor': bookAuthor,
+      'price': price,
+      'tipoTransaccion': tipoTransaccion,
+      'status': status,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+      'buyerName': buyerName,
+      'sellerName': sellerName,
     );
   }
 

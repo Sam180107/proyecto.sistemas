@@ -36,6 +36,7 @@ class OrderCubit extends Cubit<OrderState> {
     required String bookTitle,
     required String bookAuthor,
     required double price,
+    required String tipoTransaccion,
   }) async {
     try {
       final currentUser = _auth.currentUser;
@@ -70,6 +71,7 @@ class OrderCubit extends Cubit<OrderState> {
         bookTitle: bookTitle,
         bookAuthor: bookAuthor,
         price: price,
+        tipoTransaccion: tipoTransaccion,
         status: 'pending',
         createdAt: DateTime.now(),
         buyerName: buyerName,

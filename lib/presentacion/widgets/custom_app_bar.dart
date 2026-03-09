@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:unimet_marketplace/domain/cubits/cart_cubit.dart';
 import '../../domain/cubits/profile_cubit.dart';
 import '../../domain/cubits/search_cubit.dart';
 import 'search_overlay.dart';
@@ -80,6 +81,46 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           onTap: () {
             Navigator.pushNamed(context, '/orders');
           },
+        ),
+        Stack(
+          children: [
+            _HoverNavItem(
+              icon: Icons.shopping_cart_outlined,
+              label: "Carrito",
+              onTap: () {
+                Navigator.pushNamed(context, '/cart');
+              },
+            ),
+            BlocBuilder<CartCubit, CartState>(
+              builder: (context, state) {
+                if (state.itemCount == 0) return const SizedBox.shrink();
+                return Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${state.itemCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         _HoverNavItem(
           icon: Icons.person_outline,

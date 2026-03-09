@@ -14,42 +14,46 @@ class SearchCubit extends Cubit<SearchState> {
   void fetchInitialPublications() async {
     try {
       emit(SearchLoading());
-      final querySnapshot = await _firestore
-          .collection('libros')
-          .limit(50)
-          .get();
+      // Simply get all books first
+      final querySnapshot = await _firestore.collection('libros').get();
 
       if (isClosed) return;
 
-      List<QueryDocumentSnapshot> docs = querySnapshot.docs.toList();
+      // Filter in memory to avoid index issues
+      final allDocs = querySnapshot.docs;
+      
+      final filteredDocs = allDocs.where((doc) {
+        final data = doc.data();
+        // Check for 'estado' field, default to 'Disponible' if missing
+        final estado = data['estado'] as String? ?? 'Disponible';
+        return estado != 'Vendido' && estado != 'Eliminado';
+      }).toList();
 
-      docs.sort((a, b) {
-        final dataA = a.data() as Map<String, dynamic>;
-        final dataB = b.data() as Map<String, dynamic>;
-        final dateA = dataA['fechaCreacion'] as Timestamp?;
-        final dateB = dataB['fechaCreacion'] as Timestamp?;
+      // Sort by creation date in memory
+      filteredDocs.sort((a, b) {
+        final dataA = a.data();
+        final dataB = b.data();
+        // Handle potential missing or different type for fechaCreacion
+        Timestamp? dateA; 
+        if (dataA['fechaCreacion'] is Timestamp) {
+            dateA = dataA['fechaCreacion'];
+        }
+        Timestamp? dateB;
+        if (dataB['fechaCreacion'] is Timestamp) {
+            dateB = dataB['fechaCreacion'];
+        }
 
         if (dateA == null && dateB == null) return 0;
-        if (dateA == null) return 1;
+        if (dateA == null) return 1; // Null dates go last
         if (dateB == null) return -1;
-        return dateB.compareTo(dateA);
+        return dateB.compareTo(dateA); // Descending order
       });
 
-      emit(SearchLoaded(docs));
-    } on FirebaseException catch (e) {
-      if (isClosed) return;
-      if (e.code == 'permission-denied') {
-        emit(
-          const SearchError(
-            'Error de permisos. Revisa las reglas de seguridad de Firestore.',
-          ),
-        );
-      } else {
-        emit(SearchError('Error de Firestore: ${e.message}'));
-      }
+      emit(SearchLoaded(filteredDocs));
     } catch (e) {
-      if (isClosed) return;
-      emit(SearchError('Failed to load initial publications: ${e.toString()}'));
+      if (!isClosed) {
+        emit(SearchError('Error al cargar publicaciones: $e'));
+      }
     }
   }
 
@@ -58,6 +62,7 @@ class SearchCubit extends Cubit<SearchState> {
     String? carrera,
     String? materia,
     String? transaccion,
+    String? condicion,
   }) async {
     try {
       emit(SearchLoading());
@@ -78,9 +83,17 @@ class SearchCubit extends Cubit<SearchState> {
           isEqualTo: transaccion,
         );
       }
+      if (condicion != null && condicion.isNotEmpty && condicion != 'Todos') {
+        collectionQuery = collectionQuery.where('condicion', isEqualTo: condicion);
+      }
 
       final querySnapshot = await collectionQuery.get();
-      List<QueryDocumentSnapshot> results = querySnapshot.docs;
+      
+      // Filter in memory to avoid index issues
+      List<QueryDocumentSnapshot> results = querySnapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return data['estado'] != 'Vendido';
+      }).toList();
 
       if (query != null && query.isNotEmpty) {
         String searchQuery = query.toLowerCase();
@@ -94,7 +107,14 @@ class SearchCubit extends Cubit<SearchState> {
       }
 
       if (isClosed) return;
-      emit(SearchLoaded(results));
+      emit(SearchLoaded(
+        results,
+        lastQuery: query,
+        lastCarrera: carrera,
+        lastMateria: materia,
+        lastTransaccion: transaccion,
+        lastCondicion: condicion,
+      ));
     } on FirebaseException catch (e) {
       if (isClosed) return;
       if (e.code == 'permission-denied') {

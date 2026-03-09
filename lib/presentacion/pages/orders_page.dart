@@ -87,7 +87,9 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Autor: ${order.bookAuthor}'),
-                      Text('Precio: \$${order.price.toStringAsFixed(2)}'),
+                      if (order.tipoTransaccion == 'Venta')
+                        Text('Precio: \$${order.price.toStringAsFixed(2)}'),
+                      Text('Tipo: ${order.tipoTransaccion}'),
                       Text(isBuyer ? 'Vendedor: ${order.sellerName ?? 'Desconocido'}' : 'Comprador: ${order.buyerName ?? 'Desconocido'}'),
                       Text('Estado: ${_getStatusText(order.status)}'),
                       Text('Fecha: ${_formatDate(order.createdAt)}'),
