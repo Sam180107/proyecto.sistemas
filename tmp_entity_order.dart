@@ -59,22 +59,6 @@ class BookOrder {
       'price': price,
       'tipoTransaccion': tipoTransaccion,
       'status': status,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-      'buyerName': buyerName,
-      'sellerName': sellerName,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'buyerId': buyerId,
-      'sellerId': sellerId,
-      'bookId': bookId,
-      'bookTitle': bookTitle,
-      'bookAuthor': bookAuthor,
-      'price': price,
-      'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       'buyerName': buyerName,

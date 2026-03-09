@@ -261,6 +261,8 @@ class ProductDetailPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  _buildWhatsappButton(context),
                 ],
               ),
               const SizedBox(height: 12),
@@ -302,60 +304,7 @@ class ProductDetailPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('usuarios')
-                        .doc(productData['userId'])
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      String telefonoFirebase = "";
-                      if (snapshot.hasData && snapshot.data!.exists) {
-                        final data = snapshot.data!.data() as Map<String, dynamic>;
-                        telefonoFirebase = data['telefono'] ?? "";
-                      }
-                      
-                      if (telefonoFirebase.isEmpty) {
-                         telefonoFirebase = productData['telefonoVendedor'] ?? "";
-                      }
-
-                      if (telefonoFirebase.isEmpty) return const SizedBox.shrink();
-
-                      return IconButton(
-                        icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 30),
-                        onPressed: () async {
-                          String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
-                          if (cleanPhone.startsWith('0')) {
-                            cleanPhone = '58${cleanPhone.substring(1)}';
-                          } else if (cleanPhone.length == 10 && (
-                              cleanPhone.startsWith('412') || 
-                              cleanPhone.startsWith('414') || 
-                              cleanPhone.startsWith('424') || 
-                              cleanPhone.startsWith('422'))) {
-                            cleanPhone = '58$cleanPhone';
-                          }
-
-                          final String mensaje =
-                              "Hola, estoy interesado en tu libro '${productData['titulo']}' que vi en BookSwap.";
-                          final Uri whatsappUri = Uri.parse(
-                              "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
-
-                          try {
-                            if (await canLaunchUrl(whatsappUri)) {
-                              await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('No se pudo abrir WhatsApp')),
-                              );
-                            }
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: $e')),
-                            );
-                          }
-                        },
-                      );
-                    },
-                  ),
+                  _buildWhatsappButton(context),
                 ],
               ),
             ],
@@ -414,6 +363,63 @@ class ProductDetailPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWhatsappButton(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(productData['userId'])
+          .snapshots(),
+      builder: (context, snapshot) {
+        String telefonoFirebase = "";
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          telefonoFirebase = data['telefono'] ?? "";
+        }
+        
+        if (telefonoFirebase.isEmpty) {
+            telefonoFirebase = productData['telefonoVendedor'] ?? "";
+        }
+
+        if (telefonoFirebase.isEmpty) return const SizedBox.shrink();
+
+        return IconButton(
+          icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 30),
+          onPressed: () async {
+            String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
+            if (cleanPhone.startsWith('0')) {
+              cleanPhone = '58${cleanPhone.substring(1)}';
+            } else if (cleanPhone.length == 10 && (
+                cleanPhone.startsWith('412') || 
+                cleanPhone.startsWith('414') || 
+                cleanPhone.startsWith('424') || 
+                cleanPhone.startsWith('422'))) {
+              cleanPhone = '58$cleanPhone';
+            }
+
+            final String mensaje =
+                "Hola, estoy interesado en tu libro '${productData['titulo']}' que vi en BookSwap.";
+            final Uri whatsappUri = Uri.parse(
+                "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
+
+            try {
+              if (await canLaunchUrl(whatsappUri)) {
+                await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+                );
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: $e')),
+              );
+            }
+          },
+        );
+      },
     );
   }
 }

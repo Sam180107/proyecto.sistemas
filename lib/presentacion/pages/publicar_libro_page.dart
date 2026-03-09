@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
-
+import 'package:flutter/services.dart';
 class PublicarLibroPage extends StatefulWidget {
   const PublicarLibroPage({super.key});
 
@@ -17,8 +17,32 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
   final _formKey = GlobalKey<FormState>();
   final _tituloController = TextEditingController();
   final _autorController = TextEditingController();
-  final _materiaController = TextEditingController();
   final _precioController = TextEditingController();
+  final _descripcionController = TextEditingController();
+
+  String? _carreraSeleccionada;
+  final List<String> opcionesCarrera = [
+    'Ingeniería Civil',
+    'Ingeniería Eléctrica',
+    'Ingeniería Mecánica',
+    'Ingeniería de Producción',
+    'Ingeniería Química',
+    'Ingeniería de Sistemas',
+    'TSU en Desarrollo de Sistemas Inteligentes',
+    'Ciencias Administrativas',
+    'Contaduría Pública',
+    'Economía Empresarial',
+    'Turismo Sostenible',
+    'Derecho',
+    'Estudios Liberales',
+    'Estudios Internacionales',
+    'Comunicación Social y Empresarial',
+    'Idiomas Modernos',
+    'Educación',
+    'Psicología',
+    'Matemáticas Industriales',
+    'Otra'
+  ];
 
   String _tipoTransaccion = 'Venta';
   String _categoria = 'LITERATURA';
@@ -31,8 +55,8 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
   void dispose() {
     _tituloController.dispose();
     _autorController.dispose();
-    _materiaController.dispose();
     _precioController.dispose();
+    _descripcionController.dispose();
     super.dispose();
   }
 
@@ -102,7 +126,8 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
       await FirebaseFirestore.instance.collection('libros').add({
         'titulo': _tituloController.text.trim(),
         'autor': _autorController.text.trim(),
-        'materia': _materiaController.text.trim(),
+        'materia': _carreraSeleccionada ?? 'No especificada',
+        'descripcion': _descripcionController.text.trim(),
         'precio': precio ?? 0.0,
         'tipo': _tipoTransaccion,
         'tipoTransaccion': _tipoTransaccion,
@@ -259,15 +284,31 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                           : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _materiaController,
+                    DropdownButtonFormField<String>(
+                      value: _carreraSeleccionada,
+                      isExpanded: true,
                       decoration: const InputDecoration(
-                        labelText: 'Materia / Carrera',
+                        labelText: 'Carrera',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.school),
                       ),
+                      items: opcionesCarrera
+                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                          .toList(),
+                      onChanged: (val) => setState(() => _carreraSeleccionada = val),
+                      validator: (value) => value == null || value.isEmpty ? 'Selecciona una carrera' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _descripcionController,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Descripción del producto',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.description),
+                      ),
                       validator: (value) => value == null || value.isEmpty
-                          ? 'Campo requerido'
+                          ? 'Agrega una descripción'
                           : null,
                     ),
                     const SizedBox(height: 16),
@@ -276,7 +317,10 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _precioController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                            ],
                             decoration: const InputDecoration(
                               labelText: 'Precio',
                               border: OutlineInputBorder(),
@@ -291,6 +335,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: _tipoTransaccion,
+                            isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Tipo',
                               border: OutlineInputBorder(),
@@ -315,6 +360,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: _categoria,
+                            isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Categoría',
                               border: OutlineInputBorder(),
@@ -322,10 +368,16 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                             items: [
                               'LITERATURA',
                               'INGENIERÍA',
+                              'CIENCIAS',
+                              'NEGOCIOS',
                               'DERECHO',
                               'ECONOMÍA',
+                              'PSICOLOGÍA',
+                              'MEDICINA',
+                              'ARQUITECTURA',
+                              'HUMANIDADES',
                               'OTROS',
-                            ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                            ].map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList(),
                             onChanged: (val) => setState(() => _categoria = val!),
                           ),
                         ),

@@ -37,27 +37,39 @@ class _LandingPageState extends State<LandingPage> {
   Future<void> _loadStatistics() async {
     try {
       final firestore = FirebaseFirestore.instance;
-      final usersSnapshot = await firestore.collection('users').get();
-      final materialsSnapshot = await firestore.collection('materials').get();
-      final reviewsSnapshot = await firestore.collection('reviews').get();
-      double avgRating = 0.0;
+      final usersSnapshot = await firestore.collection('usuarios').get();
+      final materialsSnapshot = await firestore.collection('libros').get();
+      final reviewsSnapshot = await firestore.collection('valoraciones').get();
+      
+      double satisfactionValue = 95.0; // valor por defecto
+      
       if (reviewsSnapshot.docs.isNotEmpty) {
         double totalRating = 0.0;
+        int count = 0;
         for (var doc in reviewsSnapshot.docs) {
-          totalRating += (doc.data()['rating'] ?? 0.0) as double;
+          final data = doc.data();
+          if (data['estrellas'] != null) {
+            totalRating += (data['estrellas'] as num).toDouble();
+            count++;
+          }
         }
-        avgRating = (totalRating / reviewsSnapshot.docs.length) * 20;
+        if (count > 0) {
+          double avgRating = totalRating / count;
+          satisfactionValue = avgRating * 20.0;
+        }
       }
 
-      setState(() {
-        totalStudents = usersSnapshot.docs.isNotEmpty
-            ? usersSnapshot.docs.length
-            : 500;
-        totalMaterials = materialsSnapshot.docs.isNotEmpty
-            ? materialsSnapshot.docs.length
-            : 1200;
-        satisfaction = avgRating > 0 ? avgRating : 95.0;
-      });
+      if (mounted) {
+        setState(() {
+          totalStudents = usersSnapshot.docs.isNotEmpty
+              ? usersSnapshot.docs.length
+              : 500;
+          totalMaterials = materialsSnapshot.docs.isNotEmpty
+              ? materialsSnapshot.docs.length
+              : 1200;
+          satisfaction = satisfactionValue;
+        });
+      }
     } catch (e) {
       print('Error cargando estadísticas: $e');
     }

@@ -46,8 +46,8 @@ class OrderCubit extends Cubit<OrderState> {
       }
 
       // Obtener nombres de comprador y vendedor
-      final buyerDoc = await _firestore.collection('users').doc(currentUser.uid).get();
-      final sellerDoc = await _firestore.collection('users').doc(sellerId).get();
+      final buyerDoc = await _firestore.collection('usuarios').doc(currentUser.uid).get();
+      final sellerDoc = await _firestore.collection('usuarios').doc(sellerId).get();
 
       String buyerName;
       if (buyerDoc.exists) {

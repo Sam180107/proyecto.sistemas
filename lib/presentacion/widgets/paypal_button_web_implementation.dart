@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_web_libraries_in_flutter, undefined_function, undefined_method, uri_does_not_exist
 import 'dart:html' as html;
-import 'dart:js'; 
 import 'dart:js_util'; 
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';

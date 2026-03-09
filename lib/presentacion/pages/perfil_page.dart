@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
@@ -330,9 +329,12 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       ),
       body: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
-          if (state is ProfileLoading)
+          if (state is ProfileLoading) {
             return const Center(child: CircularProgressIndicator());
-          if (state is ProfileError) return Center(child: Text(state.mensaje));
+          }
+          if (state is ProfileError) {
+            return Center(child: Text(state.mensaje));
+          }
 
           if (state is ProfileLoaded) {
             final userData = state.userData;

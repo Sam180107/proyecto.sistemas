@@ -36,10 +36,12 @@ class DetalleLibroPage extends StatelessWidget {
         tipoTransaccion: tipoTransaccion,
       );
 
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Solicitud de $tipoTransaccion enviada exitosamente')),
       );
     } catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al enviar solicitud: $e')),
       );

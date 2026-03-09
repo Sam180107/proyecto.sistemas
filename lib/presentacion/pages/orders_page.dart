@@ -38,12 +38,12 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mis Órdenes'),
+        title: const Text('Mis Intercambios'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Compras'),
-            Tab(text: 'Ventas'),
+            Tab(text: 'Solicitados'),
+            Tab(text: 'Solicitudes'),
           ],
         ),
       ),
@@ -70,7 +70,7 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
           if (state.orders.isEmpty) {
             return Center(
               child: Text(
-                isBuyer ? 'No has realizado ninguna compra' : 'No tienes ventas pendientes',
+                isBuyer ? 'No tienes solicitudes realizadas' : 'No tienes solicitudes pendientes',
                 style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
             );
