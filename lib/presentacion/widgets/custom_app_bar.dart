@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:unimet_marketplace/domain/cubits/cart_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/notification_cubit.dart';
 import '../../domain/cubits/profile_cubit.dart';
 import '../../domain/cubits/search_cubit.dart';
 import 'search_overlay.dart';
@@ -121,6 +122,45 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               },
             ),
           ],
+        ),
+        // Campana de notificaciones
+        BlocBuilder<NotificationCubit, NotificationState>(
+          builder: (context, notifState) {
+            final count = notifState.totalUnread;
+            return Stack(
+              children: [
+                _HoverNavItem(
+                  icon: Icons.notifications_outlined,
+                  label: 'Notificaciones',
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/notificaciones'),
+                ),
+                if (count > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                          minWidth: 16, minHeight: 16),
+                      child: Text(
+                        '$count',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         _HoverNavItem(
           icon: Icons.person_outline,

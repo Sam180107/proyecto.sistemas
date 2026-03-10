@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/entities/order.dart';
 
-class OrdersPage extends StatefulWidget {
+class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
 
   @override
-  State<OrdersPage> createState() => _OrdersPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => RatingCubit(),
+      child: const _OrdersPageContent(),
+    );
+  }
 }
 
-class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateMixin {
+class _OrdersPageContent extends StatefulWidget {
+  const _OrdersPageContent();
+
+  @override
+  State<_OrdersPageContent> createState() => _OrdersPageState();
+}
+
+class _OrdersPageState extends State<_OrdersPageContent> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -125,24 +138,101 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
         children: [
           IconButton(
             icon: const Icon(Icons.check, color: Colors.green),
-            onPressed: () => _updateOrderStatus(order.id, 'accepted'),
+            onPressed: () => _updateOrderStatus(order.id, 'accepted', null),
           ),
           IconButton(
             icon: const Icon(Icons.close, color: Colors.red),
-            onPressed: () => _updateOrderStatus(order.id, 'rejected'),
+            onPressed: () => _updateOrderStatus(order.id, 'rejected', null),
           ),
         ],
       );
     } else if (order.status == 'paid') {
       return IconButton(
         icon: const Icon(Icons.check_circle, color: Colors.blue),
-        onPressed: () => _updateOrderStatus(order.id, 'completed'),
+        onPressed: () => _mostrarDialogoValoracion(context, order.id, order.buyerId),
       );
     }
     return Text(_getStatusText(order.status));
   }
 
-  void _updateOrderStatus(String orderId, String status) {
+  void _mostrarDialogoValoracion(BuildContext context, String orderId, String otherUserId) {
+    int estrellasSeleccionadas = 0;
+    
+    // Preparar el cubit para este usuario
+    context.read<RatingCubit>().cargarValoraciones(otherUserId);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (contextDialog, setState) => AlertDialog(
+          title: const Text('¡Transacción Completada!'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('¿Cómo calificarías a este usuario?'),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return IconButton(
+                    icon: Icon(
+                      index < estrellasSeleccionadas
+                          ? Icons.star
+                          : Icons.star_border,
+                      color: Colors.amber,
+                      size: 32,
+                    ),
+                    onPressed: () {
+                      setState(() => estrellasSeleccionadas = index + 1);
+                    },
+                  );
+                }),
+              ),
+              Text(
+                estrellasSeleccionadas > 0
+                    ? '$estrellasSeleccionadas estrella${estrellasSeleccionadas > 1 ? 's' : ''}'
+                    : 'Selecciona estrellas',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext); // Omitir calificación
+                _updateOrderStatus(orderId, 'completed', null);
+              },
+              child: const Text('Omitir'),
+            ),
+            ElevatedButton(
+              onPressed: estrellasSeleccionadas > 0
+                  ? () async {
+                      final success = await context.read<RatingCubit>().enviarValoracion(estrellasSeleccionadas);
+                      if (!mounted) return;
+                      Navigator.of(dialogContext).pop();
+                      
+                      _updateOrderStatus(orderId, 'completed', null);
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            success ? '¡Valoración guardada!' : 'Error al guardar valoración',
+                          ),
+                          backgroundColor: success ? Colors.green : Colors.red,
+                        ),
+                      );
+                    }
+                  : null,
+              child: const Text('Calificar y Completar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _updateOrderStatus(String orderId, String status, BuildContext? _) {
     if (orderId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error: ID de orden inválido')),

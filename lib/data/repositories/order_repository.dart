@@ -39,13 +39,21 @@ class OrderRepository {
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    if (status == 'accepted') {
+    if (status == 'accepted' || status == 'completed' || status == 'paid') {
       final orderDoc = await _firestore.collection('orders').doc(orderId).get();
       if (orderDoc.exists) {
         final orderData = orderDoc.data()!;
         final bookId = orderData['bookId'];
         if (bookId != null && bookId.isNotEmpty) {
-          await markBookAsSold(bookId);
+          // Check if already decremented for this specific order somehow
+          final isStockDecremented = orderData['isStockDecremented'] ?? false;
+          if (!isStockDecremented) {
+            await markBookAsSold(bookId);
+            // Mark the order so we don't decrement stock multiple times for the same order
+            await _firestore.collection('orders').doc(orderId).update({
+              'isStockDecremented': true,
+            });
+          }
         }
       }
     }
@@ -53,12 +61,30 @@ class OrderRepository {
 
   Future<void> markBookAsSold(String bookId) async {
     try {
-      await _firestore.collection('libros').doc(bookId).update({
-        'estado': 'Vendido',
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final docRef = _firestore.collection('libros').doc(bookId);
+      final doc = await docRef.get();
+      if (doc.exists) {
+        final currentStock = doc.data()?['stock'] ?? 1;
+        if (currentStock > 1) {
+          await docRef.update({
+            'stock': currentStock - 1,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        } else {
+          await docRef.update({
+            'stock': 0,
+            'estado': 'Vendido',
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+      }
     } catch (e) {
-      print('Error al marcar libro como vendido: $e');
+      print('CRITICAL: Error al restar stock del libro $bookId: $e');
+      if (e.toString().contains('permission-denied')) {
+        print(
+          'AVISO: Error de permisos de Firebase al intentar descontar stock. El comprador no puede editar el libro del vendedor.',
+        );
+      }
     }
   }
 

@@ -15,6 +15,7 @@ import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/search_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/cart_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/notification_cubit.dart';
 
 // Páginas
 import 'package:unimet_marketplace/presentacion/pages/landing_page.dart';
@@ -32,6 +33,7 @@ import 'package:unimet_marketplace/presentacion/pages/gestion_publicaciones_page
 import 'package:unimet_marketplace/presentacion/pages/gestion_usuarios_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/solicitudes_carrera_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/gestion_reportes_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/notificaciones_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +70,7 @@ class MyApp extends StatelessWidget {
           BlocProvider(create: (context) => SearchCubit()),
           BlocProvider(create: (context) => OrderCubit(OrderRepository())),
           BlocProvider(create: (context) => CartCubit()),
+          BlocProvider(create: (context) => NotificationCubit()),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -99,6 +102,7 @@ class MyApp extends StatelessWidget {
             '/gestion_usuarios': (context) => const GestionUsuariosPage(),
             '/solicitudes_carrera': (context) => const SolicitudesCarreraPage(),
             '/gestion_reportes': (context) => const GestionReportesPage(),
+            '/notificaciones': (context) => const NotificacionesPage(),
           },
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:unimet_marketplace/domain/cubits/cart_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
 import 'package:unimet_marketplace/domain/entities/cart_item.dart';
 import '../widgets/paypal_button.dart';
+import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -13,11 +14,17 @@ class ProductDetailPage extends StatelessWidget {
 
   const ProductDetailPage({super.key, required this.productData});
 
-  void _solicitarLibro(BuildContext context, String price, String tipoTransaccion) async {
+  void _solicitarLibro(
+    BuildContext context,
+    String price,
+    String tipoTransaccion,
+  ) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes iniciar sesion para realizar esta accion')),
+        const SnackBar(
+          content: Text('Debes iniciar sesion para realizar esta accion'),
+        ),
       );
       return;
     }
@@ -35,17 +42,27 @@ class ProductDetailPage extends StatelessWidget {
         bookId: productData['id'] ?? '',
         bookTitle: productData['titulo'] ?? 'Sin Titulo',
         bookAuthor: productData['autor'] ?? 'Anonimo',
-        price: tipoTransaccion == 'Venta' ? (double.tryParse(price) ?? 0.0) : 0.0,
+        price: tipoTransaccion == 'Venta'
+            ? (double.tryParse(price) ?? 0.0)
+            : 0.0,
         tipoTransaccion: tipoTransaccion,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Solicitud de $tipoTransaccion enviada exitosamente. El vendedor se pondra en contacto contigo.')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Solicitud de $tipoTransaccion enviada exitosamente. El vendedor se pondra en contacto contigo.',
+            ),
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al enviar solicitud: $e')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al enviar solicitud: $e')),
+        );
+      }
     }
   }
 
@@ -56,6 +73,7 @@ class ProductDetailPage extends StatelessWidget {
       case 'Donacion':
         return Colors.green;
       case 'Venta':
+        return const Color(0xFF003870);
       default:
         return const Color(0xFF003870);
     }
@@ -119,11 +137,13 @@ class ProductDetailPage extends StatelessWidget {
                 color: Colors.black.withOpacity(0.05),
                 blurRadius: 20,
                 offset: const Offset(0, 5),
-              )
+              ),
             ],
           ),
           child: Center(
-            child: (productData['imageUrl'] != null || productData['imagen'] != null)
+            child:
+                (productData['imageUrl'] != null ||
+                    productData['imagen'] != null)
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.network(
@@ -131,9 +151,11 @@ class ProductDetailPage extends StatelessWidget {
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.book_rounded,
-                              size: 100, color: Colors.grey),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.book_rounded,
+                        size: 100,
+                        color: Colors.grey,
+                      ),
                     ),
                   )
                 : const Icon(Icons.book_rounded, size: 100, color: Colors.grey),
@@ -144,7 +166,8 @@ class ProductDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              (productData['materia'] as String? ?? 'Sin Categoria').toUpperCase(),
+              (productData['materia'] as String? ?? 'Sin Categoria')
+                  .toUpperCase(),
               style: const TextStyle(
                 color: Color(0xFF003870),
                 fontWeight: FontWeight.bold,
@@ -152,20 +175,46 @@ class ProductDetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _getStatusColor(tipoTransaccion),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                tipoTransaccion.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(tipoTransaccion),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    tipoTransaccion.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Stock: ${productData['stock'] ?? 1}',
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Text(
@@ -191,9 +240,17 @@ class ProductDetailPage extends StatelessWidget {
                   context,
                   '/perfil',
                   arguments: {
-                    'vendedor': productData['vendedor'] ?? productData['nombreVendedor'] ?? 'Vendedor',
+                    'vendedor':
+                        productData['vendedor'] ??
+                        productData['nombreVendedor'] ??
+                        'Vendedor',
                     'carrera': productData['carrera'] ?? 'Estudiante',
-                    'iniciales': (productData['vendedor'] ?? productData['nombreVendedor'] ?? 'U').toString().substring(0, 1),
+                    'iniciales':
+                        (productData['vendedor'] ??
+                                productData['nombreVendedor'] ??
+                                'U')
+                            .toString()
+                            .substring(0, 1),
                     'userId': productData['userId'],
                     'rol': 'Estudiante',
                     'isOtherUser': true,
@@ -210,7 +267,7 @@ class ProductDetailPage extends StatelessWidget {
               child: const Text(
                 "Ver Perfil del Vendedor",
                 style: TextStyle(
-                  color: Color(0xFF1E88E5),
+                  color: Color.fromARGB(255, 27, 132, 223),
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -238,7 +295,8 @@ class ProductDetailPage extends StatelessWidget {
                           author: productData['autor'] ?? 'Autor Desconocido',
                           price: double.tryParse(price) ?? 0.0,
                           sellerId: productData['userId'] ?? 'system',
-                          imageUrl: productData['imageUrl'] ?? productData['imagen'],
+                          imageUrl:
+                              productData['imageUrl'] ?? productData['imagen'],
                         );
                         context.read<CartCubit>().addItem(item);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -279,6 +337,12 @@ class ProductDetailPage extends StatelessWidget {
                       backgroundColor: Colors.green,
                     ),
                   );
+                  // Mostrar diálogo de valoración inmediatamente para el demo
+                  _mostrarDialogoValoracion(
+                    context,
+                    bookId,
+                    productData['userId'] ?? '',
+                  );
                 },
               ),
             ] else ...[
@@ -286,13 +350,23 @@ class ProductDetailPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _solicitarLibro(context, price, tipoTransaccion),
-                      icon: Icon(tipoTransaccion == 'Intercambio'
-                          ? Icons.swap_horiz
-                          : Icons.volunteer_activism),
-                      label: Text(tipoTransaccion == 'Intercambio'
-                          ? 'Solicitar Intercambio'
-                          : 'Solicitar Donacion'),
+                      onPressed: () {
+                        _solicitarLibro(context, price, tipoTransaccion);
+                        final bookId = productData['id'] ?? '';
+                        if (bookId.isNotEmpty) {
+                          context.read<OrderCubit>().markBookAsSold(bookId);
+                        }
+                      },
+                      icon: Icon(
+                        tipoTransaccion == 'Intercambio'
+                            ? Icons.swap_horiz
+                            : Icons.volunteer_activism,
+                      ),
+                      label: Text(
+                        tipoTransaccion == 'Intercambio'
+                            ? 'Solicitar Intercambio'
+                            : 'Solicitar Donacion',
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF003870),
                         foregroundColor: Colors.white,
@@ -346,10 +420,7 @@ class ProductDetailPage extends StatelessWidget {
         children: [
           const Text(
             'Descripcion del Libro',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Text(
@@ -378,9 +449,9 @@ class ProductDetailPage extends StatelessWidget {
           final data = snapshot.data!.data() as Map<String, dynamic>;
           telefonoFirebase = data['telefono'] ?? "";
         }
-        
+
         if (telefonoFirebase.isEmpty) {
-            telefonoFirebase = productData['telefonoVendedor'] ?? "";
+          telefonoFirebase = productData['telefonoVendedor'] ?? "";
         }
 
         if (telefonoFirebase.isEmpty) return const SizedBox.shrink();
@@ -388,38 +459,151 @@ class ProductDetailPage extends StatelessWidget {
         return IconButton(
           icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 30),
           onPressed: () async {
-            String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
+            String cleanPhone = telefonoFirebase.replaceAll(
+              RegExp(r'[^\d]'),
+              '',
+            );
             if (cleanPhone.startsWith('0')) {
               cleanPhone = '58${cleanPhone.substring(1)}';
-            } else if (cleanPhone.length == 10 && (
-                cleanPhone.startsWith('412') || 
-                cleanPhone.startsWith('414') || 
-                cleanPhone.startsWith('424') || 
-                cleanPhone.startsWith('422'))) {
+            } else if (cleanPhone.length == 10 &&
+                (cleanPhone.startsWith('412') ||
+                    cleanPhone.startsWith('414') ||
+                    cleanPhone.startsWith('424') ||
+                    cleanPhone.startsWith('422'))) {
               cleanPhone = '58$cleanPhone';
             }
 
             final String mensaje =
                 "Hola, estoy interesado en tu libro '${productData['titulo']}' que vi en BookSwap.";
             final Uri whatsappUri = Uri.parse(
-                "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
+              "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}",
+            );
 
             try {
               if (await canLaunchUrl(whatsappUri)) {
-                await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+                await launchUrl(
+                  whatsappUri,
+                  mode: LaunchMode.externalApplication,
                 );
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+                  );
+                }
               }
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: $e')),
-              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Error: $e')));
+              }
             }
           },
         );
       },
+    );
+  }
+
+  void _mostrarDialogoValoracion(
+    BuildContext context,
+    String bookId,
+    String sellerId,
+  ) {
+    int estrellasSeleccionadas = 0;
+
+    // Preparar el cubit para el vendedor
+    context.read<RatingCubit>().cargarValoraciones(sellerId);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (contextDialog, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            '¡Transacción Completada!',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '¿Cómo calificarías al vendedor?',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return IconButton(
+                    icon: Icon(
+                      index < estrellasSeleccionadas
+                          ? Icons.star
+                          : Icons.star_border,
+                      color: Colors.amber,
+                      size: 40,
+                    ),
+                    onPressed: () {
+                      setState(() => estrellasSeleccionadas = index + 1);
+                    },
+                  );
+                }),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                estrellasSeleccionadas > 0
+                    ? '$estrellasSeleccionadas estrella${estrellasSeleccionadas > 1 ? 's' : ''}'
+                    : 'Selecciona estrellas',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Omitir', style: TextStyle(color: Colors.grey)),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: estrellasSeleccionadas > 0
+                  ? () async {
+                      final success = await context
+                          .read<RatingCubit>()
+                          .enviarValoracion(estrellasSeleccionadas);
+                      if (context.mounted) {
+                        Navigator.of(dialogContext).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? '¡Gracias por tu valoración!'
+                                  : 'Error al guardar valoración',
+                            ),
+                            backgroundColor: success
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF003870),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Enviar Valoración'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

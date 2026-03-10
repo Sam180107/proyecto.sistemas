@@ -19,6 +19,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
   final _autorController = TextEditingController();
   final _precioController = TextEditingController();
   final _descripcionController = TextEditingController();
+  final _stockController = TextEditingController(text: '1');
 
   String? _carreraSeleccionada;
   final List<String> opcionesCarrera = [
@@ -57,6 +58,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
     _autorController.dispose();
     _precioController.dispose();
     _descripcionController.dispose();
+    _stockController.dispose();
     super.dispose();
   }
 
@@ -90,6 +92,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
       final double? precio = double.tryParse(
         _precioController.text.replaceAll(',', ''),
       );
+      final int stock = int.tryParse(_stockController.text) ?? 1;
 
       // --- SUBIDA A SUPABASE STORAGE ---
       final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -140,8 +143,9 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         'carrera': userData['carrera'] ?? 'Estudiante',
         'rol': userData['rol'] ?? 'Estudiante', // Nuevo campo
         'iniciales': iniciales,
+        'stock': stock, // Nuevo campo para inventario
         'fechaCreacion': FieldValue.serverTimestamp(),
-        'estado': 'Disponible',
+        'estado': stock > 0 ? 'Disponible' : 'Vendido',
       });
 
       if (mounted) {
@@ -401,6 +405,24 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _stockController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'Stock Disponible (Cantidad)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.inventory),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Campo requerido';
+                        if (int.tryParse(value) == null || int.parse(value) < 1) {
+                          return 'El stock debe ser al menos 1';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(

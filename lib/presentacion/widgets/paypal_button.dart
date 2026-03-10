@@ -26,9 +26,22 @@ class PaypalButton extends StatelessWidget {
       );
     }
 
-    return PaypalButtonWebImplementation(
-      amount: amount,
-      onPaymentSuccess: onPaymentSuccess,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PaypalButtonWebImplementation(
+          amount: amount,
+          onPaymentSuccess: onPaymentSuccess,
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: () => onPaymentSuccess({'status': 'COMPLETED', 'id': 'DEMO-ORDER-ID'}),
+          child: const Text(
+            'Simular Pago (Solo para Demo)',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+        ),
+      ],
     );
   }
 }
