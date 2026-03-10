@@ -5,13 +5,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 abstract class ProfileState {}
+
 class ProfileInitial extends ProfileState {}
+
 class ProfileLoading extends ProfileState {}
+
 class ProfileLoaded extends ProfileState {
   final Map<String, dynamic> userData;
   final User currentUser;
   ProfileLoaded({required this.userData, required this.currentUser});
 }
+
 class ProfileError extends ProfileState {
   final String mensaje;
   ProfileError(this.mensaje);
@@ -36,54 +40,75 @@ class ProfileCubit extends Cubit<ProfileState> {
       }
       debugPrint('ProfileCubit: User authenticated: ${user.uid}');
       _userSubscription?.cancel();
-      _userSubscription = _firestore.collection('usuarios').doc(user.uid).snapshots().listen(
-        (snapshot) {
-          debugPrint('ProfileCubit: Snapshot received for ${user.uid}, exists: ${snapshot.exists}');
-          if (snapshot.exists && snapshot.data() != null) {
-            emit(ProfileLoaded(userData: snapshot.data()!, currentUser: user));
-          } else {
-            debugPrint('ProfileCubit: User document not found for ${user.uid}. Using Auth data fallback.');
-            // Fallback: Create a temporary userData map from Auth info
-            final fallbackData = {
-              'nombre': user.displayName ?? 'Usuario',
-              'email': user.email ?? '',
-              'rol': 'Usuario', // Default role
-              'carrera': 'No especificada',
-              'telefono': '',
-            };
-            emit(ProfileLoaded(userData: fallbackData, currentUser: user));
-            
-            // Optional: Try to create the document if it's missing (Self-healing)
-            _firestore.collection('usuarios').doc(user.uid).set(
-              {...fallbackData, 'fechaRegistro': FieldValue.serverTimestamp()},
-              SetOptions(merge: true),
-            ).catchError((e) => debugPrint("Error creating missing profile: $e"));
-          }
-        },
-        onError: (error) {
-          debugPrint('ProfileCubit: Error fetching user data: $error');
-          emit(ProfileError("Error de red: $error"));
-        },
-      );
+      _userSubscription = _firestore
+          .collection('usuarios')
+          .doc(user.uid)
+          .snapshots()
+          .listen(
+            (snapshot) {
+              debugPrint(
+                'ProfileCubit: Snapshot received for ${user.uid}, exists: ${snapshot.exists}',
+              );
+              if (snapshot.exists && snapshot.data() != null) {
+                emit(
+                  ProfileLoaded(userData: snapshot.data()!, currentUser: user),
+                );
+              } else {
+                debugPrint(
+                  'ProfileCubit: User document not found for ${user.uid}. Using Auth data fallback.',
+                );
+                // Fallback: Create a temporary userData map from Auth info
+                final fallbackData = {
+                  'nombre': user.displayName ?? 'Usuario',
+                  'email': user.email ?? '',
+                  'rol': 'Usuario', // Default role
+                  'carrera': 'No especificada',
+                  'telefono': '',
+                };
+                emit(ProfileLoaded(userData: fallbackData, currentUser: user));
+
+                // Optional: Try to create the document if it's missing (Self-healing)
+                _firestore
+                    .collection('usuarios')
+                    .doc(user.uid)
+                    .set({
+                      ...fallbackData,
+                      'fechaRegistro': FieldValue.serverTimestamp(),
+                    }, SetOptions(merge: true))
+                    .catchError(
+                      (e) => debugPrint("Error creating missing profile: $e"),
+                    );
+              }
+            },
+            onError: (error) {
+              debugPrint('ProfileCubit: Error fetching user data: $error');
+              emit(ProfileError("Error de red: $error"));
+            },
+          );
     });
   }
 
   Future<bool> actualizarTelefono(String nuevoTelefono) async {
-  try {
-    // Limpiamos un poco el input antes de guardarlo para que sea estándar
-    String tlfLimpio = nuevoTelefono.trim();
-    
-    await _firestore
-        .collection('usuarios')
-        .doc(_auth.currentUser!.uid)
-        .update({'telefono': tlfLimpio}); // Asegúrate que en Firestore la llave sea 'telefono'
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
+    try {
+      // Limpiamos un poco el input antes de guardarlo para que sea estándar
+      String tlfLimpio = nuevoTelefono.trim();
 
-  Future<bool> solicitarCambioCarrera(String carreraActual, String nuevaCarrera) async {
+      await _firestore
+          .collection('usuarios')
+          .doc(_auth.currentUser!.uid)
+          .update({
+            'telefono': tlfLimpio,
+          }); // Asegúrate que en Firestore la llave sea 'telefono'
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> solicitarCambioCarrera(
+    String carreraActual,
+    String nuevaCarrera,
+  ) async {
     try {
       await _firestore.collection('solicitudes_carrera').add({
         'uid': _auth.currentUser!.uid,
@@ -94,29 +119,40 @@ class ProfileCubit extends Cubit<ProfileState> {
         'fecha_solicitud': FieldValue.serverTimestamp(),
       });
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> actualizarNombre(String nuevoNombre) async {
     try {
       await _auth.currentUser!.updateDisplayName(nuevoNombre);
-      await _firestore.collection('usuarios').doc(_auth.currentUser!.uid).update({'nombre': nuevoNombre});
+      await _firestore
+          .collection('usuarios')
+          .doc(_auth.currentUser!.uid)
+          .update({'nombre': nuevoNombre});
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> enviarCorreoPassword() async {
     try {
       await _auth.sendPasswordResetEmail(email: _auth.currentUser!.email!);
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> eliminarCuenta() async {
     try {
       await _auth.currentUser!.delete();
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<void> cerrarSesion() async {

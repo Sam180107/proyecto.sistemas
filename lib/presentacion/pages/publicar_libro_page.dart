@@ -7,7 +7,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 class PublicarLibroPage extends StatefulWidget {
-  const PublicarLibroPage({super.key});
+  final Map<String, dynamic>? bookData;
+  final String? bookId;
+
+  const PublicarLibroPage({super.key, this.bookData, this.bookId});
 
   @override
   State<PublicarLibroPage> createState() => _PublicarLibroPageState();
@@ -15,11 +18,26 @@ class PublicarLibroPage extends StatefulWidget {
 
 class _PublicarLibroPageState extends State<PublicarLibroPage> {
   final _formKey = GlobalKey<FormState>();
-  final _tituloController = TextEditingController();
-  final _autorController = TextEditingController();
-  final _precioController = TextEditingController();
-  final _descripcionController = TextEditingController();
-  final _stockController = TextEditingController(text: '1');
+  late TextEditingController _tituloController;
+  late TextEditingController _autorController;
+  late TextEditingController _precioController;
+  late TextEditingController _descripcionController;
+  late TextEditingController _stockController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tituloController = TextEditingController(text: widget.bookData?['titulo'] ?? '');
+    _autorController = TextEditingController(text: widget.bookData?['autor'] ?? '');
+    _precioController = TextEditingController(text: widget.bookData?['precio']?.toString() ?? '');
+    _descripcionController = TextEditingController(text: widget.bookData?['descripcion'] ?? '');
+    _stockController = TextEditingController(text: (widget.bookData?['stock'] ?? '1').toString());
+    
+    _tipoTransaccion = widget.bookData?['tipoTransaccion'] ?? 'Venta';
+    _categoria = widget.bookData?['categoria'] ?? 'LITERATURA';
+    _estadoLibro = widget.bookData?['condicion'] ?? 'Usado';
+    _carreraSeleccionada = widget.bookData?['materia'];
+  }
 
   String? _carreraSeleccionada;
   final List<String> opcionesCarrera = [
@@ -65,7 +83,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
   Future<void> _publicarLibro() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedImage == null) {
+    if (_selectedImage == null && widget.bookId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, selecciona una imagen para el libro'),
@@ -82,7 +100,6 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         throw Exception('Debes iniciar sesión para publicar');
       }
 
-      // Obtener datos del perfil del usuario
       final userDoc = await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
       if (!userDoc.exists) {
         throw Exception('Perfil de usuario no encontrado. Completa tu perfil primero.');
@@ -94,39 +111,40 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
       );
       final int stock = int.tryParse(_stockController.text) ?? 1;
 
-      // --- SUBIDA A SUPABASE STORAGE ---
-      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final supabase = Supabase.instance.client;
+      String imageUrl = widget.bookData?['imageUrl'] ?? '';
 
-      if (kIsWeb) {
-        final bytes = await _selectedImage!.readAsBytes();
-        await supabase.storage
+      if (_selectedImage != null) {
+        final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final supabase = Supabase.instance.client;
+
+        if (kIsWeb) {
+          final bytes = await _selectedImage!.readAsBytes();
+          await supabase.storage
+              .from('libros_imagenes')
+              .uploadBinary(
+                fileName,
+                bytes,
+                fileOptions: const FileOptions(contentType: 'image/jpeg'),
+              );
+        } else {
+          await supabase.storage
+              .from('libros_imagenes')
+              .upload(
+                fileName,
+                File(_selectedImage!.path),
+                fileOptions: const FileOptions(contentType: 'image/jpeg'),
+              );
+        }
+
+        imageUrl = supabase.storage
             .from('libros_imagenes')
-            .uploadBinary(
-              fileName,
-              bytes,
-              fileOptions: const FileOptions(contentType: 'image/jpeg'),
-            );
-      } else {
-        await supabase.storage
-            .from('libros_imagenes')
-            .upload(
-              fileName,
-              File(_selectedImage!.path),
-              fileOptions: const FileOptions(contentType: 'image/jpeg'),
-            );
+            .getPublicUrl(fileName);
       }
 
-      final String imageUrl = supabase.storage
-          .from('libros_imagenes')
-          .getPublicUrl(fileName);
-      // --- FIN SUBIDA ---
-
-      // Generar iniciales del nombre
       String nombre = userData['nombre'] ?? 'Usuario';
       String iniciales = nombre.isNotEmpty ? nombre.split(' ').map((e) => e[0]).take(2).join('').toUpperCase() : 'UN';
 
-      await FirebaseFirestore.instance.collection('libros').add({
+      final materialData = {
         'titulo': _tituloController.text.trim(),
         'autor': _autorController.text.trim(),
         'materia': _carreraSeleccionada ?? 'No especificada',
@@ -136,29 +154,36 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         'tipoTransaccion': _tipoTransaccion,
         'categoria': _categoria,
         'condicion': _estadoLibro,
-        'imageUrl': imageUrl, // Guardamos la URL de la imagen
+        'imageUrl': imageUrl,
         'userEmail': user.email,
         'userId': user.uid,
         'vendedor': nombre,
         'carrera': userData['carrera'] ?? 'Estudiante',
-        'rol': userData['rol'] ?? 'Estudiante', // Nuevo campo
+        'rol': userData['rol'] ?? 'Estudiante',
         'iniciales': iniciales,
-        'stock': stock, // Nuevo campo para inventario
-        'fechaCreacion': FieldValue.serverTimestamp(),
+        'stock': stock,
+        'updatedAt': FieldValue.serverTimestamp(),
         'estado': stock > 0 ? 'Disponible' : 'Vendido',
-      });
+      };
+
+      if (widget.bookId != null) {
+        await FirebaseFirestore.instance.collection('libros').doc(widget.bookId).update(materialData);
+      } else {
+        materialData['fechaCreacion'] = FieldValue.serverTimestamp();
+        await FirebaseFirestore.instance.collection('libros').add(materialData);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Libro publicado con éxito!')),
+          SnackBar(content: Text(widget.bookId != null ? '¡Publicación actualizada!' : '¡Libro publicado con éxito!')),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error al publicar: $e')));
+        ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -241,9 +266,14 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                                               as ImageProvider,
                                     fit: BoxFit.cover,
                                   )
-                                : null,
+                                : (widget.bookData?['imageUrl'] != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(widget.bookData!['imageUrl']),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null),
                           ),
-                          child: _selectedImage == null
+                          child: _selectedImage == null && widget.bookData?['imageUrl'] == null
                               ? const Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
