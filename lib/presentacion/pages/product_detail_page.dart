@@ -97,6 +97,14 @@ class ProductDetailPage extends StatelessWidget {
         title: Text(productData['titulo'] ?? 'Detalles del Producto'),
         backgroundColor: Colors.white,
         elevation: 1,
+        actions: [
+          if (productData['userId'] != FirebaseAuth.instance.currentUser?.uid)
+            IconButton(
+              onPressed: () => _mostrarDialogoReporte(context),
+              icon: const Icon(Icons.report_problem_outlined, color: Colors.red),
+              tooltip: 'Reportar Publicación',
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -345,6 +353,41 @@ class ProductDetailPage extends StatelessWidget {
                   );
                 },
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Simulando proceso de transacción...'),
+                        backgroundColor: Colors.blue,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    Future.delayed(const Duration(seconds: 2), () {
+                      if (context.mounted) {
+                        _mostrarDialogoValoracion(
+                          context,
+                          productData['id'] ?? '',
+                          productData['userId'] ?? '',
+                        );
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.shopping_bag_outlined, color: Colors.blue),
+                  label: const Text('Simular Compra',
+                      style: TextStyle(
+                          color: Colors.blue, fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: Colors.blue, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
             ] else ...[
               Row(
                 children: [
@@ -352,10 +395,6 @@ class ProductDetailPage extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         _solicitarLibro(context, price, tipoTransaccion);
-                        final bookId = productData['id'] ?? '';
-                        if (bookId.isNotEmpty) {
-                          context.read<OrderCubit>().markBookAsSold(bookId);
-                        }
                       },
                       icon: Icon(
                         tipoTransaccion == 'Intercambio'
@@ -502,6 +541,102 @@ class ProductDetailPage extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  void _mostrarDialogoReporte(BuildContext context) {
+    String motivoSeleccionado = '';
+    final TextEditingController motivoController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.report_problem, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Reportar Publicación'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('¿Cuál es el motivo del reporte?'),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Contenido inapropiado', child: Text('Contenido inapropiado')),
+                      DropdownMenuItem(value: 'Información falsa/engañosa', child: Text('Información falsa/engañosa')),
+                      DropdownMenuItem(value: 'No cumple con las reglas institucionales', child: Text('No cumple reglas institucionales')),
+                      DropdownMenuItem(value: 'Otro', child: Text('Otro')),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        motivoSeleccionado = val ?? '';
+                      });
+                    },
+                    hint: const Text('Seleccionar motivo'),
+                  ),
+                  if (motivoSeleccionado == 'Otro') ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: motivoController,
+                      decoration: const InputDecoration(labelText: 'Especificar motivo', border: OutlineInputBorder()),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+              ElevatedButton(
+                onPressed: () async {
+                  if (motivoSeleccionado.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, selecciona un motivo')));
+                    return;
+                  }
+                  final motivoFinal = motivoSeleccionado == 'Otro' ? motivoController.text : motivoSeleccionado;
+                  if (motivoFinal.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, especifica el motivo')));
+                    return;
+                  }
+                  try {
+                    final currUser = FirebaseAuth.instance.currentUser;
+                    await FirebaseFirestore.instance.collection('reportes').add({
+                      'estado': 'Pendiente',
+                      'motivo': motivoFinal,
+                      'publicacionId': productData['id'],
+                      'tituloPublicacion': productData['titulo'],
+                      'vendedorId': productData['userId'],
+                      'reportadoPor': currUser?.email ?? 'Anónimo',
+                      'fechaReporte': FieldValue.serverTimestamp(),
+                      'tipo': 'Publicacion',
+                    });
+                    if (context.mounted) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reporte enviado con éxito'), backgroundColor: Colors.green));
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al enviar reporte: $e'), backgroundColor: Colors.red));
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Enviar Reporte', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 

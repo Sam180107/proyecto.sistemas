@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/cubits/search_cubit.dart';
 import '../widgets/custom_app_bar.dart';
 import 'product_detail_page.dart';
@@ -171,6 +173,25 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (data['userId'] != FirebaseAuth.instance.currentUser?.uid)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.report_problem_outlined,
+                            color: Colors.red, size: 18),
+                        onPressed: () => _mostrarDialogoReporte(context, data),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(4),
+                        tooltip: 'Reportar',
+                      ),
+                    ),
+                  ),
               ],
             ),
             Padding(
@@ -225,6 +246,101 @@ class HomePage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+  void _mostrarDialogoReporte(BuildContext context, Map<String, dynamic> bookData) {
+    String motivoSeleccionado = '';
+    final TextEditingController motivoController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.report_problem, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Reportar Publicación'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('¿Cuál es el motivo del reporte?'),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Contenido inapropiado', child: Text('Contenido inapropiado')),
+                      DropdownMenuItem(value: 'Información falsa/engañosa', child: Text('Información falsa/engañosa')),
+                      DropdownMenuItem(value: 'No cumple con las reglas institucionales', child: Text('No cumple reglas institucionales')),
+                      DropdownMenuItem(value: 'Otro', child: Text('Otro')),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        motivoSeleccionado = val ?? '';
+                      });
+                    },
+                    hint: const Text('Seleccionar motivo'),
+                  ),
+                  if (motivoSeleccionado == 'Otro') ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: motivoController,
+                      decoration: const InputDecoration(labelText: 'Especificar motivo', border: OutlineInputBorder()),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+              ElevatedButton(
+                onPressed: () async {
+                  if (motivoSeleccionado.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, selecciona un motivo')));
+                    return;
+                  }
+                  final motivoFinal = motivoSeleccionado == 'Otro' ? motivoController.text : motivoSeleccionado;
+                  if (motivoFinal.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, especifica el motivo')));
+                    return;
+                  }
+                  try {
+                    final currUser = FirebaseAuth.instance.currentUser;
+                    await FirebaseFirestore.instance.collection('reportes').add({
+                      'estado': 'Pendiente',
+                      'motivo': motivoFinal,
+                      'publicacionId': bookData['id'],
+                      'tituloPublicacion': bookData['titulo'],
+                      'vendedorId': bookData['userId'],
+                      'reportadoPor': currUser?.email ?? 'Anónimo',
+                      'fechaReporte': FieldValue.serverTimestamp(),
+                      'tipo': 'Publicacion',
+                    });
+                    if (context.mounted) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reporte enviado con éxito'), backgroundColor: Colors.green));
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al enviar reporte: $e'), backgroundColor: Colors.red));
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Enviar Reporte', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

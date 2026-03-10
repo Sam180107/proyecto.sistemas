@@ -130,6 +130,93 @@ class _GestionReportesPageState extends State<GestionReportesPage> {
     }
   }
 
+  Future<void> _congelarPublicacion(String docId, Map<String, dynamic> data) async {
+    final referenciaId = data['referencia_id'] as String?;
+    
+    if (referenciaId == null || referenciaId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El reporte no tiene un ID de referencia válido para congelar.')),
+      );
+      return;
+    }
+
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.ac_unit, color: Colors.blue, size: 28),
+            const SizedBox(width: 8),
+            Text('Congelar Publicación', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          '¿Estás seguro de congelar esta publicación? Se ocultará para todos los usuarios.',
+          style: GoogleFonts.inter(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancelar', style: GoogleFonts.inter(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text('Congelar', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado == true) {
+      try {
+        // Congelar la publicacion
+        await _firestore.collection('libros').doc(referenciaId).update({
+          'estado': 'Congelado',
+        });
+
+        // Notificar al usuario (FORCE EDIT)
+        final targetUserId = data['creador_elemento_id'] as String?;
+        if (targetUserId != null && targetUserId.isNotEmpty) {
+          await _firestore.collection('notificaciones').add({
+            'targetUserId': targetUserId,
+            'titulo': 'Publicación Congelada',
+            'mensaje': 'Tu publicación "${data['elemento_reportado']}" ha sido congelada por un administrador. Debes editarla para reactivarla.',
+            'fecha': FieldValue.serverTimestamp(),
+            'leido': false,
+            'tipo': 'admin_report',
+          });
+        }
+
+        // Marcar reporte como resuelto
+        await _firestore.collection('reportes').doc(docId).update({
+          'estado': 'Resuelto',
+          'fecha_resolucion': FieldValue.serverTimestamp(),
+          'accion_tomada': 'Publicación Congelada',
+        });
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Publicación congelada correctamente.'),
+            backgroundColor: Colors.blue,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al congelar: $e'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -380,6 +467,19 @@ class _GestionReportesPageState extends State<GestionReportesPage> {
           // Botones
           if (estado == 'Pendiente') ...[
             const SizedBox(width: 12),
+            if (tipo.toLowerCase() == 'publicacion' || tipo.toLowerCase() == 'publicación')
+              IconButton(
+                onPressed: () => _congelarPublicacion(docId, data),
+                icon: const Icon(Icons.ac_unit),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFE3F2FD),
+                  foregroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.all(12),
+                ),
+                tooltip: 'Congelar Publicación',
+              ),
+            const SizedBox(width: 8),
             IconButton(
               onPressed: () => _resolverReporte(docId, data),
               icon: const Icon(Icons.check_circle_outline),
@@ -389,7 +489,7 @@ class _GestionReportesPageState extends State<GestionReportesPage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.all(12),
               ),
-              tooltip: 'Resolver',
+              tooltip: 'Resolver (Sin acción)',
             ),
             const SizedBox(width: 8),
             IconButton(

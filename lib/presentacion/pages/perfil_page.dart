@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'perfil_admin_page.dart';
+import 'publicar_libro_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 
@@ -397,6 +399,8 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                   ),
                   const SizedBox(height: 30),
                   _buildSettingsList(userData),
+                  const SizedBox(height: 30),
+                  _buildPublicationsSection(userAuth.uid),
                 ],
               ),
             );
@@ -584,6 +588,8 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                       _buildRealStatCards(userId),
                       const SizedBox(height: 20),
                       _buildReputationCard(),
+                      const SizedBox(height: 20),
+                      _buildPublicationsSection(userId),
                     ],
                   ),
                 );
@@ -1014,6 +1020,335 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
           borderRadius: BorderRadius.circular(5),
         ),
       ],
+    );
+  }
+
+  Widget _buildPublicationsSection(String sellerId) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('libros')
+          .where('userId', isEqualTo: sellerId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Text('Error cargando publicaciones: ${snapshot.error}');
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Text(
+                'Este usuario no tiene publicaciones.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            ),
+          );
+        }
+
+        final isOwner = FirebaseAuth.instance.currentUser?.uid == sellerId;
+        
+        final docs = snapshot.data!.docs.where((doc) {
+           final data = doc.data() as Map<String, dynamic>;
+           if (isOwner) {
+             return data['estado'] != 'Eliminado';
+           }
+           return data['estado'] == 'Disponible';
+        }).toList();
+
+        if (docs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isOwner ? "Nuestras Publicaciones" : "Publicaciones del Vendedor",
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.70,
+              ),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final doc = docs[index];
+                final data = doc.data() as Map<String, dynamic>;
+                data['id'] = doc.id;
+                return _buildMiniBookCard(context, data, isOwner);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMiniBookCard(BuildContext context, Map<String, dynamic> data, bool isOwner) {
+    bool isFrozen = data['estado'] == 'Congelado';
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/product_detail', arguments: data);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: isFrozen ? Border.all(color: Colors.blue, width: 2) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
+                    child: data['imageUrl'] != null || data['imagen'] != null
+                        ? Image.network(
+                            data['imageUrl'] ?? data['imagen'],
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.book, size: 40, color: Colors.grey),
+                          )
+                        : Container(
+                            color: Colors.grey[200],
+                            width: double.infinity,
+                            child: const Icon(Icons.book, size: 40, color: Colors.grey),
+                          ),
+                  ),
+                  if (isFrozen)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.white.withOpacity(0.7),
+                        child: const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.ac_unit, color: Colors.blue, size: 30),
+                              Text(
+                                'CONGELADO',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  backgroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (!isOwner && !isFrozen)
+                    Positioned(
+                      top: 5,
+                      right: 5,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.8),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.report_problem_outlined,
+                              color: Colors.red, size: 18),
+                          onPressed: () => _mostrarDialogoReporte(context, data),
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(4),
+                          tooltip: 'Reportar',
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data['titulo'] ?? 'Sin título',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Builder(
+                    builder: (context) {
+                      final rawPrice = data['precio'];
+                      String price = '0.00';
+                      if (rawPrice != null) {
+                        if (rawPrice is num) {
+                          price = rawPrice.toStringAsFixed(2);
+                        } else if (rawPrice is String) {
+                          price = double.tryParse(rawPrice)?.toStringAsFixed(2) ?? rawPrice;
+                        }
+                      }
+                      return Text(
+                        "\$ $price",
+                        style: const TextStyle(
+                          color: Color(0xFF003870),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      );
+                    },
+                  ),
+                  if (isOwner && isFrozen)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PublicarLibroPage(
+                                      bookData: data,
+                                      bookId: data['id'],
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                side: const BorderSide(color: Colors.blue),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                              child: const Text('Reactivar (Editar)', style: TextStyle(fontSize: 10)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  void _mostrarDialogoReporte(BuildContext context, Map<String, dynamic> bookData) {
+    String motivoSeleccionado = '';
+    final TextEditingController motivoController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.report_problem, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Reportar Publicación'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('¿Cuál es el motivo del reporte?'),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Contenido inapropiado', child: Text('Contenido inapropiado')),
+                      DropdownMenuItem(value: 'Información falsa/engañosa', child: Text('Información falsa/engañosa')),
+                      DropdownMenuItem(value: 'No cumple con las reglas institucionales', child: Text('No cumple reglas institucionales')),
+                      DropdownMenuItem(value: 'Otro', child: Text('Otro')),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        motivoSeleccionado = val ?? '';
+                      });
+                    },
+                    hint: const Text('Seleccionar motivo'),
+                  ),
+                  if (motivoSeleccionado == 'Otro') ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: motivoController,
+                      decoration: const InputDecoration(labelText: 'Especificar motivo', border: OutlineInputBorder()),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+              ElevatedButton(
+                onPressed: () async {
+                  if (motivoSeleccionado.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, selecciona un motivo')));
+                    return;
+                  }
+                  final motivoFinal = motivoSeleccionado == 'Otro' ? motivoController.text : motivoSeleccionado;
+                  if (motivoFinal.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, especifica el motivo')));
+                    return;
+                  }
+                  try {
+                    final currUser = FirebaseAuth.instance.currentUser;
+                    await FirebaseFirestore.instance.collection('reportes').add({
+                      'estado': 'Pendiente',
+                      'motivo': motivoFinal,
+                      'publicacionId': bookData['id'],
+                      'tituloPublicacion': bookData['titulo'],
+                      'vendedorId': bookData['userId'],
+                      'reportadoPor': currUser?.email ?? 'Anónimo',
+                      'fechaReporte': FieldValue.serverTimestamp(),
+                      'tipo': 'Publicacion',
+                    });
+                    if (context.mounted) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reporte enviado con éxito'), backgroundColor: Colors.green));
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al enviar reporte: $e'), backgroundColor: Colors.red));
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Enviar Reporte', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
