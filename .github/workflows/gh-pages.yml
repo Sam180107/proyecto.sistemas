@@ -1,0 +1,33 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - desarrollo # Cambia esto si tu rama principal es diferente
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x' # Asegúrate de usar la versión que prefieras
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Web
+        # IMPORTANTE: Reemplaza /nombre-del-repo/ con el nombre de tu repositorio de GitHub
+        # Ejemplo: flutter build web --base-href "/proyecto.sistemas/"
+        run: flutter build web --base-href "/proyecto.sistemas/"
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build/web
+          branch: gh-pages
