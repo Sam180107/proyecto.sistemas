@@ -16,7 +16,6 @@ class _PerfilAdminPageState extends State<PerfilAdminPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   int _totalSolicitudes = 0;
-  int _totalReportes = 0;
   int _totalLibrosPendientes = 0;
   bool _isLoadingMetrics = true;
 
@@ -32,16 +31,11 @@ class _PerfilAdminPageState extends State<PerfilAdminPage> {
           .collection('solicitudes_carrera')
           .where('estado', isEqualTo: 'Pendiente')
           .get();
-      final reportesSnapshot = await _firestore
-          .collection('reportes')
-          .where('estado', isEqualTo: 'Pendiente')
-          .get();
       final librosSnapshot = await _firestore.collection('libros').get();
 
       if (!mounted) return;
       setState(() {
         _totalSolicitudes = solicitudesSnapshot.docs.length;
-        _totalReportes = reportesSnapshot.docs.length;
         _totalLibrosPendientes = librosSnapshot.docs.length;
         _isLoadingMetrics = false;
       });
@@ -348,14 +342,6 @@ class _PerfilAdminPageState extends State<PerfilAdminPage> {
               "Cambios de Carrera",
               Colors.orange,
               Icons.assignment_ind_outlined,
-            ),
-            const SizedBox(width: 16),
-            _adminStatCard(
-              _isLoadingMetrics ? '...' : _totalReportes.toString(),
-              "REPORTES",
-              "Denuncias Pendientes",
-              Colors.redAccent,
-              Icons.flag_outlined,
             ),
             const SizedBox(width: 16),
             _adminStatCard(

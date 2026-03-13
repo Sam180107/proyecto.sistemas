@@ -17,10 +17,12 @@ class HomePage extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFFF2F4F7),
         appBar: const CustomAppBar(),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
@@ -67,7 +69,12 @@ class HomePage extends StatelessWidget {
                                 ),
                             itemCount: state.results.length,
                             itemBuilder: (context, index) {
-                              return _BookCard(bookData: state.results[index]);
+                              final doc =
+                                  state.results[index] as DocumentSnapshot;
+                              final data = doc.data() as Map<String, dynamic>;
+                              final bookData = Map<String, dynamic>.from(data);
+                              bookData['id'] = doc.id;
+                              return _BookCard(bookData: bookData);
                             },
                           );
                         },
@@ -81,6 +88,17 @@ class HomePage extends StatelessWidget {
               ],
             ),
           ),
+        ),
+            Positioned(
+              top: 10,
+              right: 16,
+              child: FloatingActionButton(
+                backgroundColor: Colors.white,
+                onPressed: () => Navigator.pushNamed(context, '/favorites'),
+                child: const Icon(Icons.favorite, color: Colors.red),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -102,6 +120,8 @@ class _BookCardState extends State<_BookCard> {
   @override
   Widget build(BuildContext context) {
     final String libroId = widget.bookData['id'] ?? '';
+    final String? imageUrl =
+        widget.bookData['imageUrl'] ?? widget.bookData['imagen'];
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -113,7 +133,7 @@ class _BookCardState extends State<_BookCard> {
           onTap: () {
             Navigator.pushNamed(
               context,
-              '/detalle',
+              '/detalle_libro',
               arguments: widget.bookData,
             );
           },
@@ -142,21 +162,21 @@ class _BookCardState extends State<_BookCard> {
                             top: Radius.circular(20),
                           ),
                           child:
-                              (widget.bookData['imagen'] != null &&
-                                  widget.bookData['imagen']!
+                              (imageUrl != null &&
+                                  imageUrl
                                       .toString()
                                       .startsWith('http'))
                               ? Image.network(
-                                  widget.bookData['imagen']!,
+                                  imageUrl,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
                                       const Center(
                                         child: Icon(Icons.broken_image),
                                       ),
                                 )
-                              : (widget.bookData['imagen'] != null)
+                              : (imageUrl != null)
                               ? Image.asset(
-                                  widget.bookData['imagen']!,
+                                  imageUrl,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
                                       const Center(
@@ -173,6 +193,19 @@ class _BookCardState extends State<_BookCard> {
                         right: 10,
                         child: Row(
                           children: [
+                            _HoverIconButton(
+                              icon: Icons.share_outlined,
+                              onPressed: () {
+                                final titulo =
+                                    widget.bookData['titulo'] ??
+                                    'Material Académico';
+                                final precio = widget.bookData['precio'] ?? '0';
+                                Share.share(
+                                  '¡Mira este libro en BookSwap! "$titulo" por $precio.',
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
                             StreamBuilder<DocumentSnapshot>(
                               stream: FirebaseFirestore.instance
                                   .collection('usuarios')
@@ -195,19 +228,6 @@ class _BookCardState extends State<_BookCard> {
                                       esFavorito,
                                     );
                                   },
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            _HoverIconButton(
-                              icon: Icons.share_outlined,
-                              onPressed: () {
-                                final titulo =
-                                    widget.bookData['titulo'] ??
-                                    'Material Académico';
-                                final precio = widget.bookData['precio'] ?? '0';
-                                Share.share(
-                                  '¡Mira este libro en BookSwap! "$titulo" por $precio.',
                                 );
                               },
                             ),
@@ -260,21 +280,9 @@ class _BookCardState extends State<_BookCard> {
                                 color: Color(0xFF003870),
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.report_gmailerrorred_outlined,
-                                size: 18,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => _mostrarDialogoReporte(
-                                context,
-                                widget.bookData,
-                              ),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
                           ],
                         ),
+
                       ],
                     ),
                   ),
@@ -287,150 +295,6 @@ class _BookCardState extends State<_BookCard> {
     );
   }
 
-  void _mostrarDialogoReporte(
-    BuildContext context,
-    Map<String, dynamic> bookData,
-  ) {
-    String motivoSeleccionado = '';
-    final TextEditingController motivoController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.report_problem, color: Colors.red),
-                SizedBox(width: 8),
-                Text('Reportar Publicación'),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('¿Cuál es el motivo del reporte?'),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Contenido inapropiado',
-                        child: Text('Contenido inapropiado'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Información falsa/engañosa',
-                        child: Text('Información falsa/engañosa'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'No cumple con las reglas institucionales',
-                        child: Text('No cumple reglas institucionales'),
-                      ),
-                      DropdownMenuItem(value: 'Otro', child: Text('Otro')),
-                    ],
-                    onChanged: (val) {
-                      setState(() {
-                        motivoSeleccionado = val ?? '';
-                      });
-                    },
-                    hint: const Text('Seleccionar motivo'),
-                  ),
-                  if (motivoSeleccionado == 'Otro') ...[
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: motivoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Especificar motivo',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 2,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text(
-                  'Cancelar',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (motivoSeleccionado.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Por favor, selecciona un motivo'),
-                      ),
-                    );
-                    return;
-                  }
-                  final motivoFinal = motivoSeleccionado == 'Otro'
-                      ? motivoController.text
-                      : motivoSeleccionado;
-                  if (motivoFinal.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Por favor, especifica el motivo'),
-                      ),
-                    );
-                    return;
-                  }
-                  try {
-                    final currUser = FirebaseAuth.instance.currentUser;
-                    await FirebaseFirestore.instance
-                        .collection('reportes')
-                        .add({
-                          'estado': 'Pendiente',
-                          'motivo': motivoFinal,
-                          'publicacionId': bookData['id'],
-                          'tituloPublicacion': bookData['titulo'],
-                          'vendedorId': bookData['userId'],
-                          'reportadoPor': currUser?.email ?? 'Anónimo',
-                          'fechaReporte': FieldValue.serverTimestamp(),
-                          'tipo': 'Publicacion',
-                        });
-                    if (context.mounted) {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Reporte enviado con éxito'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al enviar reporte: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text(
-                  'Enviar Reporte',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
 }
 
 class _HoverIconButton extends StatefulWidget {

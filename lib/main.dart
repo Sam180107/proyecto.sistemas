@@ -32,8 +32,8 @@ import 'package:unimet_marketplace/presentacion/pages/orders_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/gestion_publicaciones_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/gestion_usuarios_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/solicitudes_carrera_page.dart';
-import 'package:unimet_marketplace/presentacion/pages/gestion_reportes_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/notificaciones_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/favorites_page.dart';
 import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
 
 void main() async {
@@ -96,6 +96,7 @@ class MyApp extends StatelessWidget {
             '/perfil_admin': (context) => const PerfilAdminPage(),
             '/perfil': (context) => const PerfilPage(),
             '/cart': (context) => const CartPage(),
+            '/favorites': (context) => const FavoritesPage(),
             '/detalle_libro': (context) => const DetalleLibroPage(),
             '/orders': (context) => const OrdersPage(),
             '/payment': (context) => const PaymentPage(),
@@ -103,7 +104,6 @@ class MyApp extends StatelessWidget {
                 const GestionPublicacionesPage(),
             '/gestion_usuarios': (context) => const GestionUsuariosPage(),
             '/solicitudes_carrera': (context) => const SolicitudesCarreraPage(),
-            '/gestion_reportes': (context) => const GestionReportesPage(),
             '/notificaciones': (context) => const NotificacionesPage(),
           },
         ),

@@ -69,6 +69,7 @@ class DetalleLibroPage extends StatelessWidget {
       );
     }
     final arguments = args;
+    final String? imageUrl = arguments['imageUrl'] ?? arguments['imagen'];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<RatingCubit>().cargarValoraciones(arguments['userId']);
@@ -84,7 +85,7 @@ class DetalleLibroPage extends StatelessWidget {
                 _buildHeader(
                   context,
                   arguments['precio'],
-                  arguments['imagen'],
+                  imageUrl,
                   arguments,
                 ),
                 Padding(

@@ -5,7 +5,6 @@ import '../widgets/custom_app_bar.dart';
 import 'gestion_publicaciones_page.dart';
 import 'gestion_usuarios_page.dart';
 import 'solicitudes_carrera_page.dart';
-import 'gestion_reportes_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({super.key});
@@ -175,20 +174,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
               context,
               MaterialPageRoute(
                 builder: (context) => const SolicitudesCarreraPage(),
-              ),
-            );
-          },
-        ),
-        _buildActionButton(
-          context,
-          'Gestión de Reportes',
-          Icons.flag_outlined,
-          Colors.redAccent,
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const GestionReportesPage(),
               ),
             );
           },

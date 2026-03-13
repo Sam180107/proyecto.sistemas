@@ -109,111 +109,6 @@ class _GestionPublicacionesContentState
     );
   }
 
-  void _mostrarDialogoReporte(String docId, String userId, String titulo) {
-    final msgController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(
-              Icons.report_problem_outlined,
-              color: Colors.orange,
-              size: 28,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Enviar Reporte al Vendedor',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Publicación: "$titulo"',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: Colors.black54,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Mensaje para el vendedor:',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: msgController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText:
-                    'Ej: Tu publicación no cumple con las normas de la plataforma. Por favor actualiza la descripción...',
-                hintStyle: GoogleFonts.inter(fontSize: 12, color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF8F9FB),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Cancelar',
-              style: GoogleFonts.inter(color: Colors.grey[600]),
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              if (msgController.text.trim().isEmpty) return;
-              Navigator.pop(ctx);
-              print(
-                "GestionPublicacionesPage: Reporting book ${docId} to seller ${userId}",
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Enviando reporte a: $userId'),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-              context.read<PublicationModerationCubit>().reportPublication(
-                docId: docId,
-                userId: userId,
-                titulo: titulo,
-                mensaje: msgController.text.trim(),
-              );
-            },
-            icon: const Icon(Icons.send, size: 18),
-            label: Text(
-              'Enviar Reporte',
-              style: GoogleFonts.inter(color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange[700],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocListener<PublicationModerationCubit, PublicationModerationState>(
@@ -557,22 +452,6 @@ class _GestionPublicacionesContentState
             tooltip: isFrozen
                 ? 'Descongelar publicación'
                 : 'Congelar publicación',
-          ),
-          const SizedBox(width: 8),
-          // Botón Reportar
-          IconButton(
-            onPressed: () =>
-                _mostrarDialogoReporte(docId, userId, data['titulo'] ?? ''),
-            icon: const Icon(Icons.report_problem_outlined),
-            style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFFFFF3E0),
-              foregroundColor: Colors.orange[700],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(12),
-            ),
-            tooltip: 'Reportar al vendedor',
           ),
           const SizedBox(width: 8),
           // Botón Eliminar
