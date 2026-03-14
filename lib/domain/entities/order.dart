@@ -10,6 +10,7 @@ class BookOrder {
   final double price;
   final String tipoTransaccion; // 'Venta' or 'Intercambio'
   final String status; // 'pending', 'accepted', 'paid', 'rejected', 'completed'
+  final String tipoTransaccion;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String? buyerName;
@@ -25,6 +26,7 @@ class BookOrder {
     required this.price,
     required this.tipoTransaccion,
     required this.status,
+    this.tipoTransaccion = 'Venta',
     required this.createdAt,
     this.updatedAt,
     this.buyerName,
@@ -42,6 +44,7 @@ class BookOrder {
       price: double.tryParse(data['price'].toString()) ?? 0.0,
       tipoTransaccion: data['tipoTransaccion'] ?? 'Venta', // Default to 'Venta' if not specified
       status: data['status'] ?? 'pending',
+      tipoTransaccion: data['tipoTransaccion'] ?? 'Venta',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: data['updatedAt'] != null ? (data['updatedAt'] as Timestamp).toDate() : null,
       buyerName: data['buyerName'],
@@ -59,6 +62,7 @@ class BookOrder {
       'price': price,
       'tipoTransaccion': tipoTransaccion,
       'status': status,
+      'tipoTransaccion': tipoTransaccion,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       'buyerName': buyerName,

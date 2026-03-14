@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'perfil_admin_page.dart';
 import 'publicar_libro_page.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 
 class PerfilPage extends StatelessWidget {
   const PerfilPage({super.key});
@@ -61,6 +59,8 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       ),
     );
   }
+
+  // --- FUNCIONES QUE LE HABLAN AL CUBIT ---
 
   void _funcionCambiarTelefono(String telefonoActual) {
     TextEditingController telefonoCtrl = TextEditingController(
@@ -331,12 +331,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       ),
       body: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
-          if (state is ProfileLoading) {
+          if (state is ProfileLoading)
             return const Center(child: CircularProgressIndicator());
-          }
-          if (state is ProfileError) {
-            return Center(child: Text(state.mensaje));
-          }
+          if (state is ProfileError) return Center(child: Text(state.mensaje));
 
           if (state is ProfileLoaded) {
             final userData = state.userData;
@@ -374,7 +371,15 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                             flex: 2,
                             child: Column(
                               children: [
-                                _buildRealStatCards(userAuth.uid),
+                                Row(
+                                  children: [
+                                    _buildStatCard("18", "Ventas"),
+                                    const SizedBox(width: 10),
+                                    _buildStatCard("6", "Intercambios"),
+                                    const SizedBox(width: 10),
+                                    _buildStatCard("24", "Reseñas"),
+                                  ],
+                                ),
                                 const SizedBox(height: 20),
                                 _buildReputationCard(),
                               ],
@@ -388,7 +393,15 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                           children: [
                             _buildUserCard(userData, userAuth.photoURL),
                             const SizedBox(height: 20),
-                            _buildRealStatCards(userAuth.uid),
+                            Row(
+                              children: [
+                                _buildStatCard("18", "Ventas"),
+                                const SizedBox(width: 10),
+                                _buildStatCard("6", "Intercambios"),
+                                const SizedBox(width: 10),
+                                _buildStatCard("24", "Reseñas"),
+                              ],
+                            ),
                             const SizedBox(height: 20),
                             _buildReputationCard(),
                           ],
@@ -399,8 +412,6 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                   ),
                   const SizedBox(height: 30),
                   _buildSettingsList(userData),
-                  const SizedBox(height: 30),
-                  _buildPublicationsSection(userAuth.uid),
                 ],
               ),
             );
@@ -417,9 +428,8 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
     String iniciales = arguments['iniciales'] ?? 'U';
     String rol = arguments['rol'] ?? 'Estudiante';
     String userId = arguments['userId'] ?? '';
-    String nombreLibro = arguments['libro'] ?? 'un libro';
 
-    // Cargar valoraciones del vendedor
+    // Inicializar el RatingCubit para este usuario
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<RatingCubit>().cargarValoraciones(userId);
     });
@@ -441,163 +451,95 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: userId.isEmpty
-          ? const Center(child: Text('ID de usuario no proporcionado.'))
-          : StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance.collection('usuarios').doc(userId).snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return const Center(child: Text('Usuario no encontrado en base de datos.'));
-                }
-
-                final userData = snapshot.data!.data() as Map<String, dynamic>;
-                final displayNombre = userData['nombre'] ?? nombre;
-                final displayCarrera = userData['carrera'] ?? carrera;
-                final displayRol = userData['rol'] ?? rol;
-                final displayIniciales = (displayNombre.isNotEmpty)
-                    ? displayNombre[0].toUpperCase()
-                    : iniciales;
-
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Perfil del Vendedor",
-                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                      ),
-                      const Text(
-                        "Información del usuario",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 30),
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.black12),
-                        ),
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 45,
-                              backgroundColor: const Color(0xFF0089A7),
-                              child: Text(
-                                displayIniciales,
-                                style: const TextStyle(color: Colors.white, fontSize: 34),
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                            Text(
-                              displayNombre,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            Text(
-                              "$displayCarrera\n$displayRol",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                            const Divider(height: 30),
-                            _buildRatingSection(),
-                            const SizedBox(height: 20),
-                            _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
-                            const SizedBox(height: 20),
-                            StreamBuilder<DocumentSnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('usuarios')
-                                  .doc(userId)
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                String telefonoFirebase = "";
-                                if (snapshot.hasData && snapshot.data!.exists) {
-                                  final data = snapshot.data!.data() as Map<String, dynamic>;
-                                  telefonoFirebase = data['telefono'] ?? "";
-                                }
-
-                                return ElevatedButton.icon(
-                                  onPressed: () async {
-                                    if (telefonoFirebase.isEmpty) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                            content: Text(
-                                                'El vendedor no tiene teléfono registrado en su perfil')),
-                                      );
-                                      return;
-                                    }
-                                    String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
-                                    if (cleanPhone.startsWith('0')) {
-                                      cleanPhone = '58${cleanPhone.substring(1)}';
-                                    } else if (cleanPhone.length == 10 && (
-                                        cleanPhone.startsWith('412') ||
-                                        cleanPhone.startsWith('414') ||
-                                        cleanPhone.startsWith('424') ||
-                                        cleanPhone.startsWith('422'))) {
-                                      cleanPhone = '58$cleanPhone';
-                                    }
-
-                                    final String mensaje =
-                                        "Hola $displayNombre, estoy interesado en tu libro '$nombreLibro' que vi en BookSwap.";
-                                    final Uri whatsappUri = Uri.parse(
-                                        "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
-
-                                    try {
-                                      if (await canLaunchUrl(whatsappUri)) {
-                                        await launchUrl(
-                                          whatsappUri,
-                                          mode: LaunchMode.externalApplication,
-                                        );
-                                      } else {
-                                        throw 'No se pudo abrir WhatsApp';
-                                      }
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Error al contactar: $e')),
-                                        );
-                                      }
-                                    }
-                                  },
-                                  icon: const Icon(Icons.message),
-                                  label: const Text('Enviar Mensaje'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1E88E5),
-                                    foregroundColor: Colors.white,
-                                    minimumSize: const Size(double.infinity, 50),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _buildRealStatCards(userId),
-                      const SizedBox(height: 20),
-                      _buildReputationCard(),
-                      const SizedBox(height: 20),
-                      _buildPublicationsSection(userId),
-                    ],
-                  ),
-                );
-              },
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Perfil del Vendedor",
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
+            const Text(
+              "Información del usuario",
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 45,
+                    backgroundColor: const Color(0xFF0089A7),
+                    child: Text(
+                      iniciales,
+                      style: const TextStyle(color: Colors.white, fontSize: 34),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    nombre,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    "$carrera\n$rol",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const Divider(height: 30),
+                  _buildRatingSection(),
+                  const SizedBox(height: 20),
+                  _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Placeholder for send message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Función de enviar mensaje próximamente',
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.message),
+                    label: const Text('Enviar Mensaje'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E88E5),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Estadísticas del vendedor
+            Row(
+              children: [
+                _buildStatCard("18", "Ventas"),
+                const SizedBox(width: 10),
+                _buildStatCard("6", "Intercambios"),
+                const SizedBox(width: 10),
+                _buildStatCard("24", "Reseñas"),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildReputationCard(),
+          ],
+        ),
+      ),
     );
   }
-  
 
   Widget _buildRatingSection() {
     return BlocBuilder<RatingCubit, RatingState>(
@@ -709,34 +651,28 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancelar'),
             ),
-            // Dentro de tu _mostrarDialogoValoracion
-              ElevatedButton(
-                onPressed: estrellasSeleccionadas > 0
-                    ? () async {
-                        // 1. Ejecutar la lógica del Cubit
-                        final success = await context
-                            .read<RatingCubit>()
-                            .enviarValoracion(estrellasSeleccionadas);
-
-                        // 2. Verificar si el widget sigue vivo antes de usar el contexto
-                        if (!context.mounted) return;
-
-                        // 3. Cerrar diálogo usando el context del builder
-                        Navigator.of(dialogContext).pop();
-
-                        // 4. Mostrar feedback al usuario
+            ElevatedButton(
+              onPressed: estrellasSeleccionadas > 0
+                  ? () async {
+                      final success = await context
+                          .read<RatingCubit>()
+                          .enviarValoracion(estrellasSeleccionadas);
+                      if (mounted) {
+                        Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              success ? '¡Valoración guardada!' : 'Error al guardar valoración',
+                              success
+                                  ? '¡Valoración guardada!'
+                                  : 'Error al guardar valoración',
                             ),
-                            backgroundColor: success ? Colors.green : Colors.red,
                           ),
                         );
                       }
-                    : null,
-                child: const Text('Guardar'),
-              ),
+                    }
+                  : null,
+              child: const Text('Guardar'),
+            ),
           ],
         ),
       ),
@@ -792,59 +728,6 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
     );
   }
 
-  Widget _buildRealStatCards(String userId) {
-    return FutureBuilder<Map<String, int>>(
-      future: _fetchUserStats(userId),
-      builder: (context, snapshot) {
-        final ventas = snapshot.data?['ventas'] ?? 0;
-        final intercambios = snapshot.data?['intercambios'] ?? 0;
-        final resenas = snapshot.data?['resenas'] ?? 0;
-
-        return Row(
-          children: [
-            _buildStatCard(ventas.toString(), "Ventas"),
-            const SizedBox(width: 10),
-            _buildStatCard(intercambios.toString(), "Intercambios"),
-            const SizedBox(width: 10),
-            _buildStatCard(resenas.toString(), "Reseñas"),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<Map<String, int>> _fetchUserStats(String userId) async {
-    int ventas = 0;
-    int intercambios = 0;
-    int resenas = 0;
-
-    try {
-      final librosSnapshot = await FirebaseFirestore.instance
-          .collection('libros')
-          .where('userId', isEqualTo: userId)
-          .get();
-
-      for (final doc in librosSnapshot.docs) {
-        final data = doc.data();
-        final tipo = data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta';
-        if (tipo == 'Intercambio') {
-          intercambios++;
-        } else {
-          ventas++;
-        }
-      }
-      final valoracionesSnapshot = await FirebaseFirestore.instance
-          .collection('valoraciones')
-          .where('vendedorId', isEqualTo: userId)
-          .get();
-      resenas = valoracionesSnapshot.docs.length;
-    } catch (e) {
-      debugPrint('Error al obtener estadísticas del usuario: $e');
-    }
-
-    return {'ventas': ventas, 'intercambios': intercambios, 'resenas': resenas};
-  }
-
   Widget _buildStatCard(String val, String label) {
     return Expanded(
       child: Container(
@@ -880,7 +763,8 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
         double calificacion = 0.0;
         String calificacionText = "0.0";
         if (state is RatingLoaded && state.totalValoraciones > 0) {
-          calificacion = state.promedio / 5.0;
+          calificacion =
+              state.promedio / 5.0; // Para el progress, normalizar a 0-1
           calificacionText = state.promedio.toStringAsFixed(1);
         }
         return Container(
@@ -1051,13 +935,13 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
         }
 
         final isOwner = FirebaseAuth.instance.currentUser?.uid == sellerId;
-        
+
         final docs = snapshot.data!.docs.where((doc) {
-           final data = doc.data() as Map<String, dynamic>;
-           if (isOwner) {
-             return data['estado'] != 'Eliminado';
-           }
-           return data['estado'] == 'Disponible';
+          final data = doc.data() as Map<String, dynamic>;
+          if (isOwner) {
+            return data['estado'] != 'Eliminado';
+          }
+          return data['estado'] == 'Disponible';
         }).toList();
 
         if (docs.isEmpty) {
@@ -1099,7 +983,11 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
     );
   }
 
-  Widget _buildMiniBookCard(BuildContext context, Map<String, dynamic> data, bool isOwner) {
+  Widget _buildMiniBookCard(
+    BuildContext context,
+    Map<String, dynamic> data,
+    bool isOwner,
+  ) {
     bool isFrozen = data['estado'] == 'Congelado';
 
     return GestureDetector(
@@ -1126,19 +1014,29 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(13),
+                    ),
                     child: data['imageUrl'] != null || data['imagen'] != null
                         ? Image.network(
                             data['imageUrl'] ?? data['imagen'],
                             fit: BoxFit.cover,
                             width: double.infinity,
                             errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.book, size: 40, color: Colors.grey),
+                                const Icon(
+                                  Icons.book,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
                           )
                         : Container(
                             color: Colors.grey[200],
                             width: double.infinity,
-                            child: const Icon(Icons.book, size: 40, color: Colors.grey),
+                            child: const Icon(
+                              Icons.book,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
                           ),
                   ),
                   if (isFrozen)
@@ -1174,7 +1072,10 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                 children: [
                   Text(
                     data['titulo'] ?? 'Sin título',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1187,7 +1088,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                         if (rawPrice is num) {
                           price = rawPrice.toStringAsFixed(2);
                         } else if (rawPrice is String) {
-                          price = double.tryParse(rawPrice)?.toStringAsFixed(2) ?? rawPrice;
+                          price =
+                              double.tryParse(rawPrice)?.toStringAsFixed(2) ??
+                              rawPrice;
                         }
                       }
                       return Text(
@@ -1219,11 +1122,19 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                                 );
                               },
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 0,
+                                ),
                                 side: const BorderSide(color: Colors.blue),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
-                              child: Text(isFrozen ? 'Reactivar (Editar)' : 'Editar', style: const TextStyle(fontSize: 10)),
+                              child: Text(
+                                isFrozen ? 'Reactivar (Editar)' : 'Editar',
+                                style: const TextStyle(fontSize: 10),
+                              ),
                             ),
                           ),
                         ],

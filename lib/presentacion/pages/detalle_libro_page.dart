@@ -1,26 +1,17 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
-import 'package:share_plus/share_plus.dart';
 
 class DetalleLibroPage extends StatelessWidget {
   const DetalleLibroPage({super.key});
 
-  void _solicitarLibro(
-    BuildContext context,
-    Map<String, dynamic> arguments,
-  ) async {
+  void _solicitarLibro(BuildContext context, Map<String, dynamic> arguments) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debes iniciar sesión para solicitar un libro'),
-        ),
+        const SnackBar(content: Text('Debes iniciar sesión para solicitar un libro')),
       );
       return;
     }
@@ -32,45 +23,33 @@ class DetalleLibroPage extends StatelessWidget {
       return;
     }
 
-    final tipoTransaccion = arguments['tipoTransaccion'] ?? 'Venta';
-
     try {
       await context.read<OrderCubit>().createOrder(
         sellerId: arguments['userId'],
         bookId: arguments['id'] ?? '',
         bookTitle: arguments['titulo'],
         bookAuthor: arguments['autor'] ?? '',
-        price: tipoTransaccion == 'Venta'
-            ? (double.tryParse(arguments['precio'].toString()) ?? 0.0)
-            : 0.0,
-        tipoTransaccion: tipoTransaccion,
+        price: double.tryParse(arguments['precio'].toString()) ?? 0.0,
+        tipoTransaccion: 'Venta',
       );
 
-      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Solicitud de $tipoTransaccion enviada exitosamente'),
-        ),
+        const SnackBar(content: Text('Solicitud enviada exitosamente')),
       );
     } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error al enviar solicitud: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al enviar solicitud: $e')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    Object? args = ModalRoute.of(context)?.settings.arguments;
-    if (args == null || args is! Map<String, dynamic>) {
-      return Scaffold(
-        body: Center(child: Text('No se encontraron datos del libro.')),
-      );
-    }
-    final arguments = args;
-    final String? imageUrl = arguments['imageUrl'] ?? arguments['imagen'];
+    // 1. Extraemos los argumentos de forma segura
+    final arguments =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
+    // Cargar valoraciones del vendedor
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<RatingCubit>().cargarValoraciones(arguments['userId']);
     });
@@ -82,35 +61,34 @@ class DetalleLibroPage extends StatelessWidget {
           SingleChildScrollView(
             child: Column(
               children: [
+                // Cabecera con Imagen y Precio
                 _buildHeader(
                   context,
-                  arguments['precio'],
-                  imageUrl,
-                  arguments,
+                  arguments['precio']!,
+                  arguments['imagen']!,
                 ),
+
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        arguments['titulo'] ?? '',
+                        arguments['titulo']!,
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        (arguments['autor'] == null ||
-                                arguments['autor'].toString().isEmpty)
-                            ? 'Anónimo'
-                            : arguments['autor'].toString(),
+                        arguments['autor'] == null || arguments['autor'].isEmpty ? 'Anónimo' : arguments['autor']!,
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
                         ),
                       ),
                       const SizedBox(height: 25),
+
                       const Text(
                         "Estado de la Transacción",
                         style: TextStyle(
@@ -120,13 +98,17 @@ class DetalleLibroPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       _buildStatusTimeline(),
+
                       const SizedBox(height: 25),
-                      _buildInfoCard(
-                        "Descripción",
-                        arguments['descripcion'] ?? 'Sin descripción',
+                      _buildInfoCard("Descripción", arguments['descripcion']!),
+
+                      const SizedBox(height: 25),
+                      _buildSellerCard(
+                        context,
+                        arguments,
                       ),
-                      const SizedBox(height: 25),
-                      _buildSellerCard(context, arguments),
+
+                      // Espacio final para que el scroll permita ver todo antes del botón
                       const SizedBox(height: 120),
                     ],
                   ),
@@ -134,17 +116,21 @@ class DetalleLibroPage extends StatelessWidget {
               ],
             ),
           ),
+
+          // 2. BOTÓN DE RETROCESO (Indispensable al usar Stack)
           Positioned(
             top: 45,
             left: 20,
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.9),
+              backgroundColor: Colors.white.withValues(alpha: 0.9),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
           ),
+
+          // 3. BOTÓN DE ACCIÓN FIJO EN LA PARTE INFERIOR
           Positioned(
             bottom: 20,
             left: 20,
@@ -156,52 +142,48 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    dynamic precio,
-    String? rutaImagen,
-    Map<String, dynamic> arguments,
-  ) {
-    final String libroId = arguments['id'] ?? '';
-    final String tipoTransaccion = arguments['tipoTransaccion'] ?? 'Venta';
+  // --- WIDGETS DE APOYO OPTIMIZADOS ---
 
+  Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen) {
     return SizedBox(
       height: 320,
       width: double.infinity,
       child: Stack(
         children: [
+          // Imagen con respaldo por si falla la ruta
           Positioned.fill(
             child: Container(
               color: Colors.grey[300],
-              child: (rutaImagen != null && rutaImagen.startsWith('http'))
+              child: rutaImagen.startsWith('http')
                   ? Image.network(
                       rutaImagen,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              size: 50,
-                              color: Colors.grey,
-                            ),
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 50,
+                            color: Colors.grey,
                           ),
+                        );
+                      },
                     )
-                  : (rutaImagen != null)
-                  ? Image.asset(
+                  : Image.asset(
                       rutaImagen,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              size: 50,
-                              color: Colors.grey,
-                            ),
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 50,
+                            color: Colors.grey,
                           ),
-                    )
-                  : const Center(child: Icon(Icons.image_not_supported)),
+                        );
+                      },
+                    ),
             ),
           ),
+          // Gradiente para que el botón de volver se vea mejor
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -209,7 +191,7 @@ class DetalleLibroPage extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
                     Colors.transparent,
                   ],
@@ -217,57 +199,24 @@ class DetalleLibroPage extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            top: 45,
-            right: 20,
-            child: Row(
-              children: [
-                StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('usuarios')
-                      .doc(FirebaseAuth.instance.currentUser?.uid)
-                      .collection('favoritos')
-                      .doc(libroId)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    bool esFavorito = snapshot.hasData && snapshot.data!.exists;
-                    return _buildCircularAction(
-                      icon: esFavorito ? Icons.favorite : Icons.favorite_border,
-                      color: esFavorito ? Colors.red : Colors.black,
-                      onPressed: () => context.read<CoraCubit>().toggleFavorito(
-                        libroId,
-                        esFavorito,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 12),
-                _buildCircularAction(
-                  icon: Icons.share_outlined,
-                  color: Colors.black,
-                  onPressed: () {
-                    Share.share(
-                      '¡Mira este material en BookSwap! "${arguments['titulo']}" por $precio. Encuéntralo en el campus de la UNIMET.',
-                      subject: 'Material Académico BookSwap',
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+          // Etiqueta de precio
           Positioned(
             bottom: 20,
             left: 20,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.65),
-                borderRadius: BorderRadius.circular(15),
+                color: const Color(0xFF1E88E5),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                  ),
+                ],
               ),
               child: Text(
-                tipoTransaccion == 'Intercambio'
-                    ? "INTERCAMBIO"
-                    : "VENTA - $precio",
+                "VENTA - \$ ${precio.toString()}",
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -281,30 +230,6 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCircularAction({
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: IconButton(
-        icon: Icon(icon, color: color, size: 22),
-        onPressed: onPressed,
-      ),
-    );
-  }
-
   Widget _buildStatusTimeline() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -312,7 +237,7 @@ class DetalleLibroPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10),
         ],
       ),
       child: Row(
@@ -382,14 +307,10 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSellerCard(
-    BuildContext context,
-    Map<String, dynamic> arguments,
-  ) {
-    String nombre = arguments['vendedor'] ?? 'Usuario';
-    String carrera = arguments['carrera'] ?? 'Carrera';
-    String iniciales = arguments['iniciales'] ?? 'U';
-
+  Widget _buildSellerCard(BuildContext context, Map<String, dynamic> arguments) {
+    String nombre = arguments['vendedor']!;
+    String carrera = arguments['carrera']!;
+    String iniciales = arguments['iniciales']!;
     return BlocBuilder<RatingCubit, RatingState>(
       builder: (context, state) {
         return Container(
@@ -427,8 +348,7 @@ class DetalleLibroPage extends StatelessWidget {
                       carrera,
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
-                    if (state is RatingLoaded &&
-                        state.totalValoraciones > 0) ...[
+                    if (state is RatingLoaded && state.totalValoraciones > 0) ...[
                       const SizedBox(height: 5),
                       Row(
                         children: [
@@ -436,10 +356,7 @@ class DetalleLibroPage extends StatelessWidget {
                           const SizedBox(width: 5),
                           Text(
                             '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         ],
                       ),
@@ -459,12 +376,6 @@ class DetalleLibroPage extends StatelessWidget {
                       'userId': arguments['userId'],
                       'rol': arguments['rol'],
                       'isOtherUser': true,
-                      'telefono':
-                          arguments['telefonoVendedor'] ??
-                          arguments['telefono'] ??
-                          arguments['celular'] ??
-                          '',
-                      'libro': arguments['titulo'] ?? 'un libro',
                     },
                   );
                 },
@@ -476,29 +387,6 @@ class DetalleLibroPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              if (arguments['telefonoVendedor'] != null &&
-                  arguments['telefonoVendedor'].toString().isNotEmpty)
-                IconButton(
-                  icon: const Icon(
-                    Icons.chat,
-                    color: Color(0xFF25D366),
-                    size: 30,
-                  ),
-                  onPressed: () async {
-                    final telefono = arguments['telefonoVendedor'];
-                    final url = 'https://wa.me/+' + telefono;
-                    if (await canLaunchUrl(Uri.parse(url))) {
-                      await launchUrl(Uri.parse(url));
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('No se pudo abrir WhatsApp'),
-                        ),
-                      );
-                    }
-                  },
-                ),
             ],
           ),
         );
@@ -511,11 +399,8 @@ class DetalleLibroPage extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
         return Icon(
-          index < rating.floor()
-              ? Icons.star
-              : (index < rating && rating % 1 != 0)
-              ? Icons.star_half
-              : Icons.star_border,
+          index < rating.floor() ? Icons.star :
+          (index < rating && rating % 1 != 0) ? Icons.star_half : Icons.star_border,
           color: Colors.amber,
           size: 14,
         );
@@ -523,20 +408,12 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomButton(
-    BuildContext context,
-    Map<String, dynamic> arguments,
-  ) {
-    final tipoTransaccion = arguments['tipoTransaccion'] ?? 'Venta';
-    final buttonText = tipoTransaccion == 'Intercambio'
-        ? "Solicitar Intercambio"
-        : "Agregar al Carrito";
-
+  Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E88E5).withOpacity(0.3),
+            color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -552,9 +429,9 @@ class DetalleLibroPage extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: Text(
-          buttonText,
-          style: const TextStyle(
+        child: const Text(
+          "Solicitar Material",
+          style: TextStyle(
             color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
