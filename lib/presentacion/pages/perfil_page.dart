@@ -595,10 +595,243 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
   );
 
   Widget _progressRow(String label, double val, String txt) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontSize: 13)), Text(txt, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))]),
-      const SizedBox(height: 8),
-      LinearProgressIndicator(value: val, backgroundColor: Colors.blue[50], color: const Color(0xFF007BFF), minHeight: 8, borderRadius: BorderRadius.circular(5))
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 13)),
+            Text(
+              txt,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: val,
+          backgroundColor: Colors.blue[50],
+          color: const Color(0xFF007BFF),
+          minHeight: 8,
+          borderRadius: BorderRadius.circular(5),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPublicationsSection(String sellerId) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('libros')
+          .where('userId', isEqualTo: sellerId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Text('Error cargando publicaciones: ${snapshot.error}');
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Text(
+                'Este usuario no tiene publicaciones.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            ),
+          );
+        }
+
+        final isOwner = FirebaseAuth.instance.currentUser?.uid == sellerId;
+        
+        final docs = snapshot.data!.docs.where((doc) {
+           final data = doc.data() as Map<String, dynamic>;
+           if (isOwner) {
+             return data['estado'] != 'Eliminado';
+           }
+           return data['estado'] == 'Disponible';
+        }).toList();
+
+        if (docs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isOwner ? "Nuestras Publicaciones" : "Publicaciones del Vendedor",
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.70,
+              ),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final doc = docs[index];
+                final data = doc.data() as Map<String, dynamic>;
+                data['id'] = doc.id;
+                return _buildMiniBookCard(context, data, isOwner);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMiniBookCard(BuildContext context, Map<String, dynamic> data, bool isOwner) {
+    bool isFrozen = data['estado'] == 'Congelado';
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, '/product_detail', arguments: data);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: isFrozen ? Border.all(color: Colors.blue, width: 2) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
+                    child: data['imageUrl'] != null || data['imagen'] != null
+                        ? Image.network(
+                            data['imageUrl'] ?? data['imagen'],
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.book, size: 40, color: Colors.grey),
+                          )
+                        : Container(
+                            color: Colors.grey[200],
+                            width: double.infinity,
+                            child: const Icon(Icons.book, size: 40, color: Colors.grey),
+                          ),
+                  ),
+                  if (isFrozen)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.white.withOpacity(0.7),
+                        child: const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.ac_unit, color: Colors.blue, size: 30),
+                              Text(
+                                'CONGELADO',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  backgroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data['titulo'] ?? 'Sin título',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Builder(
+                    builder: (context) {
+                      final rawPrice = data['precio'];
+                      String price = '0.00';
+                      if (rawPrice != null) {
+                        if (rawPrice is num) {
+                          price = rawPrice.toStringAsFixed(2);
+                        } else if (rawPrice is String) {
+                          price = double.tryParse(rawPrice)?.toStringAsFixed(2) ?? rawPrice;
+                        }
+                      }
+                      return Text(
+                        "\$ $price",
+                        style: const TextStyle(
+                          color: Color(0xFF003870),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      );
+                    },
+                  ),
+                  if (isOwner)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PublicarLibroPage(
+                                      bookData: data,
+                                      bookId: data['id'],
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                side: const BorderSide(color: Colors.blue),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                              child: Text(isFrozen ? 'Reactivar (Editar)' : 'Editar', style: const TextStyle(fontSize: 10)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

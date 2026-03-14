@@ -339,9 +339,9 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'Publicar Ahora',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                        child: Text(
+                          widget.bookId != null ? 'Guardar Cambios' : 'Publicar Ahora',
+                          style: const TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
                   ],
