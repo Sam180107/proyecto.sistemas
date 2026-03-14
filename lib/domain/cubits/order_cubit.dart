@@ -36,6 +36,7 @@ class OrderCubit extends Cubit<OrderState> {
     required String bookTitle,
     required String bookAuthor,
     required double price,
+    required String tipoTransaccion,
   }) async {
     try {
       final currentUser = _auth.currentUser;
@@ -45,8 +46,8 @@ class OrderCubit extends Cubit<OrderState> {
       }
 
       // Obtener nombres de comprador y vendedor
-      final buyerDoc = await _firestore.collection('users').doc(currentUser.uid).get();
-      final sellerDoc = await _firestore.collection('users').doc(sellerId).get();
+      final buyerDoc = await _firestore.collection('usuarios').doc(currentUser.uid).get();
+      final sellerDoc = await _firestore.collection('usuarios').doc(sellerId).get();
 
       String buyerName;
       if (buyerDoc.exists) {
@@ -70,6 +71,7 @@ class OrderCubit extends Cubit<OrderState> {
         bookTitle: bookTitle,
         bookAuthor: bookAuthor,
         price: price,
+        tipoTransaccion: tipoTransaccion,
         status: 'pending',
         createdAt: DateTime.now(),
         buyerName: buyerName,
@@ -132,6 +134,16 @@ class OrderCubit extends Cubit<OrderState> {
       // El stream se actualizará automáticamente
     } catch (e) {
       emit(OrderError('Error al actualizar orden: $e'));
+    }
+  }
+
+  // Marcar libro como vendido después de pago exitoso
+  Future<void> markBookAsSold(String bookId) async {
+    if (bookId.isEmpty) return;
+    try {
+      await _orderRepository.markBookAsSold(bookId);
+    } catch (e) {
+      print('Error en Cubit al marcar libro: $e');
     }
   }
 

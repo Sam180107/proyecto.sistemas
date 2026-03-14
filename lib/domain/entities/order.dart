@@ -9,6 +9,7 @@ class BookOrder {
   final String bookAuthor;
   final double price;
   final String status; // 'pending', 'accepted', 'paid', 'rejected', 'completed'
+  final String tipoTransaccion;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String? buyerName;
@@ -23,6 +24,7 @@ class BookOrder {
     required this.bookAuthor,
     required this.price,
     required this.status,
+    this.tipoTransaccion = 'Venta',
     required this.createdAt,
     this.updatedAt,
     this.buyerName,
@@ -39,6 +41,7 @@ class BookOrder {
       bookAuthor: data['bookAuthor'] ?? '',
       price: double.tryParse(data['price'].toString()) ?? 0.0,
       status: data['status'] ?? 'pending',
+      tipoTransaccion: data['tipoTransaccion'] ?? 'Venta',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: data['updatedAt'] != null ? (data['updatedAt'] as Timestamp).toDate() : null,
       buyerName: data['buyerName'],
@@ -55,6 +58,7 @@ class BookOrder {
       'bookAuthor': bookAuthor,
       'price': price,
       'status': status,
+      'tipoTransaccion': tipoTransaccion,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       'buyerName': buyerName,

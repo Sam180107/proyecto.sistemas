@@ -30,6 +30,7 @@ class DetalleLibroPage extends StatelessWidget {
         bookTitle: arguments['titulo'],
         bookAuthor: arguments['autor'] ?? '',
         price: double.tryParse(arguments['precio'].toString()) ?? 0.0,
+        tipoTransaccion: 'Venta',
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
