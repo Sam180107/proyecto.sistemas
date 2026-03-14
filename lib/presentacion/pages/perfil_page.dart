@@ -1200,7 +1200,7 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                       );
                     },
                   ),
-                  if (isOwner && isFrozen)
+                  if (isOwner)
                     Padding(
                       padding: const EdgeInsets.only(top: 4.0),
                       child: Row(
@@ -1223,7 +1223,7 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                                 side: const BorderSide(color: Colors.blue),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                               ),
-                              child: const Text('Reactivar (Editar)', style: TextStyle(fontSize: 10)),
+                              child: Text(isFrozen ? 'Reactivar (Editar)' : 'Editar', style: const TextStyle(fontSize: 10)),
                             ),
                           ),
                         ],
