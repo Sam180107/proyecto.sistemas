@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
+import 'publicar_libro_page.dart';
 
 class DetalleLibroPage extends StatelessWidget {
   const DetalleLibroPage({super.key});
@@ -64,8 +65,8 @@ class DetalleLibroPage extends StatelessWidget {
                 // Cabecera con Imagen y Precio
                 _buildHeader(
                   context,
-                  arguments['precio']!,
-                  arguments['imagen']!,
+                  arguments['precio'] ?? 0.0,
+                  arguments['imagen'] ?? arguments['imageUrl'] ?? '',
                 ),
 
                 Padding(
@@ -74,7 +75,7 @@ class DetalleLibroPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        arguments['titulo']!,
+                        arguments['titulo'] ?? 'Sin título',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -100,7 +101,7 @@ class DetalleLibroPage extends StatelessWidget {
                       _buildStatusTimeline(),
 
                       const SizedBox(height: 25),
-                      _buildInfoCard("Descripción", arguments['descripcion']!),
+                      _buildInfoCard("Descripción", arguments['descripcion'] ?? 'Sin descripción'),
 
                       const SizedBox(height: 25),
                       _buildSellerCard(
@@ -409,6 +410,7 @@ class DetalleLibroPage extends StatelessWidget {
   }
 
   Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
+    final isOwner = FirebaseAuth.instance.currentUser?.uid == arguments['userId'];
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -420,7 +422,21 @@ class DetalleLibroPage extends StatelessWidget {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () => _solicitarLibro(context, arguments),
+        onPressed: () {
+            if (isOwner) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PublicarLibroPage(
+                    bookData: arguments,
+                    bookId: arguments['id'],
+                  ),
+                ),
+              );
+            } else {
+              _solicitarLibro(context, arguments);
+            }
+          },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF1E88E5),
           minimumSize: const Size(double.infinity, 60),

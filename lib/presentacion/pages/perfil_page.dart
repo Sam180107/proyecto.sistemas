@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:unimet_marketplace/domain/cubits/profile_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'perfil_admin_page.dart';
@@ -500,24 +501,82 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                   const SizedBox(height: 20),
                   _infoLine(Icons.location_on_outlined, "Unimet, Caracas"),
                   const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      // Placeholder for send message
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Función de enviar mensaje próximamente',
-                          ),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('usuarios')
+                        .doc(userId)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      String telefonoFirebase = "";
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final data = snapshot.data!.data() as Map<String, dynamic>;
+                        telefonoFirebase = data['telefono'] ?? "";
+                      }
+
+                      return ElevatedButton.icon(
+                        onPressed: () async {
+                          if (telefonoFirebase.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'El vendedor no tiene teléfono registrado en su perfil',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          String cleanPhone = telefonoFirebase.replaceAll(
+                            RegExp(r'[^\d]'),
+                            '',
+                          );
+                          if (cleanPhone.startsWith('0')) {
+                            cleanPhone = '58${cleanPhone.substring(1)}';
+                          } else if (cleanPhone.length == 10 &&
+                              (cleanPhone.startsWith('412') ||
+                                  cleanPhone.startsWith('414') ||
+                                  cleanPhone.startsWith('424') ||
+                                  cleanPhone.startsWith('422'))) {
+                            cleanPhone = '58$cleanPhone';
+                          }
+
+                          final String mensaje =
+                              "Hola $nombre, me interesan tus publicaciones en BookSwap.";
+                          final Uri whatsappUri = Uri.parse(
+                            "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}",
+                          );
+
+                          try {
+                            if (await canLaunchUrl(whatsappUri)) {
+                              await launchUrl(
+                                whatsappUri,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('No se pudo abrir WhatsApp'),
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.message),
+                        label: const Text('Enviar Mensaje'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E88E5),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
                         ),
                       );
                     },
-                    icon: const Icon(Icons.message),
-                    label: const Text('Enviar Mensaje'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E88E5),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
                   ),
                 ],
               ),
