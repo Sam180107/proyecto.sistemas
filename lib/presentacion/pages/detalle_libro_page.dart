@@ -3,16 +3,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
+import 'package:unimet_marketplace/domain/cubits/cart_cubit.dart';
+import 'package:unimet_marketplace/domain/entities/cart_item.dart';
+import '../widgets/paypal_button.dart';
 import 'publicar_libro_page.dart';
 
 class DetalleLibroPage extends StatelessWidget {
   const DetalleLibroPage({super.key});
 
-  void _solicitarLibro(BuildContext context, Map<String, dynamic> arguments) async {
+  void _solicitarLibro(
+    BuildContext context,
+    Map<String, dynamic> arguments,
+  ) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes iniciar sesión para solicitar un libro')),
+        const SnackBar(
+          content: Text('Debes iniciar sesión para solicitar un libro'),
+        ),
       );
       return;
     }
@@ -38,9 +46,9 @@ class DetalleLibroPage extends StatelessWidget {
         const SnackBar(content: Text('Solicitud enviada exitosamente')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al enviar solicitud: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al enviar solicitud: $e')));
     }
   }
 
@@ -82,7 +90,9 @@ class DetalleLibroPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        arguments['autor'] == null || arguments['autor'].isEmpty ? 'Anónimo' : arguments['autor']!,
+                        arguments['autor'] == null || arguments['autor'].isEmpty
+                            ? 'Anónimo'
+                            : arguments['autor']!,
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
@@ -101,48 +111,42 @@ class DetalleLibroPage extends StatelessWidget {
                       _buildStatusTimeline(),
 
                       const SizedBox(height: 25),
-                      _buildInfoCard("Descripción", arguments['descripcion'] ?? 'Sin descripción'),
-
-                      const SizedBox(height: 25),
-                      _buildSellerCard(
-                        context,
-                        arguments,
+                      _buildInfoCard(
+                        "Descripción",
+                        arguments['descripcion'] ?? 'Sin descripción',
                       ),
 
-                      // Espacio final para que el scroll permita ver todo antes del botón
-                      const SizedBox(height: 120),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+                      const SizedBox(height: 25),
+                      _buildSellerCard(context, arguments),
 
-          // 2. BOTÓN DE RETROCESO (Indispensable al usar Stack)
-          Positioned(
-            top: 45,
-            left: 20,
-            child: CircleAvatar(
-              backgroundColor: Colors.white.withValues(alpha: 0.9),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => Navigator.pop(context),
+                      // Espacio final para que el scroll permita ver todo antes del botón
+                        const SizedBox(height: 180),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
 
-          // 3. BOTÓN DE ACCIÓN FIJO EN LA PARTE INFERIOR
-          Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
+            // 2. BOTÓN DE RETROCESO (Indispensable al usar Stack)
+            Positioned(
+              top: 45,
+              left: 20,
+              child: CircleAvatar(
+                backgroundColor: Colors.white.withValues(alpha: 0.9),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
             child: _buildBottomButton(context, arguments),
           ),
-        ],
-      ),
-    );
-  }
-
   // --- WIDGETS DE APOYO OPTIMIZADOS ---
 
   Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen) {
@@ -238,7 +242,10 @@ class DetalleLibroPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+          ),
         ],
       ),
       child: Row(
@@ -308,7 +315,10 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSellerCard(BuildContext context, Map<String, dynamic> arguments) {
+  Widget _buildSellerCard(
+    BuildContext context,
+    Map<String, dynamic> arguments,
+  ) {
     String nombre = arguments['vendedor']!;
     String carrera = arguments['carrera']!;
     String iniciales = arguments['iniciales']!;
@@ -349,7 +359,8 @@ class DetalleLibroPage extends StatelessWidget {
                       carrera,
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
-                    if (state is RatingLoaded && state.totalValoraciones > 0) ...[
+                    if (state is RatingLoaded &&
+                        state.totalValoraciones > 0) ...[
                       const SizedBox(height: 5),
                       Row(
                         children: [
@@ -357,7 +368,10 @@ class DetalleLibroPage extends StatelessWidget {
                           const SizedBox(width: 5),
                           Text(
                             '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -400,8 +414,11 @@ class DetalleLibroPage extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
         return Icon(
-          index < rating.floor() ? Icons.star :
-          (index < rating && rating % 1 != 0) ? Icons.star_half : Icons.star_border,
+          index < rating.floor()
+              ? Icons.star
+              : (index < rating && rating % 1 != 0)
+              ? Icons.star_half
+              : Icons.star_border,
           color: Colors.amber,
           size: 14,
         );
@@ -409,51 +426,128 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
-    final isOwner = FirebaseAuth.instance.currentUser?.uid == arguments['userId'];
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+  Widget _buildBottomButton(
+    BuildContext context,
+    Map<String, dynamic> arguments,
+  ) {
+    final isOwner =
+        FirebaseAuth.instance.currentUser?.uid == arguments['userId'];
+
+    final rawPrice = arguments['precio'];
+    String price = '0.00';
+    if (rawPrice != null) {
+      if (rawPrice is num) {
+        price = rawPrice.toStringAsFixed(2);
+      } else if (rawPrice is String) {
+        price = double.tryParse(rawPrice)?.toStringAsFixed(2) ?? rawPrice;
+      }
+    }
+
+    final isVenta = arguments['tipoTransaccion'] == 'Venta' || arguments['tipo'] == 'Venta';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (!isVenta)
+          Container(
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: () {
+                if (isOwner) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PublicarLibroPage(
+                        bookData: arguments,
+                        bookId: arguments['id'],
+                      ),
+                    ),
+                  );
+                } else {
+                  _solicitarLibro(context, arguments);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E88E5),
+                minimumSize: const Size(double.infinity, 60),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                "Solicitar Material",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: () {
-            if (isOwner) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PublicarLibroPage(
-                    bookData: arguments,
-                    bookId: arguments['id'],
+        if (isVenta && !isOwner &&
+            double.tryParse(price) != null &&
+            double.parse(price) > 0) ...[
+          if (!isVenta) const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                final item = CartItem(
+                  bookId: arguments['id'] ?? UniqueKey().toString(),
+                  title: arguments['titulo'] ?? 'Sin Título',
+                  author: arguments['autor'] ?? 'Autor Desconocido',
+                  price: double.tryParse(price) ?? 0.0,
+                  sellerId: arguments['userId'] ?? 'system',
+                  imageUrl: arguments['imageUrl'] ?? arguments['imagen'] ?? '',
+                );
+                context.read<CartCubit>().addItem(item);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Agregado al carrito'),
+                    duration: Duration(seconds: 1),
                   ),
+                );
+              },
+              icon: const Icon(Icons.add_shopping_cart),
+              label: const Text('Agregar al Carrito'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF1E88E5),
+                side: const BorderSide(color: Color(0xFF1E88E5)),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          PaypalButton(
+            amount: price,
+            onPaymentSuccess: (data) {
+              final bookId = arguments['id'] ?? '';
+              if (bookId.isNotEmpty) {
+                context.read<OrderCubit>().markBookAsSold(bookId);
+              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('¡Pago realizado con éxito!'),
+                  backgroundColor: Colors.green,
                 ),
               );
-            } else {
-              _solicitarLibro(context, arguments);
-            }
-          },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1E88E5),
-          minimumSize: const Size(double.infinity, 60),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            },
           ),
-          elevation: 0,
-        ),
-        child: const Text(
-          "Solicitar Material",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+        ],
+      ],
     );
   }
 }
