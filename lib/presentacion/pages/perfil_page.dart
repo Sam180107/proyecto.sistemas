@@ -413,6 +413,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                   ),
                   const SizedBox(height: 30),
                   _buildSettingsList(userData),
+                  const SizedBox(height: 30),
+                  _buildPublicationsSection(userAuth.uid),
+                  const SizedBox(height: 50),
                 ],
               ),
             );
@@ -1023,10 +1026,10 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.70,
+                crossAxisCount: 3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.52,
               ),
               itemCount: docs.length,
               itemBuilder: (context, index) {
@@ -1040,6 +1043,50 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
         );
       },
     );
+  }
+
+  void _eliminarPublicacion(BuildContext context, String bookId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Publicación'),
+        content: const Text(
+          '¿Estás seguro de que deseas eliminar esta publicación? Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('libros')
+            .doc(bookId)
+            .update({'estado': 'Eliminado'});
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Publicación eliminada correctamente')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar: $e')),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildMiniBookCard(
@@ -1056,13 +1103,13 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(20),
           border: isFrozen ? Border.all(color: Colors.blue, width: 2) : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              spreadRadius: 2,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -1070,49 +1117,71 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
+              flex: 12,
               child: Stack(
                 children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(13),
-                    ),
-                    child: data['imageUrl'] != null || data['imagen'] != null
-                        ? Image.network(
-                            data['imageUrl'] ?? data['imagen'],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                                  Icons.book,
-                                  size: 40,
-                                  color: Colors.grey,
-                                ),
-                          )
-                        : Container(
-                            color: Colors.grey[200],
-                            width: double.infinity,
-                            child: const Icon(
-                              Icons.book,
-                              size: 40,
-                              color: Colors.grey,
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                      child: data['imageUrl'] != null || data['imagen'] != null
+                          ? Image.network(
+                              data['imageUrl'] ?? data['imagen'],
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(child: Icon(Icons.broken_image)),
+                            )
+                          : Container(
+                              color: Colors.grey[200],
+                              child: const Center(child: Icon(Icons.book, size: 30, color: Colors.grey)),
                             ),
-                          ),
+                    ),
                   ),
+                  if (isOwner)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => _eliminarPublicacion(context, data['id']),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
                   if (isFrozen)
                     Positioned.fill(
                       child: Container(
-                        color: Colors.white.withOpacity(0.7),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.7),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
                         child: const Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.ac_unit, color: Colors.blue, size: 30),
+                              Icon(Icons.ac_unit, color: Colors.blue, size: 20),
                               Text(
                                 'CONGELADO',
                                 style: TextStyle(
                                   color: Colors.blue,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                                  fontSize: 8,
                                   backgroundColor: Colors.white,
                                 ),
                               ),
@@ -1124,82 +1193,89 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data['titulo'] ?? 'Sin título',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Builder(
-                    builder: (context) {
-                      final rawPrice = data['precio'];
-                      String price = '0.00';
-                      if (rawPrice != null) {
-                        if (rawPrice is num) {
-                          price = rawPrice.toStringAsFixed(2);
-                        } else if (rawPrice is String) {
-                          price =
-                              double.tryParse(rawPrice)?.toStringAsFixed(2) ??
-                              rawPrice;
-                        }
-                      }
-                      return Text(
-                        "\$ $price",
-                        style: const TextStyle(
-                          color: Color(0xFF003870),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      );
-                    },
-                  ),
-                  if (isOwner)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PublicarLibroPage(
-                                      bookData: data,
-                                      bookId: data['id'],
-                                    ),
-                                  ),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 0,
-                                ),
-                                side: const BorderSide(color: Colors.blue),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              child: Text(
-                                isFrozen ? 'Reactivar (Editar)' : 'Editar',
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            ),
-                          ),
-                        ],
+            Expanded(
+              flex: isOwner ? 10 : 7,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      data['categoria'] ?? 'CATEGORIA',
+                      style: const TextStyle(
+                        fontSize: 8,
+                        letterSpacing: 1.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E88E5),
                       ),
                     ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      data['titulo'] ?? 'Sin título',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                        color: Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    Builder(
+                      builder: (context) {
+                        final rawPrice = data['precio'];
+                        String price = '0.00';
+                        if (rawPrice != null) {
+                          if (rawPrice is num) {
+                            price = rawPrice.toStringAsFixed(2);
+                          } else if (rawPrice is String) {
+                            price = double.tryParse(rawPrice)?.toStringAsFixed(2) ?? rawPrice;
+                          }
+                        }
+                        return Text(
+                          "\$ $price",
+                          style: const TextStyle(
+                            color: Color(0xFF003870),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        );
+                      },
+                    ),
+                    if (isOwner)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 28,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PublicarLibroPage(
+                                    bookData: data,
+                                    bookId: data['id'],
+                                  ),
+                                ),
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              side: const BorderSide(color: Colors.blue),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                            child: Text(
+                              isFrozen ? 'Reactivar' : 'Editar',
+                              style: const TextStyle(fontSize: 9),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],

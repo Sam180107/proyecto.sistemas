@@ -63,21 +63,19 @@ class FavoritesPage extends StatelessWidget {
                     }
 
                     return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const ClampingScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2, // Ajustable según diseño responsive
-                        childAspectRatio: 0.7,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                        crossAxisCount: 3,
+                        childAspectRatio: 0.55,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
                       ),
                       itemCount: snapshot.data!.docs.length,
                       itemBuilder: (context, index) {
                         final favData = snapshot.data!.docs[index];
                         final bookId = favData['idLibro'] as String;
 
-                        // Aquí necesitamos obtener los detalles del libro
-                        // Esto podría hacerse con un FutureBuilder individual para cada carta
-                        // Ojo con el rendimiento: idealmente traer todo en una query si fuera posible, 
-                        // pero Firestore no soporta "WHERE IN" con muchos IDs fácilmente.
                         return FutureBuilder<DocumentSnapshot>(
                           future: FirebaseFirestore.instance
                               .collection('libros')
@@ -85,15 +83,13 @@ class FavoritesPage extends StatelessWidget {
                               .get(),
                           builder: (context, bookSnapshot) {
                             if (!bookSnapshot.hasData) return const SizedBox.shrink(); 
-                            if (!bookSnapshot.data!.exists) return const SizedBox.shrink(); // Libro borrado?
+                            if (!bookSnapshot.data!.exists) return const SizedBox.shrink(); 
 
                             final bookData = Map<String, dynamic>.from(
                               bookSnapshot.data!.data() as Map<String, dynamic>,
                             );
-                            // Añadimos el ID al mapa para que navegue bien
                             bookData['id'] = bookSnapshot.data!.id;
 
-                            // Reutilizamos el diseño de carta o creamos uno simple
                             return _FavoriteBookCard(bookData: bookData);
                           },
                         );
@@ -126,55 +122,91 @@ class _FavoriteBookCard extends StatelessWidget {
           arguments: bookData,
         );
       },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: imageUrl != null
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image)),
-                    )
-                  : const Center(child: Icon(Icons.book, size: 50)),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              flex: 12,
+              child: Stack(
                 children: [
-                  Text(
-                    bookData['titulo'] ?? 'Sin título',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Text(
-                    bookData['autor'] ?? 'Desconocido',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '\$${bookData['precio'] ?? '0'}',
-                        style: const TextStyle(
-                          color: Color(0xFF003870),
-                          fontWeight: FontWeight.bold,
-                        ),
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
                       ),
-                      const Icon(Icons.favorite, color: Colors.red, size: 20),
-                    ],
+                      child: imageUrl != null && imageUrl.startsWith('http')
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image)),
+                            )
+                          : imageUrl != null
+                              ? Image.asset(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image)),
+                                )
+                              : const Center(child: Icon(Icons.book, size: 30, color: Colors.grey)),
+                    ),
+                  ),
+                  const Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Icon(Icons.favorite, color: Colors.red, size: 16),
                   ),
                 ],
+              ),
+            ),
+            Expanded(
+              flex: 8,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bookData['categoria'] ?? 'CATEGORIA',
+                      style: const TextStyle(
+                        fontSize: 8,
+                        letterSpacing: 1.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E88E5),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      bookData['titulo'] ?? 'Sin título',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '\$${bookData['precio'] ?? '0'}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF003870),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

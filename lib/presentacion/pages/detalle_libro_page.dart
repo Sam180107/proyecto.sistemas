@@ -42,10 +42,13 @@ class DetalleLibroPage extends StatelessWidget {
         tipoTransaccion: 'Venta',
       );
 
+      if (!context.mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Solicitud enviada exitosamente')),
       );
     } catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error al enviar solicitud: $e')));
@@ -98,6 +101,21 @@ class DetalleLibroPage extends StatelessWidget {
                           color: Colors.grey,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.inventory_2_outlined, size: 16, color: (arguments['stock'] ?? 0) > 0 ? Colors.green : Colors.red),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Stock: ${arguments['stock'] ?? 0}",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: (arguments['stock'] ?? 0) > 0 ? Colors.green[700] : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 25),
 
                       const Text(
@@ -147,6 +165,10 @@ class DetalleLibroPage extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: _buildBottomButton(context, arguments),
           ),
+        ),
+      );
+    }
+
   // --- WIDGETS DE APOYO OPTIMIZADOS ---
 
   Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen) {
@@ -448,7 +470,7 @@ class DetalleLibroPage extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (!isVenta)
+        if (isOwner || !isVenta)
           Container(
             decoration: BoxDecoration(
               boxShadow: [
@@ -483,9 +505,9 @@ class DetalleLibroPage extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                "Solicitar Material",
-                style: TextStyle(
+              child: Text(
+                isOwner ? "Editar Publicación" : "Solicitar Material",
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -534,6 +556,7 @@ class DetalleLibroPage extends StatelessWidget {
           PaypalButton(
             amount: price,
             onPaymentSuccess: (data) {
+              if (!context.mounted) return;
               final bookId = arguments['id'] ?? '';
               if (bookId.isNotEmpty) {
                 context.read<OrderCubit>().markBookAsSold(bookId);
