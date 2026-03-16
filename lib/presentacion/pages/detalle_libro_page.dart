@@ -253,7 +253,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           },
         ),
         const SizedBox(width: 15),
-        // Botón azul ovalado - Ancho de 300
+        
         SizedBox(
           width: 380, 
           child: ElevatedButton(

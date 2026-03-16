@@ -4,39 +4,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
 
-// Imports de tu proyecto
 import '../../domain/cubits/search_cubit.dart';
 import '../widgets/custom_app_bar.dart';
 import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
 
-// 1. Modelo de datos (Data)
-final List<Map<String, String>> libros = [
-  {
-    'titulo': 'Cálculo: Una Variable',
-    'autor': 'James Stewart',
-    'precio': '45.00',
-    'categoria': 'MATEMÁTICAS',
-    'imagen': 'assets/calculo.jpg',
-    'vendedor': 'María González',
-    'carrera': 'Ingeniería Civil',
-    'iniciales': 'MG',
-    'descripcion': 'Libro en excelente estado, edición 8va.',
-  },
-  {
-    'titulo': 'Física Universitaria',
-    'autor': 'Sears & Zemansky',
-    'precio': '50.00',
-    'categoria': 'FÍSICA',
-    'imagen': 'assets/fisica.jpg',
-    'vendedor': 'Ricardo Pérez',
-    'carrera': 'Ingeniería de Sistemas',
-    'iniciales': 'RP',
-    'descripcion': 'Casi nuevo, incluye el solucionario impreso.',
-  },
-];
-
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  // Estado local para controlar si el filtro de favoritos está activo
+  bool mostrarSoloFavoritos = false;
 
   @override
   Widget build(BuildContext context) {
@@ -77,9 +58,23 @@ class HomePage extends StatelessWidget {
                           return Center(child: Text(state.message));
                         }
                         if (state is SearchLoaded) {
-                          if (state.results.isEmpty) {
+                          // --- LÓGICA DE FILTRADO ---
+                          var resultadosMostrados = state.results;
+
+                          if (mostrarSoloFavoritos) {
+                            // Escuchamos la lista de IDs del CoraCubit
+                            final listaFavoritos = context.watch<CoraCubit>().state;
+                            resultadosMostrados = resultadosMostrados.where((doc) {
+                              return listaFavoritos.contains(doc.id);
+                            }).toList();
+                          }
+
+                          if (resultadosMostrados.isEmpty) {
                             return const Center(
-                              child: Text('No se encontraron publicaciones.'),
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 40),
+                                child: Text('No se encontraron publicaciones en esta categoría.'),
+                              ),
                             );
                           }
 
@@ -96,9 +91,9 @@ class HomePage extends StatelessWidget {
                                   mainAxisSpacing: 16,
                                   childAspectRatio: 0.68,
                                 ),
-                                itemCount: state.results.length,
+                                itemCount: resultadosMostrados.length,
                                 itemBuilder: (context, index) {
-                                  final doc = state.results[index];
+                                  final doc = resultadosMostrados[index];
                                   final data = doc.data() as Map<String, dynamic>;
                                   data['id'] = doc.id; 
                                   return _buildBookCard(context, data);
@@ -114,15 +109,25 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+            
+            // --- BOTÓN FLOTANTE (CORAZÓN DE FILTRO) ---
             Positioned(
               top: 10,
               right: 16,
               child: FloatingActionButton(
                 mini: true,
-                heroTag: 'fav_btn',
-                backgroundColor: Colors.white,
-                onPressed: () => Navigator.pushNamed(context, '/favorites'),
-                child: const Icon(Icons.favorite, color: Colors.red),
+                heroTag: 'fav_btn_main',
+                // Cambia de color si el filtro está encendido
+                backgroundColor: mostrarSoloFavoritos ? Colors.red : Colors.white,
+                onPressed: () {
+                  setState(() {
+                    mostrarSoloFavoritos = !mostrarSoloFavoritos;
+                  });
+                },
+                child: Icon(
+                  Icons.favorite, 
+                  color: mostrarSoloFavoritos ? Colors.white : Colors.red
+                ),
               ),
             ),
           ],
@@ -132,14 +137,19 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildBookCard(BuildContext context, Map<String, dynamic> data) {
+    // Usamos StatefulBuilder solo para el efecto de Hover interno
     return StatefulBuilder(
-      builder: (context, setState) {
+      builder: (context, cardSetState) {
         final String libroId = data['id'] ?? '';
         bool isHovered = false;
 
+        // Escuchamos la lista de favoritos del Cubit para saber si este libro está marcado
+        final listaIdsFavoritos = context.watch<CoraCubit>().state;
+        final bool estaEnFavoritos = listaIdsFavoritos.contains(libroId);
+
         return MouseRegion(
-          onEnter: (_) => setState(() => isHovered = true),
-          onExit: (_) => setState(() => isHovered = false),
+          onEnter: (_) => cardSetState(() => isHovered = true),
+          onExit: (_) => cardSetState(() => isHovered = false),
           cursor: SystemMouseCursors.click,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
@@ -188,6 +198,7 @@ class HomePage extends StatelessWidget {
                                 : const Center(child: Icon(Icons.book, size: 40, color: Colors.grey)),
                           ),
                         ),
+                        // Badge de Tipo de Transacción
                         Positioned(
                           top: 12,
                           left: 12,
@@ -205,26 +216,16 @@ class HomePage extends StatelessWidget {
                             ),
                           ),
                         ),
+                        // --- CORAZÓN DE CADA TARJETA ---
                         Positioned(
                           top: 12,
                           right: 12,
-                          child: StreamBuilder<DocumentSnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('usuarios')
-                                .doc(FirebaseAuth.instance.currentUser?.uid)
-                                .collection('favoritos')
-                                .doc(libroId)
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              final bool estaEnFavoritos = snapshot.hasData && snapshot.data!.exists;
-                              return _HoverIconButton(
-                                icon: Icons.favorite_border,
-                                activeIcon: Icons.favorite,
-                                activeColor: Colors.red,
-                                isSelected: estaEnFavoritos,
-                                onPressed: () => context.read<CoraCubit>().toggleFavorito(libroId, estaEnFavoritos),
-                              );
-                            },
+                          child: _HoverIconButton(
+                            icon: Icons.favorite_border,
+                            activeIcon: Icons.favorite,
+                            activeColor: Colors.red,
+                            isSelected: estaEnFavoritos,
+                            onPressed: () => context.read<CoraCubit>().toggleFavorito(libroId, estaEnFavoritos),
                           ),
                         ),
                       ],
@@ -272,7 +273,7 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// ESTA ES LA CLASE QUE FALTABA
+// Widget auxiliar para el botón de favorito con fondo circular
 class _HoverIconButton extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
@@ -294,6 +295,9 @@ class _HoverIconButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, spreadRadius: 1)
+        ]
       ),
       child: IconButton(
         icon: Icon(
