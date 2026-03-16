@@ -44,6 +44,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< Updated upstream
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
       appBar: const CustomAppBar(),
@@ -113,6 +114,94 @@ class HomePage extends StatelessWidget {
                   }
                   return const SizedBox.shrink();
                 },
+=======
+    return BlocProvider(
+      create: (context) => SearchCubit(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF2F4F7),
+        appBar: const CustomAppBar(),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Explorar Material Académico',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Encuentra libros y material de estudio para tus cursos',
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
+                    ),
+                    const SizedBox(height: 20),
+                    BlocBuilder<SearchCubit, SearchState>(
+                      builder: (context, state) {
+                        if (state is SearchInitial || state is SearchLoading) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (state is SearchError) {
+                          return Center(child: Text(state.message));
+                        }
+                        if (state is SearchLoaded && state.results.isNotEmpty) {
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              int crossAxisCount = 4;
+                              if (constraints.maxWidth < 600) {
+                                crossAxisCount = 2;
+                              } else if (constraints.maxWidth < 900) {
+                                crossAxisCount = 3;
+                              }
+
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 0.65,
+                                ),
+                                itemCount: state.results.length,
+                                itemBuilder: (context, index) {
+                                  final doc =
+                                      state.results[index] as DocumentSnapshot;
+                                  final data = doc.data() as Map<String, dynamic>;
+                                  final bookData = Map<String, dynamic>.from(data);
+                                  bookData['id'] = doc.id;
+                                  return _BookCard(bookData: bookData);
+                                },
+                              );
+                            },
+                          );
+                        }
+                        return const Center(
+                          child: Text('No se encontraron resultados'),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Botón flotante para ir a la pantalla de favoritos general
+            Positioned(
+              top: 10,
+              right: 16,
+              child: FloatingActionButton(
+                mini: true,
+                backgroundColor: Colors.white,
+                onPressed: () => Navigator.pushNamed(context, '/favorites'),
+                child: const Icon(Icons.favorite, color: Colors.red),
+>>>>>>> Stashed changes
               ),
             ],
           ),
@@ -186,6 +275,7 @@ class HomePage extends StatelessWidget {
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(20),
                           ),
+<<<<<<< Updated upstream
                           child: Container(
                             width: double.infinity,
                             color: Colors.grey[100],
@@ -281,6 +371,55 @@ class HomePage extends StatelessWidget {
                               );
                             },
                           ),
+=======
+                          child: (imageUrl != null &&
+                                  imageUrl.toString().startsWith('http'))
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Center(child: Icon(Icons.broken_image)),
+                                )
+                              : (imageUrl != null)
+                                  ? Image.asset(
+                                      imageUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const Center(child: Icon(Icons.broken_image)),
+                                    )
+                                  : const Center(child: Icon(Icons.image_not_supported)),
+                        ),
+                      ),
+                      
+                      // EL CORAZÓN AHORA ESTÁ SOLO Y ES REACTIVO
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: StreamBuilder<DocumentSnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('usuarios')
+                              .doc(FirebaseAuth.instance.currentUser?.uid)
+                              .collection('favoritos')
+                              .doc(libroId)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            bool esFavorito =
+                                snapshot.hasData && snapshot.data!.exists;
+                            return _HoverIconButton(
+                              icon: esFavorito
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              isSelected: esFavorito,
+                              activeColor: Colors.red,
+                              onPressed: () {
+                                context.read<CoraCubit>().toggleFavorito(
+                                      libroId,
+                                      esFavorito,
+                                    );
+                              },
+                            );
+                          },
+>>>>>>> Stashed changes
                         ),
                       ],
                     ),
@@ -291,7 +430,11 @@ class HomePage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
+<<<<<<< Updated upstream
                           (data['materia'] ?? 'Sin materia').toUpperCase(),
+=======
+                          (widget.bookData['categoria'] ?? 'CATEGORIA').toUpperCase(),
+>>>>>>> Stashed changes
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 11,
@@ -310,6 +453,7 @@ class HomePage extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+<<<<<<< Updated upstream
                         Text(
                           data['autor'] ?? 'Sin autor',
                           style: TextStyle(
@@ -354,6 +498,16 @@ class HomePage extends StatelessWidget {
                               ],
                             ),
                           ],
+=======
+                        const Spacer(),
+                        Text(
+                          '\$ ${widget.bookData['precio'] ?? '0'}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF003870),
+                          ),
+>>>>>>> Stashed changes
                         ),
                       ],
                     ),
