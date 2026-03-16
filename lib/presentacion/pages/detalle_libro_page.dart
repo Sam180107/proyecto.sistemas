@@ -3,43 +3,83 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_paypal_payment/flutter_paypal_payment.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
-import 'package:share_plus/share_plus.dart'; // Para la funcionalidad del botón de compartir
 
-
-class DetalleLibroPage extends StatelessWidget {
+class DetalleLibroPage extends StatefulWidget {
   const DetalleLibroPage({super.key});
 
-  void _solicitarLibro(BuildContext context, Map<String, dynamic> arguments) async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes iniciar sesión para solicitar un libro')),
-      );
-      return;
-    }
+  @override
+  State<DetalleLibroPage> createState() => _DetalleLibroPageState();
+}
 
-    if (currentUser.uid == arguments['userId']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No puedes solicitar tu propio libro')),
-      );
-      return;
-    }
+class _DetalleLibroPageState extends State<DetalleLibroPage> {
+  bool _mostrarPago = false;
 
+  void _iniciarProcesoDeSolicitud() {
+    setState(() {
+      _mostrarPago = true;
+    });
+  }
+
+  // --- LÓGICA DE PAYPAL ---
+  void _ejecutarPagoReal(BuildContext context, Map<String, dynamic> arguments) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (BuildContext context) => PaypalCheckoutView(
+          sandboxMode: true,
+          clientId: "AYHmMHVwGKu8CBkSEiMHEHBb9xr3SP0uPZ4bmjbwWYxH_5NdkHM7Q6wc3pAVM4Gefr_OF01DXcuSPwGH",
+          secretKey: "ENHj2nD99h26jpDsVNvJnwV4ui9N1hOmmFKOL7kPUU6OKcVTq2XM1OokPQEYxM-WWgCn2eaxZlZsvDtR",
+          transactions: [
+            {
+              "amount": {
+                "total": arguments['precio'].toString(),
+                "currency": "USD",
+                "details": {
+                  "subtotal": arguments['precio'].toString(),
+                  "shipping": '0',
+                  "shipping_discount": 0
+                }
+              },
+              "description": "Compra de material: ${arguments['titulo']} en BookSwap UNIMET",
+              "item_list": {
+                "items": [
+                  {
+                    "name": arguments['titulo'] ?? "Libro",
+                    "quantity": 1,
+                    "price": arguments['precio'].toString(),
+                    "currency": "USD"
+                  }
+                ],
+              }
+            }
+          ],
+          note: "Pago procesado por BookSwap.",
+          onSuccess: (Map params) async {
+            await _finalizarPedidoEnFirebase(context, arguments);
+          },
+          onError: (error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error en la pasarela de pago: $error')),
+            );
+          },
+          onCancel: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Pago cancelado')),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _finalizarPedidoEnFirebase(BuildContext context, Map<String, dynamic> arguments) async {
     try {
       await context.read<OrderCubit>().createOrder(
-<<<<<<< Updated upstream
-        sellerId: arguments['userId'],
-        bookId: arguments['id'] ?? '',
-        bookTitle: arguments['titulo'],
-        bookAuthor: arguments['autor'] ?? '',
-        price: double.tryParse(arguments['precio'].toString()) ?? 0.0,
-      );
-=======
             sellerId: arguments['userId'],
             bookId: arguments['id'] ?? '',
             bookTitle: arguments['titulo'],
@@ -47,19 +87,14 @@ class DetalleLibroPage extends StatelessWidget {
             price: double.tryParse(arguments['precio'].toString()) ?? 0.0,
             tipoTransaccion: 'Venta',
           );
->>>>>>> Stashed changes
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solicitud enviada exitosamente')),
+        const SnackBar(content: Text('¡Pago exitoso! Solicitud enviada al vendedor.')),
       );
+      Navigator.pop(context);
     } catch (e) {
-<<<<<<< Updated upstream
-=======
-      if (!context.mounted) return;
->>>>>>> Stashed changes
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al enviar solicitud: $e')),
-      );
+      debugPrint("Error al registrar orden: $e");
     }
   }
 
@@ -78,131 +113,205 @@ class DetalleLibroPage extends StatelessWidget {
           SingleChildScrollView(
             child: Column(
               children: [
-                _buildHeader(
-                  context,
-<<<<<<< Updated upstream
-                  arguments['precio']!,
-                  arguments['imagen']!,
-=======
-                  arguments['precio'] ?? 0.0,
-                  arguments['imagen'] ?? arguments['imageUrl'] ?? '',
->>>>>>> Stashed changes
-                  arguments,
-                ),
+                _buildHeader(context, arguments['precio'] ?? 0.0, arguments['imagen'] ?? arguments['imageUrl'] ?? '', arguments),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-<<<<<<< Updated upstream
-                        arguments['titulo']!,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        arguments['autor'] == null || arguments['autor'].isEmpty ? 'Anónimo' : arguments['autor']!,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-=======
-                        arguments['titulo'] ?? 'Sin título',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        arguments['autor'] == null || arguments['autor'].isEmpty
-                            ? 'Anónimo'
-                            : arguments['autor']!,
-                        style: const TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
+                      Text(arguments['titulo'] ?? 'Sin título', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text(arguments['autor'] ?? 'Anónimo', style: const TextStyle(fontSize: 16, color: Colors.grey)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.inventory_2_outlined,
-                              size: 16, color: (arguments['stock'] ?? 0) > 0 ? Colors.green : Colors.red),
+                          Icon(Icons.inventory_2_outlined, size: 16, color: (arguments['stock'] ?? 0) > 0 ? Colors.green : Colors.red),
                           const SizedBox(width: 8),
-                          Text(
-                            "Stock: ${arguments['stock'] ?? 0}",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: (arguments['stock'] ?? 0) > 0 ? Colors.green[700] : Colors.red,
-                            ),
-                          ),
+                          Text("Stock: ${arguments['stock'] ?? 0}", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (arguments['stock'] ?? 0) > 0 ? Colors.green[700] : Colors.red)),
                         ],
                       ),
->>>>>>> Stashed changes
                       const SizedBox(height: 25),
-                      const Text(
-                        "Estado de la Transacción",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
+                      const Text("Estado de la Transacción", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 12),
                       _buildStatusTimeline(),
                       const SizedBox(height: 25),
-<<<<<<< Updated upstream
-                      _buildInfoCard("Descripción", arguments['descripcion']!),
-
-                      const SizedBox(height: 25),
-                      _buildSellerCard(
-                        context,
-                        arguments,
-                      ),
-
-                      // Espacio final para que el scroll permita ver todo antes del botón
-                      const SizedBox(height: 120),
-=======
                       _buildInfoCard("Descripción", arguments['descripcion'] ?? 'Sin descripción'),
                       const SizedBox(height: 25),
                       _buildSellerCard(context, arguments),
-                      const SizedBox(height: 180),
->>>>>>> Stashed changes
+                      if (_mostrarPago) ...[
+                        const SizedBox(height: 25),
+                        _buildPayPalSection(context, arguments),
+                      ],
+                      const SizedBox(height: 180), 
                     ],
                   ),
                 ),
               ],
-<<<<<<< Updated upstream
             ),
           ),
-
-          // 2. BOTÓN DE RETROCESO (Indispensable al usar Stack)
           Positioned(
             top: 45,
             left: 20,
             child: CircleAvatar(
-              backgroundColor: Colors.white.withValues(alpha: 0.9),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => Navigator.pop(context),
-=======
+              backgroundColor: Colors.white.withOpacity(0.9),
+              child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
             ),
           ),
-
-          // BOTÓN DE RETROCESO FLOTANTE
-          Positioned(
-            top: 45,
-            left: 20,
-            child: _CircleIconButton(
-              icon: Icons.arrow_back,
-              onPressed: () => Navigator.pop(context),
+          if (!_mostrarPago)
+            Positioned(
+              bottom: 20,
+              left: 20,
+              right: 20,
+              child: _buildBottomButton(context, arguments),
             ),
-          ),
         ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: _buildBottomButton(context, arguments),
-        ),
       ),
     );
   }
 
-  // --- WIDGETS DE CABECERA ---
+  Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
+    final isOwner = FirebaseAuth.instance.currentUser?.uid == arguments['userId'];
+
+    if (isOwner) {
+      return ElevatedButton(
+        onPressed: null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.grey,
+          minimumSize: const Size(double.infinity, 60),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        ),
+        child: const Text("Tu Publicación", style: TextStyle(color: Colors.white, fontSize: 18)),
+      );
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // --- BOTÓN DE WHATSAPP CON DATOS EN TIEMPO REAL ---
+        StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('usuarios')
+              .doc(arguments['userId'])
+              .snapshots(),
+          builder: (context, snapshot) {
+            String telefonoFirebase = "";
+            if (snapshot.hasData && snapshot.data!.exists) {
+              final data = snapshot.data!.data() as Map<String, dynamic>;
+              telefonoFirebase = data['telefono'] ?? "";
+            }
+
+            return Container(
+              height: 60,
+              width: 60,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))],
+              ),
+              child: IconButton(
+                onPressed: () async {
+                  if (telefonoFirebase.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('El vendedor no tiene teléfono registrado')),
+                    );
+                    return;
+                  }
+
+                  // 1. Limpieza total (solo dígitos)
+                  String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
+
+                  // 2. Estandarización para Venezuela
+                  if (cleanPhone.startsWith('0')) {
+                    cleanPhone = '58${cleanPhone.substring(1)}';
+                  } else if (cleanPhone.length == 10 && (
+                      cleanPhone.startsWith('412') || 
+                      cleanPhone.startsWith('414') || 
+                      cleanPhone.startsWith('424') || 
+                      cleanPhone.startsWith('422'))) {
+                    cleanPhone = '58$cleanPhone';
+                  }
+
+                  final String nombre = arguments['vendedor'] ?? "Vendedor";
+                  final String nombreLibro = arguments['titulo'] ?? "Material";
+                  final String mensaje = "Hola $nombre, estoy interesado en tu libro '$nombreLibro' que vi en BookSwap.";
+                  
+                  final Uri whatsappUri = Uri.parse(
+                      "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
+
+                  if (await canLaunchUrl(whatsappUri)) {
+                    await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No se pudo abrir WhatsApp')),
+                      );
+                    }
+                  }
+                },
+                icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 30),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 15),
+        // Botón azul ovalado - Ancho de 300
+        SizedBox(
+          width: 380, 
+          child: ElevatedButton(
+            onPressed: () => _iniciarProcesoDeSolicitud(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E88E5),
+              minimumSize: const Size(0, 60),
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            ),
+            child: const Text("Solicitar Material", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- FUNCIONES AUXILIARES DE UI ---
+
+  Widget _buildPayPalSection(BuildContext context, Map<String, dynamic> arguments) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF003087), width: 2),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.payment, color: Color(0xFF003087)),
+              SizedBox(width: 10),
+              Text("Checkout Seguro", style: TextStyle(color: Color(0xFF003087), fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Text("Total a pagar: \$${arguments['precio']}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => _ejecutarPagoReal(context, arguments),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFC439),
+              foregroundColor: Colors.black,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text("Pagar con PayPal", style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          TextButton(
+            onPressed: () => setState(() => _mostrarPago = false),
+            child: const Text("Cancelar", style: TextStyle(color: Colors.red)),
+          )
+        ],
+      ),
+    );
+  }
 
   Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen, Map<String, dynamic> arguments) {
     return SizedBox(
@@ -218,45 +327,15 @@ class DetalleLibroPage extends StatelessWidget {
                   : Image.asset(rutaImagen, fit: BoxFit.cover),
             ),
           ),
-
-          // Gradiente superior
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 100,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black.withOpacity(0.4), Colors.transparent],
-                ),
->>>>>>> Stashed changes
-              ),
-            ),
-          ),
-
-<<<<<<< Updated upstream
-          // 3. BOTÓN DE ACCIÓN FIJO EN LA PARTE INFERIOR
-          Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: _buildBottomButton(context, arguments),
-          ),
-=======
-          // BOTONES SUPERIORES DERECHOS
           Positioned(
             top: 45,
             right: 20,
             child: Row(
               children: [
-                _CircleIconButton(
+                _buildCircularAction(
                   icon: Icons.share_outlined,
                   onPressed: () {
-                    Share.share(
-                        '¡Mira este libro en BookSwap UNIMET!\n\n${arguments['titulo']}\nPrecio: \$${arguments['precio']}');
+                    Share.share('¡Mira este material en BookSwap UNIMET!\n\n${arguments['titulo']}\nPrecio: \$${arguments['precio']}');
                   },
                 ),
                 const SizedBox(width: 12),
@@ -269,31 +348,13 @@ class DetalleLibroPage extends StatelessWidget {
                       .snapshots(),
                   builder: (context, snapshot) {
                     bool esFavorito = snapshot.hasData && snapshot.data!.exists;
-                    return _CircleIconButton(
+                    return _buildCircularAction(
                       icon: esFavorito ? Icons.favorite : Icons.favorite_border,
                       iconColor: esFavorito ? Colors.red : Colors.black,
-                      isSelected: esFavorito,
                       onPressed: () {
                         final userId = FirebaseAuth.instance.currentUser?.uid;
                         if (userId == null) return;
-                        
-                        final ref = FirebaseFirestore.instance
-                            .collection('usuarios')
-                            .doc(userId)
-                            .collection('favoritos')
-                            .doc(arguments['id']);
-
-                        if (esFavorito) {
-                          ref.delete();
-                        } else {
-                          ref.set({
-                            'id': arguments['id'],
-                            'titulo': arguments['titulo'],
-                            'imagen': rutaImagen,
-                            'precio': precio,
-                            'addedAt': FieldValue.serverTimestamp(),
-                          });
-                        }
+                        context.read<CoraCubit>().toggleFavorito(arguments['id'], esFavorito);
                       },
                     );
                   },
@@ -301,9 +362,6 @@ class DetalleLibroPage extends StatelessWidget {
               ],
             ),
           ),
-
-          // ETIQUETA DE PRECIO (Se quitó el const del BoxDecoration para evitar error de black24)
-          // ETIQUETA DE PRECIO
           Positioned(
             bottom: 20,
             left: 20,
@@ -312,207 +370,30 @@ class DetalleLibroPage extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFF1E88E5),
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    // Usamos el valor hexadecimal de black24 para evitar el error de Flutter
-                    color: Color(0x3D000000), 
-                    blurRadius: 8,
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8)],
               ),
               child: Text(
                 "VENTA - \$ ${precio.toString()}",
-                style: const TextStyle(
-                  color: Colors.white, 
-                  fontWeight: FontWeight.bold, 
-                  fontSize: 16,
-                ),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
-            ),           
-          ),           
->>>>>>> Stashed changes
+            ),
+          ),
         ],
       ),
     );
   }
 
-<<<<<<< Updated upstream
-  // --- WIDGETS DE APOYO OPTIMIZADOS ---
-
-  Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen, Map<String, dynamic> arguments) {
-  final String libroId = arguments['id'] ?? ''; // Asegúrate de pasar el ID del libro en los argumentos
-
-  return SizedBox(
-    height: 320,
-    width: double.infinity,
-    child: Stack(
-      children: [
-        // 1. Imagen de fondo
-        Positioned.fill(
-          child: Container(
-            color: Colors.grey[300],
-            child: rutaImagen.startsWith('http')
-                ? Image.network(rutaImagen, fit: BoxFit.cover)
-                : Image.asset(rutaImagen, fit: BoxFit.cover),
-          ),
-        ),
-        
-        // 2. Gradiente superior para visibilidad de botones
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.3),
-                  Colors.transparent,
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        // 3. BOTONES DE ACCIÓN (Favorito y Compartir)
-        Positioned(
-          top: 45, // Alineado con el botón de retroceder
-          right: 20,
-          child: Row(
-            children: [
-              // --- BOTÓN DE FAVORITO CON FIREBASE ---
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('usuarios')
-                    .doc(FirebaseAuth.instance.currentUser?.uid)
-                    .collection('favoritos')
-                    .doc(libroId)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  bool esFavorito = snapshot.hasData && snapshot.data!.exists;
-
-                  return _buildCircularAction(
-                    icon: esFavorito ? Icons.favorite : Icons.favorite_border,
-                    color: esFavorito ? Colors.red : Colors.black,
-                    onPressed: () => context.read<CoraCubit>().toggleFavorito(libroId, esFavorito),
-                  );
-                },
-              ),
-              const SizedBox(width: 12),
-              
-              // --- BOTÓN DE COMPARTIR ---
-              _buildCircularAction(
-                icon: Icons.share_outlined,
-                color: Colors.black,
-                onPressed: () {
-                  // Necesitas importar 'package:share_plus/share_plus.dart'
-                  Share.share(
-                    '¡Mira este material en BookSwap! "${arguments['titulo']}" por \$${precio.toString()}. Encuéntralo en el campus de la UNIMET.',
-                    subject: 'Material Académico BookSwap',
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // 4. Etiqueta de precio (Tu código original)
-        Positioned(
-          bottom: 20,
-          left: 20,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E88E5),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-            child: Text(
-              "VENTA - \$ ${precio.toString()}",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-// Widget auxiliar para mantener el estilo circular y la sombra
-Widget _buildCircularAction({required IconData icon, required Color color, required VoidCallback onPressed}) {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.9),
-      shape: BoxShape.circle,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.1),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: IconButton(
-      icon: Icon(icon, color: color, size: 22),
-      onPressed: onPressed,
-    ),
-  );
-}
-=======
-  // WIDGET AUXILIAR DE BOTÓN CIRCULAR (Corregido con isSelected)
-  Widget _CircleIconButton({
-    required IconData icon, 
-    required VoidCallback onPressed, 
-    Color iconColor = Colors.black,
-    bool isSelected = false,
-  }) {
+  Widget _buildCircularAction({required IconData icon, required VoidCallback onPressed, Color iconColor = Colors.black}) {
     return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12, 
-            blurRadius: 8, 
-            spreadRadius: 1
-          )
-        ],
-      ),
-      child: CircleAvatar(
-        backgroundColor: Colors.white,
-        radius: 20,
-        child: IconButton(
-          icon: Icon(icon, color: iconColor, size: 20),
-          onPressed: onPressed,
-        ),
-      ),
+      decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+      child: IconButton(icon: Icon(icon, color: iconColor), onPressed: onPressed),
     );
   }
-
-  // --- RESTO DE WIDGETS AUXILIARES ---
->>>>>>> Stashed changes
 
   Widget _buildStatusTimeline() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-<<<<<<< Updated upstream
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10),
-        ],
-=======
->>>>>>> Stashed changes
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -553,61 +434,6 @@ Widget _buildCircularAction({required IconData icon, required Color color, requi
   }
 
   Widget _buildSellerCard(BuildContext context, Map<String, dynamic> arguments) {
-<<<<<<< Updated upstream
-  String nombre = arguments['vendedor']!;
-  String carrera = arguments['carrera']!;
-  String iniciales = arguments['iniciales']!;
-  
-  return BlocBuilder<RatingCubit, RatingState>(
-    builder: (context, state) {
-      return Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: const Color(0xFF003870),
-              child: Text(
-                iniciales,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nombre,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    carrera,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  if (state is RatingLoaded && state.totalValoraciones > 0) ...[
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        _buildStarRating(state.promedio),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${state.promedio.toStringAsFixed(1)} (${state.totalValoraciones})',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-=======
     return BlocBuilder<RatingCubit, RatingState>(
       builder: (context, state) {
         return Container(
@@ -618,107 +444,26 @@ Widget _buildCircularAction({required IconData icon, required Color color, requi
               CircleAvatar(
                 radius: 25,
                 backgroundColor: const Color(0xFF003870),
-                child: Text(arguments['iniciales'] ?? '?', style: const TextStyle(color: Colors.white)),
+                child: Text(arguments['iniciales'] ?? '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(arguments['vendedor'] ?? 'Usuario', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(arguments['carrera'] ?? 'UNIMET', style: const TextStyle(color: Colors.grey, fontSize: 12)),
->>>>>>> Stashed changes
+                    Text(arguments['vendedor'] ?? 'Vendedor', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(arguments['carrera'] ?? 'Carrera no especificada', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
-                ],
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  '/perfil',
-                  arguments: {
-                    'vendedor': arguments['vendedor'],
-                    'carrera': arguments['carrera'],
-                    'iniciales': arguments['iniciales'],
-                    'userId': arguments['userId'],
-                    'rol': arguments['rol'],
-                    'isOtherUser': true,
-                    // --- CORRECCIÓN AQUÍ ---
-                    // Si en la lista de libros el campo viene como 'telefono', pásalo directamente
-                   // En el Navigator.pushNamed de _buildSellerCard
-                    'telefono': arguments['telefonoVendedor'] ?? arguments['telefono'] ?? arguments['celular'] ?? '',
-                    'libro': arguments['titulo'] ?? 'un libro', 
-                  },
-                );
-              },
-              child: const Text(
-                "Ver Perfil",
-                style: TextStyle(
-                  color: Color(0xFF1E88E5),
-                  fontWeight: FontWeight.bold,
                 ),
               ),
-<<<<<<< Updated upstream
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-  Widget _buildStarRating(double rating) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (index) {
-        return Icon(
-          index < rating.floor() ? Icons.star :
-          (index < rating && rating % 1 != 0) ? Icons.star_half : Icons.star_border,
-          color: Colors.amber,
-          size: 14,
-        );
-      }),
-    );
-  }
-
-  Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: () => _solicitarLibro(context, arguments),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1E88E5),
-          minimumSize: const Size(double.infinity, 60),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          elevation: 0,
-        ),
-        child: const Text(
-          "Solicitar Material",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-}
-=======
               TextButton(
-                onPressed: () {},
-                child: const Text("Ver Perfil", style: TextStyle(color: Color(0xFF1E88E5))),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/perfil', arguments: {
+                    ...arguments,
+                    'isOtherUser': true,
+                  });
+                },
+                child: const Text("Ver Perfil", style: TextStyle(color: Color(0xFF1E88E5), fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -726,21 +471,4 @@ Widget _buildCircularAction({required IconData icon, required Color color, requi
       },
     );
   }
-
-  Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
-    final isOwner = FirebaseAuth.instance.currentUser?.uid == arguments['userId'];
-    return ElevatedButton(
-      onPressed: () => isOwner ? null : _solicitarLibro(context, arguments),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E88E5),
-        minimumSize: const Size(double.infinity, 60),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      ),
-      child: Text(
-        isOwner ? "Editar Publicación" : "Solicitar Material",
-        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
 }
->>>>>>> Stashed changes

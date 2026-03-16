@@ -13,6 +13,7 @@ class BookOrder {
   final DateTime? updatedAt;
   final String? buyerName;
   final String? sellerName;
+  final String tipoTransaccion; // --- NUEVO CAMPO ---
 
   BookOrder({
     required this.id,
@@ -27,15 +28,16 @@ class BookOrder {
     this.updatedAt,
     this.buyerName,
     this.sellerName,
+    required this.tipoTransaccion, // --- REQUERIDO ---
   });
 
   factory BookOrder.fromMap(String id, Map<String, dynamic> data) {
     return BookOrder(
       id: id,
-      buyerId: data['buyerId'],
-      sellerId: data['sellerId'],
-      bookId: data['bookId'],
-      bookTitle: data['bookTitle'],
+      buyerId: data['buyerId'] ?? '',
+      sellerId: data['sellerId'] ?? '',
+      bookId: data['bookId'] ?? '',
+      bookTitle: data['bookTitle'] ?? '',
       bookAuthor: data['bookAuthor'] ?? '',
       price: double.tryParse(data['price'].toString()) ?? 0.0,
       status: data['status'] ?? 'pending',
@@ -43,6 +45,7 @@ class BookOrder {
       updatedAt: data['updatedAt'] != null ? (data['updatedAt'] as Timestamp).toDate() : null,
       buyerName: data['buyerName'],
       sellerName: data['sellerName'],
+      tipoTransaccion: data['tipoTransaccion'] ?? 'Venta', // --- MAPEO ---
     );
   }
 
@@ -59,6 +62,7 @@ class BookOrder {
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       'buyerName': buyerName,
       'sellerName': sellerName,
+      'tipoTransaccion': tipoTransaccion, // --- HACIA FIRESTORE ---
     };
   }
 }

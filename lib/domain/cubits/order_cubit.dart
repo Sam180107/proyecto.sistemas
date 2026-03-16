@@ -5,22 +5,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:unimet_marketplace/data/repositories/order_repository.dart';
 import 'package:unimet_marketplace/domain/entities/order.dart';
 
+// --- Estados del Cubit ---
 abstract class OrderState {}
+
 class OrderInitial extends OrderState {}
+
 class OrderLoading extends OrderState {}
+
 class OrderLoaded extends OrderState {
   final List<BookOrder> orders;
   OrderLoaded(this.orders);
 }
+
 class OrderError extends OrderState {
   final String message;
   OrderError(this.message);
 }
+
 class OrderCreated extends OrderState {
   final String orderId;
   OrderCreated(this.orderId);
 }
 
+// --- Cubit Principal ---
 class OrderCubit extends Cubit<OrderState> {
   final OrderRepository _orderRepository;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -29,41 +36,40 @@ class OrderCubit extends Cubit<OrderState> {
 
   OrderCubit(this._orderRepository) : super(OrderInitial());
 
-  // Crear una nueva orden
+  /// Crear una nueva orden
+  /// Se agregó 'tipoTransaccion' para diferenciar entre Venta e Intercambio
   Future<void> createOrder({
     required String sellerId,
     required String bookId,
     required String bookTitle,
     required String bookAuthor,
     required double price,
+    required String tipoTransaccion, // Parámetro añadido
   }) async {
     try {
+      emit(OrderLoading()); // Opcional: emitir carga antes de iniciar
+
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
         emit(OrderError('Usuario no autenticado'));
         return;
       }
 
-      // Obtener nombres de comprador y vendedor
+      // Obtener nombres de comprador y vendedor desde Firestore
       final buyerDoc = await _firestore.collection('users').doc(currentUser.uid).get();
       final sellerDoc = await _firestore.collection('users').doc(sellerId).get();
 
-      String buyerName;
-      if (buyerDoc.exists) {
-        buyerName = buyerDoc.data()?['nombre'] ?? 'Desconocido';
-      } else {
-        buyerName = 'Desconocido';
-      }
+      String buyerName = buyerDoc.exists 
+          ? (buyerDoc.data()?['nombre'] ?? 'Desconocido') 
+          : 'Desconocido';
 
-      String sellerName;
-      if (sellerDoc.exists) {
-        sellerName = sellerDoc.data()?['nombre'] ?? 'Desconocido';
-      } else {
-        sellerName = 'Desconocido';
-      }
+      String sellerName = sellerDoc.exists 
+          ? (sellerDoc.data()?['nombre'] ?? 'Desconocido') 
+          : 'Desconocido';
 
+      // Creación del objeto de la entidad con el nuevo campo
       final order = BookOrder(
-        id: '', // Se asignará al crear
+        id: '', // Firestore generará el ID
         buyerId: currentUser.uid,
         sellerId: sellerId,
         bookId: bookId,
@@ -74,6 +80,7 @@ class OrderCubit extends Cubit<OrderState> {
         createdAt: DateTime.now(),
         buyerName: buyerName,
         sellerName: sellerName,
+        tipoTransaccion: tipoTransaccion, // Campo asignado
       );
 
       final orderId = await _orderRepository.createOrder(order);
@@ -83,10 +90,11 @@ class OrderCubit extends Cubit<OrderState> {
     }
   }
 
-  // Cargar órdenes del comprador
+  /// Cargar órdenes donde el usuario actual es el comprador
   void loadBuyerOrders() {
     emit(OrderLoading());
     _ordersSubscription?.cancel();
+    
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
       emit(OrderError('Usuario no autenticado'));
@@ -102,10 +110,11 @@ class OrderCubit extends Cubit<OrderState> {
     );
   }
 
-  // Cargar órdenes del vendedor
+  /// Cargar órdenes donde el usuario actual es el vendedor
   void loadSellerOrders() {
     emit(OrderLoading());
     _ordersSubscription?.cancel();
+    
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
       emit(OrderError('Usuario no autenticado'));
@@ -121,7 +130,7 @@ class OrderCubit extends Cubit<OrderState> {
     );
   }
 
-  // Actualizar estado de orden (para vendedores)
+  /// Actualizar estado de orden (Ej: de 'pending' a 'completed')
   Future<void> updateOrderStatus(String orderId, String status) async {
     if (orderId.isEmpty) {
       emit(OrderError('ID de orden inválido'));
@@ -129,7 +138,7 @@ class OrderCubit extends Cubit<OrderState> {
     }
     try {
       await _orderRepository.updateOrderStatus(orderId, status);
-      // El stream se actualizará automáticamente
+      // El stream de Firebase actualizará la UI automáticamente
     } catch (e) {
       emit(OrderError('Error al actualizar orden: $e'));
     }

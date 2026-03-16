@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/cubits/search_cubit.dart';
-import '../widgets/custom_app_bar.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Para StreamBuilder y Firestore
-import 'package:firebase_auth/firebase_auth.dart';    // Para el ID del usuario actual
-import 'package:flutter/material.dart';              // Para Positioned y widgets básicos
-
-import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
 
+// Imports de tu proyecto
+import '../../domain/cubits/search_cubit.dart';
+import '../widgets/custom_app_bar.dart';
+import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
+
 // 1. Modelo de datos (Data)
-// Esta lista centraliza la información para que sea fácil de mantener o conectar a Firebase luego.
 final List<Map<String, String>> libros = [
   {
     'titulo': 'Cálculo: Una Variable',
@@ -21,8 +20,7 @@ final List<Map<String, String>> libros = [
     'vendedor': 'María González',
     'carrera': 'Ingeniería Civil',
     'iniciales': 'MG',
-    'descripcion':
-        'Libro en excelente estado, edición 8va. Incluye todos los capítulos sin marcas ni subrayados. Perfecto para cursos de Cálculo I y II.',
+    'descripcion': 'Libro en excelente estado, edición 8va.',
   },
   {
     'titulo': 'Física Universitaria',
@@ -33,10 +31,8 @@ final List<Map<String, String>> libros = [
     'vendedor': 'Ricardo Pérez',
     'carrera': 'Ingeniería de Sistemas',
     'iniciales': 'RP',
-    'descripcion':
-        'Casi nuevo, incluye el solucionario impreso. Muy útil para los laboratorios de Física I.',
+    'descripcion': 'Casi nuevo, incluye el solucionario impreso.',
   },
-  // Puedes añadir más mapas aquí y el Grid se actualizará solo.
 ];
 
 class HomePage extends StatelessWidget {
@@ -44,77 +40,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< Updated upstream
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
-      appBar: const CustomAppBar(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Explorar Material Académico',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Encuentra libros y material de estudio para tus cursos',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
-              ),
-              const SizedBox(height: 20),
-              BlocBuilder<SearchCubit, SearchState>(
-                builder: (context, state) {
-                  if (state is SearchInitial || state is SearchLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (state is SearchError) {
-                    return Center(child: Text(state.message));
-                  }
-                  if (state is SearchLoaded) {
-                    if (state.results.isEmpty) {
-                      return const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('No se encontraron publicaciones.'),
-                            SizedBox(height: 8),
-                            Text(
-                              'Esto puede deberse a un problema de permisos en Firebase.',
-                              style: TextStyle(color: Colors.grey),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            crossAxisSpacing: 20,
-                            mainAxisSpacing: 24,
-                            childAspectRatio: 0.68,
-                          ),
-                      itemCount: state.results.length,
-                      itemBuilder: (context, index) {
-                        final doc = state.results[index];
-                        final data = doc.data() as Map<String, dynamic>;
-                        data['id'] = doc.id;
-                        return _buildBookCard(context, data);
-                      },
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-=======
     return BlocProvider(
       create: (context) => SearchCubit(),
       child: Scaffold(
@@ -142,6 +67,7 @@ class HomePage extends StatelessWidget {
                       style: TextStyle(fontSize: 16, color: Colors.black54),
                     ),
                     const SizedBox(height: 20),
+                    
                     BlocBuilder<SearchCubit, SearchState>(
                       builder: (context, state) {
                         if (state is SearchInitial || state is SearchLoading) {
@@ -150,61 +76,56 @@ class HomePage extends StatelessWidget {
                         if (state is SearchError) {
                           return Center(child: Text(state.message));
                         }
-                        if (state is SearchLoaded && state.results.isNotEmpty) {
+                        if (state is SearchLoaded) {
+                          if (state.results.isEmpty) {
+                            return const Center(
+                              child: Text('No se encontraron publicaciones.'),
+                            );
+                          }
+
                           return LayoutBuilder(
                             builder: (context, constraints) {
-                              int crossAxisCount = 4;
-                              if (constraints.maxWidth < 600) {
-                                crossAxisCount = 2;
-                              } else if (constraints.maxWidth < 900) {
-                                crossAxisCount = 3;
-                              }
+                              int crossAxisCount = constraints.maxWidth < 600 ? 2 : (constraints.maxWidth < 900 ? 3 : 4);
 
                               return GridView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: crossAxisCount,
                                   crossAxisSpacing: 16,
                                   mainAxisSpacing: 16,
-                                  childAspectRatio: 0.65,
+                                  childAspectRatio: 0.68,
                                 ),
                                 itemCount: state.results.length,
                                 itemBuilder: (context, index) {
-                                  final doc =
-                                      state.results[index] as DocumentSnapshot;
+                                  final doc = state.results[index];
                                   final data = doc.data() as Map<String, dynamic>;
-                                  final bookData = Map<String, dynamic>.from(data);
-                                  bookData['id'] = doc.id;
-                                  return _BookCard(bookData: bookData);
+                                  data['id'] = doc.id; 
+                                  return _buildBookCard(context, data);
                                 },
                               );
                             },
                           );
                         }
-                        return const Center(
-                          child: Text('No se encontraron resultados'),
-                        );
+                        return const SizedBox.shrink();
                       },
                     ),
                   ],
                 ),
               ),
             ),
-            // Botón flotante para ir a la pantalla de favoritos general
             Positioned(
               top: 10,
               right: 16,
               child: FloatingActionButton(
                 mini: true,
+                heroTag: 'fav_btn',
                 backgroundColor: Colors.white,
                 onPressed: () => Navigator.pushNamed(context, '/favorites'),
                 child: const Icon(Icons.favorite, color: Colors.red),
->>>>>>> Stashed changes
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -213,28 +134,22 @@ class HomePage extends StatelessWidget {
   Widget _buildBookCard(BuildContext context, Map<String, dynamic> data) {
     return StatefulBuilder(
       builder: (context, setState) {
-
-        final String libroId = data['id'] ?? ''; // Extrae el ID del libro
-        bool esFavorito = false; // Estado inicial del corazón
+        final String libroId = data['id'] ?? '';
         bool isHovered = false;
-        
+
         return MouseRegion(
           onEnter: (_) => setState(() => isHovered = true),
           onExit: (_) => setState(() => isHovered = false),
           cursor: SystemMouseCursors.click,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            transform: isHovered
-                ? (Matrix4.identity()..translate(0, -5, 0))
-                : Matrix4.identity(),
+            transform: isHovered ? (Matrix4.identity()..translate(0, -5, 0)) : Matrix4.identity(),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: isHovered
-                      ? Colors.black.withOpacity(0.15)
-                      : Colors.black.withOpacity(0.05),
+                  color: isHovered ? Colors.black.withOpacity(0.15) : Colors.black.withOpacity(0.05),
                   blurRadius: isHovered ? 15 : 10,
                   spreadRadius: isHovered ? 4 : 2,
                 ),
@@ -246,22 +161,9 @@ class HomePage extends StatelessWidget {
                   context,
                   '/detalle_libro',
                   arguments: {
-                    'id': data['id'] ?? '',
-                    'titulo': data['titulo'] ?? 'Sin título',
-                    'autor': data['autor'] ?? '',
-                    'materia': data['materia'] ?? 'Sin materia',
-                    'precio': data['precio']?.toString() ?? '0.00',
-                    'descripcion': data['descripcion'] ?? 'Sin descripción',
-                    'imagen':
-                        data['imageUrl'] ??
-                        'assets/images/book_placeholder.png',
-                    'vendedor': data['vendedor'] ?? 'Vendedor Anónimo',
-                    'carrera': data['carrera'] ?? 'Estudiante',
-                    'iniciales': data['iniciales'] ?? 'UN',
-                    'userId': data['userId'] ?? '', // ID del vendedor
-                    'rol': data['rol'] ?? 'Estudiante', // Rol del vendedor
-                    'tipoTransaccion':
-                        data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta',
+                    ...data,
+                    'imagen': data['imageUrl'] ?? 'assets/images/book_placeholder.png',
+                    'tipoTransaccion': data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta',
                   },
                 );
               },
@@ -272,10 +174,7 @@ class HomePage extends StatelessWidget {
                     child: Stack(
                       children: [
                         ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(20),
-                          ),
-<<<<<<< Updated upstream
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                           child: Container(
                             width: double.infinity,
                             color: Colors.grey[100],
@@ -283,231 +182,82 @@ class HomePage extends StatelessWidget {
                                 ? Image.network(
                                     data['imageUrl'],
                                     fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            const Center(
-                                              child: Icon(
-                                                Icons.book,
-                                                size: 40,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        const Center(child: Icon(Icons.book, size: 40, color: Colors.grey)),
                                   )
-                                : const Center(
-                                    child: Icon(
-                                      Icons.book,
-                                      size: 40,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
+                                : const Center(child: Icon(Icons.book, size: 40, color: Colors.grey)),
                           ),
                         ),
-                        // Badge (Venta / Intercambio)
                         Positioned(
-                          top: 15,
-                          left: 15,
+                          top: 12,
+                          left: 12,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color:
-                                  (data['tipoTransaccion'] ?? data['tipo']) ==
-                                      'Intercambio'
+                              color: (data['tipoTransaccion'] ?? data['tipo']) == 'Intercambio'
                                   ? const Color(0xFF4CAF50).withOpacity(0.9)
                                   : const Color(0xFF1976D2).withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              (data['tipoTransaccion'] ??
-                                      data['tipo'] ??
-                                      'Venta')
-                                  .toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              (data['tipoTransaccion'] ?? data['tipo'] ?? 'Venta').toUpperCase(),
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
-                        
-                        // REEMPLAZA TU POSITIONED DEL CORAZÓN POR ESTE:
                         Positioned(
-                          top: 15,
-                          right: 15,
+                          top: 12,
+                          right: 12,
                           child: StreamBuilder<DocumentSnapshot>(
-                            // Escucha en tiempo real la colección de favoritos del usuario actual
                             stream: FirebaseFirestore.instance
                                 .collection('usuarios')
                                 .doc(FirebaseAuth.instance.currentUser?.uid)
                                 .collection('favoritos')
-                                .doc(libroId) // Usa el libroId que definimos arriba
+                                .doc(libroId)
                                 .snapshots(),
                             builder: (context, snapshot) {
-                              // Si el documento existe en la colección, es porque es favorito
                               final bool estaEnFavoritos = snapshot.hasData && snapshot.data!.exists;
-                        
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: _HoverIconButton(
-                                  icon: Icons.favorite_border,
-                                  activeIcon: Icons.favorite,
-                                  activeColor: Colors.red,
-                                  isSelected: estaEnFavoritos, // Ahora es reactivo
-                                  onPressed: () => context.read<CoraCubit>().toggleFavorito(libroId, estaEnFavoritos),
-                                ),
+                              return _HoverIconButton(
+                                icon: Icons.favorite_border,
+                                activeIcon: Icons.favorite,
+                                activeColor: Colors.red,
+                                isSelected: estaEnFavoritos,
+                                onPressed: () => context.read<CoraCubit>().toggleFavorito(libroId, estaEnFavoritos),
                               );
                             },
                           ),
-=======
-                          child: (imageUrl != null &&
-                                  imageUrl.toString().startsWith('http'))
-                              ? Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Center(child: Icon(Icons.broken_image)),
-                                )
-                              : (imageUrl != null)
-                                  ? Image.asset(
-                                      imageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const Center(child: Icon(Icons.broken_image)),
-                                    )
-                                  : const Center(child: Icon(Icons.image_not_supported)),
-                        ),
-                      ),
-                      
-                      // EL CORAZÓN AHORA ESTÁ SOLO Y ES REACTIVO
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: StreamBuilder<DocumentSnapshot>(
-                          stream: FirebaseFirestore.instance
-                              .collection('usuarios')
-                              .doc(FirebaseAuth.instance.currentUser?.uid)
-                              .collection('favoritos')
-                              .doc(libroId)
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            bool esFavorito =
-                                snapshot.hasData && snapshot.data!.exists;
-                            return _HoverIconButton(
-                              icon: esFavorito
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              isSelected: esFavorito,
-                              activeColor: Colors.red,
-                              onPressed: () {
-                                context.read<CoraCubit>().toggleFavorito(
-                                      libroId,
-                                      esFavorito,
-                                    );
-                              },
-                            );
-                          },
->>>>>>> Stashed changes
                         ),
                       ],
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-<<<<<<< Updated upstream
-                          (data['materia'] ?? 'Sin materia').toUpperCase(),
-=======
-                          (widget.bookData['categoria'] ?? 'CATEGORIA').toUpperCase(),
->>>>>>> Stashed changes
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
+                          (data['categoria'] ?? data['materia'] ?? 'General').toUpperCase(),
+                          style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           data['titulo'] ?? 'Sin título',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-<<<<<<< Updated upstream
+                        const SizedBox(height: 8),
                         Text(
-                          data['autor'] ?? 'Sin autor',
+                          (data['tipoTransaccion'] ?? data['tipo']) == 'Intercambio'
+                              ? 'Trueque'
+                              : "\$ ${data['precio'] ?? '0.00'}",
                           style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 13,
+                            color: (data['tipoTransaccion'] ?? data['tipo']) == 'Intercambio'
+                                ? const Color(0xFF4CAF50)
+                                : const Color(0xFF1976D2),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              (data['tipoTransaccion'] ?? data['tipo']) ==
-                                      'Intercambio'
-                                  ? 'Trueque'
-                                  : "\$ ${data['precio']?.toString() ?? '0.00'}",
-                              style: TextStyle(
-                                color:
-                                    (data['tipoTransaccion'] ?? data['tipo']) ==
-                                        'Intercambio'
-                                    ? const Color(0xFF4CAF50)
-                                    : const Color(0xFF1976D2),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const Row(
-                              children: [
-                                Icon(
-                                  Icons.location_on_outlined,
-                                  size: 14,
-                                  color: Colors.grey,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Campus',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-=======
-                        const Spacer(),
-                        Text(
-                          '\$ ${widget.bookData['precio'] ?? '0'}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF003870),
-                          ),
->>>>>>> Stashed changes
                         ),
                       ],
                     ),
@@ -522,58 +272,37 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// Widget auxiliar para los botones de icono con efecto hover
-class _HoverIconButton extends StatefulWidget {
+// ESTA ES LA CLASE QUE FALTABA
+class _HoverIconButton extends StatelessWidget {
   final IconData icon;
-  final IconData? activeIcon;
-  final Color? activeColor;
+  final IconData activeIcon;
+  final Color activeColor;
   final bool isSelected;
   final VoidCallback onPressed;
 
   const _HoverIconButton({
     required this.icon,
-    required this.onPressed,
-    this.activeIcon,
+    required this.activeIcon,
+    required this.activeColor,
     required this.isSelected,
-    this.activeColor,
+    required this.onPressed,
   });
 
   @override
-  State<_HoverIconButton> createState() => _HoverIconButtonState();
-}
-
-class _HoverIconButtonState extends State<_HoverIconButton> {
-  bool _isHovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onPressed, // Llama directamente a la función que pasamos
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _isHovered ? Colors.white : Colors.white.withOpacity(0.9),
-            shape: BoxShape.circle,
-            boxShadow: [
-              if (_isHovered)
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  spreadRadius: 1,
-                ),
-            ],
-          ),
-          child: Icon(
-            // Ahora usa widget.isSelected para decidir el icono y color
-            widget.isSelected ? (widget.activeIcon ?? widget.icon) : widget.icon,
-            size: 20,
-            color: widget.isSelected ? (widget.activeColor ?? Colors.red) : (_isHovered ? Colors.black87 : Colors.grey[700]),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: Icon(
+          isSelected ? activeIcon : icon,
+          color: isSelected ? activeColor : Colors.grey,
         ),
+        onPressed: onPressed,
+        constraints: const BoxConstraints(),
+        padding: const EdgeInsets.all(8),
       ),
     );
   }
