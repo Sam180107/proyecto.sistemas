@@ -9,6 +9,9 @@ import 'package:flutter_paypal_payment/flutter_paypal_payment.dart';
 import 'package:unimet_marketplace/domain/cubits/rating_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/order_cubit.dart';
 import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class DetalleLibroPage extends StatefulWidget {
   const DetalleLibroPage({super.key});
@@ -21,9 +24,185 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   bool _mostrarPago = false;
 
   void _iniciarProcesoDeSolicitud() {
-    setState(() {
-      _mostrarPago = true;
-    });
+    setState(() => _mostrarPago = true);
+  }
+
+  // --- NUEVA LÓGICA DE EDICIÓN ---
+void _mostrarDialogoEditar(BuildContext context, Map<String, dynamic> arguments) {
+  final TextEditingController tituloCtrl = TextEditingController(text: arguments['titulo'] ?? '');
+  final TextEditingController autorCtrl = TextEditingController(text: arguments['autor'] ?? '');
+  final TextEditingController descCtrl = TextEditingController(text: arguments['descripcion'] ?? '');
+  final TextEditingController precioCtrl = TextEditingController(text: arguments['precio'].toString());
+  final TextEditingController stockCtrl = TextEditingController(text: (arguments['stock'] ?? 0).toString());
+  final String libroId = arguments['id'] ?? '';
+  
+  
+  final double anchoPantalla = MediaQuery.of(context).size.width;
+
+  XFile? imagenSeleccionada;
+  bool subiendo = false;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setDialogState) => AlertDialog(
+        
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        titlePadding: EdgeInsets.zero,
+        title: Container(
+          
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E88E5),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: const Center(
+            child: Text("Actualizar Publicación", 
+              
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 26)),
+          ),
+        ),
+        
+        content: SizedBox(
+          
+          width: anchoPantalla * 0.9, 
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                
+                const SizedBox(height: 40),
+                GestureDetector(
+                  onTap: () async {
+                    final picker = ImagePicker();
+                    final foto = await picker.pickImage(source: ImageSource.gallery);
+                    if (foto != null) setDialogState(() => imagenSeleccionada = foto);
+                  },
+                  child: Container(
+                    
+                    height: 180, 
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50], 
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.blue[100]!, width: 2),
+                      image: imagenSeleccionada != null 
+                        ? DecorationImage(image: FileImage(File(imagenSeleccionada!.path)), fit: BoxFit.cover)
+                        : (arguments['imageUrl'] != null ? DecorationImage(image: NetworkImage(arguments['imageUrl']), fit: BoxFit.cover) : null),
+                    ),
+                    child: (imagenSeleccionada == null && (arguments['imageUrl'] == null))
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            
+                            Icon(Icons.cloud_upload_outlined, size: 40, color: Colors.blue[400]),
+                            Text("Subir foto", style: TextStyle(color: Colors.blue[400])),
+                          ],
+                        )
+                      : Align(
+                          alignment: Alignment.bottomRight, 
+                          child: Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                            child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                          ),
+                        ),
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                _buildModernField(tituloCtrl, "Título del material", Icons.book),
+                _buildModernField(autorCtrl, "Autor", Icons.person_outline),
+                Row(
+                  children: [
+                    Expanded(child: _buildModernField(precioCtrl, "Precio (\$)", Icons.attach_money, isNumber: true)),
+                    
+                    const SizedBox(width: 10),
+                    Expanded(child: _buildModernField(stockCtrl, "Stock", Icons.inventory_2, isNumber: true)),
+                  ],
+                ),
+                _buildModernField(descCtrl, "Descripción", Icons.description_outlined, maxLines: 3),
+              ],
+            ),
+          ),
+        ),
+        
+        actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext), 
+            child: const Text("Cancelar", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: subiendo ? null : () async {
+              setDialogState(() => subiendo = true);
+              try {
+                String? nuevaUrl;
+                if (imagenSeleccionada != null) {
+                  final bytes = await imagenSeleccionada!.readAsBytes();
+                  final fileName = 'edit_${DateTime.now().millisecondsSinceEpoch}.jpg';
+                  await Supabase.instance.client.storage.from('libros_imagenes').uploadBinary(fileName, bytes);
+                  nuevaUrl = Supabase.instance.client.storage.from('libros_imagenes').getPublicUrl(fileName);
+                }
+
+                
+                final Map<String, dynamic> datosParaActualizar = {
+                  'titulo': tituloCtrl.text,
+                  'autor': autorCtrl.text,
+                  'precio': double.tryParse(precioCtrl.text) ?? 0.0,
+                  'stock': int.tryParse(stockCtrl.text) ?? 0,
+                  'descripcion': descCtrl.text,
+                };
+                
+                if (nuevaUrl != null) {
+                  datosParaActualizar['imageUrl'] = nuevaUrl;
+                }
+
+                await FirebaseFirestore.instance.collection('libros').doc(libroId).update(datosParaActualizar);
+                
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(backgroundColor: Colors.green, content: Text("¡Actualizado con éxito!")),
+                  );
+                }
+              } catch (e) { 
+                setDialogState(() => subiendo = false); 
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E88E5),
+              
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: subiendo 
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+              : const Text("Guardar Cambios", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildModernField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: const Color(0xFF1E88E5), size: 22),
+          filled: true,
+          fillColor: Colors.grey[100],
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        ),
+      ),
+    );
   }
 
   // --- LÓGICA DE PAYPAL ---
@@ -34,44 +213,21 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           sandboxMode: true,
           clientId: "AYHmMHVwGKu8CBkSEiMHEHBb9xr3SP0uPZ4bmjbwWYxH_5NdkHM7Q6wc3pAVM4Gefr_OF01DXcuSPwGH",
           secretKey: "ENHj2nD99h26jpDsVNvJnwV4ui9N1hOmmFKOL7kPUU6OKcVTq2XM1OokPQEYxM-WWgCn2eaxZlZsvDtR",
-          transactions: [
-            {
-              "amount": {
-                "total": arguments['precio'].toString(),
-                "currency": "USD",
-                "details": {
-                  "subtotal": arguments['precio'].toString(),
-                  "shipping": '0',
-                  "shipping_discount": 0
-                }
-              },
-              "description": "Compra de material: ${arguments['titulo']} en BookSwap UNIMET",
-              "item_list": {
-                "items": [
-                  {
-                    "name": arguments['titulo'] ?? "Libro",
-                    "quantity": 1,
-                    "price": arguments['precio'].toString(),
-                    "currency": "USD"
-                  }
-                ],
-              }
+          transactions: [{
+            "amount": {
+              "total": arguments['precio'].toString(),
+              "currency": "USD",
+              "details": {"subtotal": arguments['precio'].toString(), "shipping": '0', "shipping_discount": 0}
+            },
+            "description": "Compra de material: ${arguments['titulo']} en BookSwap UNIMET",
+            "item_list": {
+              "items": [{"name": arguments['titulo'] ?? "Libro", "quantity": 1, "price": arguments['precio'].toString(), "currency": "USD"}],
             }
-          ],
+          }],
           note: "Pago procesado por BookSwap.",
-          onSuccess: (Map params) async {
-            await _finalizarPedidoEnFirebase(context, arguments);
-          },
-          onError: (error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error en la pasarela de pago: $error')),
-            );
-          },
-          onCancel: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Pago cancelado')),
-            );
-          },
+          onSuccess: (Map params) async => await _finalizarPedidoEnFirebase(context, arguments),
+          onError: (error) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $error'))),
+          onCancel: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pago cancelado'))),
         ),
       ),
     );
@@ -87,227 +243,157 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             price: double.tryParse(arguments['precio'].toString()) ?? 0.0,
             tipoTransaccion: 'Venta',
           );
-
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Pago exitoso! Solicitud enviada al vendedor.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Pago exitoso! Solicitud enviada.')));
       Navigator.pop(context);
-    } catch (e) {
-      debugPrint("Error al registrar orden: $e");
-    }
+    } catch (e) { debugPrint("Error: $e"); }
   }
 
   @override
   Widget build(BuildContext context) {
     final arguments = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RatingCubit>().cargarValoraciones(arguments['userId']);
-    });
+    final String libroId = arguments['id'] ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildHeader(context, arguments['precio'] ?? 0.0, arguments['imagen'] ?? arguments['imageUrl'] ?? '', arguments),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(arguments['titulo'] ?? 'Sin título', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                      Text(arguments['autor'] ?? 'Anónimo', style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                      const SizedBox(height: 8),
-                      Row(
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('libros').doc(libroId).snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData || !snapshot.data!.exists) return const Center(child: CircularProgressIndicator());
+          
+          final libroData = snapshot.data!.data() as Map<String, dynamic>;
+          libroData['id'] = snapshot.data!.id;
+
+          return Stack(
+            children: [
+              SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildHeader(context, libroData['precio'] ?? 0.0, libroData['imagen'] ?? libroData['imageUrl'] ?? '', libroData),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.inventory_2_outlined, size: 16, color: (arguments['stock'] ?? 0) > 0 ? Colors.green : Colors.red),
-                          const SizedBox(width: 8),
-                          Text("Stock: ${arguments['stock'] ?? 0}", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: (arguments['stock'] ?? 0) > 0 ? Colors.green[700] : Colors.red)),
+                          Text(libroData['titulo'] ?? 'Sin título', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                          Text(libroData['autor'] ?? 'Anónimo', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                          const SizedBox(height: 8),
+                          _buildStockInfo(libroData),
+                          const SizedBox(height: 25),
+                          const Text("Estado de la Transacción", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          const SizedBox(height: 12),
+                          _buildStatusTimeline(),
+                          const SizedBox(height: 25),
+                          _buildInfoCard("Descripción", libroData['descripcion'] ?? 'Sin descripción'),
+                          const SizedBox(height: 25),
+                          _buildSellerCard(context, libroData),
+                          if (_mostrarPago) ...[
+                            const SizedBox(height: 25),
+                            _buildPayPalSection(context, libroData),
+                          ],
+                          const SizedBox(height: 180), 
                         ],
                       ),
-                      const SizedBox(height: 25),
-                      const Text("Estado de la Transacción", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      const SizedBox(height: 12),
-                      _buildStatusTimeline(),
-                      const SizedBox(height: 25),
-                      _buildInfoCard("Descripción", arguments['descripcion'] ?? 'Sin descripción'),
-                      const SizedBox(height: 25),
-                      _buildSellerCard(context, arguments),
-                      if (_mostrarPago) ...[
-                        const SizedBox(height: 25),
-                        _buildPayPalSection(context, arguments),
-                      ],
-                      const SizedBox(height: 180), 
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 45,
-            left: 20,
-            child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.9),
-              child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context)),
-            ),
-          ),
-          if (!_mostrarPago)
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: _buildBottomButton(context, arguments),
-            ),
-        ],
+              ),
+              _buildBackButton(context),
+              if (!_mostrarPago)
+                Positioned(bottom: 20, left: 20, right: 20, child: _buildBottomActionArea(context, libroData)),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildBottomButton(BuildContext context, Map<String, dynamic> arguments) {
-    final isOwner = FirebaseAuth.instance.currentUser?.uid == arguments['userId'];
-
-    if (isOwner) {
-      return ElevatedButton(
-        onPressed: null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey,
-          minimumSize: const Size(double.infinity, 60),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        ),
-        child: const Text("Tu Publicación", style: TextStyle(color: Colors.white, fontSize: 18)),
-      );
-    }
+  Widget _buildBottomActionArea(BuildContext context, Map<String, dynamic> libroData) {
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final bool isOwner = currentUserId == libroData['userId'];
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // --- BOTÓN DE WHATSAPP CON DATOS EN TIEMPO REAL ---
-        StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('usuarios')
-              .doc(arguments['userId'])
-              .snapshots(),
-          builder: (context, snapshot) {
-            String telefonoFirebase = "";
-            if (snapshot.hasData && snapshot.data!.exists) {
-              final data = snapshot.data!.data() as Map<String, dynamic>;
-              telefonoFirebase = data['telefono'] ?? "";
-            }
-
-            return Container(
-              height: 60,
-              width: 60,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))],
-              ),
-              child: IconButton(
-                onPressed: () async {
-                  if (telefonoFirebase.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('El vendedor no tiene teléfono registrado')),
-                    );
-                    return;
-                  }
-
-                  // 1. Limpieza total (solo dígitos)
-                  String cleanPhone = telefonoFirebase.replaceAll(RegExp(r'[^\d]'), '');
-
-                  // 2. Estandarización para Venezuela
-                  if (cleanPhone.startsWith('0')) {
-                    cleanPhone = '58${cleanPhone.substring(1)}';
-                  } else if (cleanPhone.length == 10 && (
-                      cleanPhone.startsWith('412') || 
-                      cleanPhone.startsWith('414') || 
-                      cleanPhone.startsWith('424') || 
-                      cleanPhone.startsWith('422'))) {
-                    cleanPhone = '58$cleanPhone';
-                  }
-
-                  final String nombre = arguments['vendedor'] ?? "Vendedor";
-                  final String nombreLibro = arguments['titulo'] ?? "Material";
-                  final String mensaje = "Hola $nombre, estoy interesado en tu libro '$nombreLibro' que vi en BookSwap.";
-                  
-                  final Uri whatsappUri = Uri.parse(
-                      "https://wa.me/$cleanPhone?text=${Uri.encodeComponent(mensaje)}");
-
-                  if (await canLaunchUrl(whatsappUri)) {
-                    await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-                  } else {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('No se pudo abrir WhatsApp')),
-                      );
-                    }
-                  }
-                },
-                icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 30),
-              ),
-            );
-          },
-        ),
-        const SizedBox(width: 15),
-        
+        if (!isOwner) ...[
+          _buildWhatsAppButton(libroData),
+          const SizedBox(width: 15),
+        ],
         SizedBox(
-          width: 380, 
+          width: isOwner ? 360 : 360, 
           child: ElevatedButton(
-            onPressed: () => _iniciarProcesoDeSolicitud(),
+            onPressed: isOwner 
+                ? () => _mostrarDialogoEditar(context, libroData)
+                : () => _iniciarProcesoDeSolicitud(),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
+              backgroundColor: isOwner ? Colors.grey[800] : const Color(0xFF1E88E5),
               minimumSize: const Size(0, 60),
-              elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              elevation: 4,
             ),
-            child: const Text("Solicitar Material", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            child: Text(
+              isOwner ? "Editar Publicación" : "Solicitar Material",
+              style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],
     );
   }
 
-  // --- FUNCIONES AUXILIARES DE UI ---
+  Widget _buildStockInfo(Map<String, dynamic> data) {
+    final int stock = data['stock'] ?? 0;
+    return Row(
+      children: [
+        Icon(Icons.inventory_2_outlined, size: 16, color: stock > 0 ? Colors.green : Colors.red),
+        const SizedBox(width: 8),
+        Text("Stock: $stock", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: stock > 0 ? Colors.green[700] : Colors.red)),
+      ],
+    );
+  }
+
+  Widget _buildWhatsAppButton(Map<String, dynamic> arguments) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('usuarios').doc(arguments['userId']).snapshots(),
+      builder: (context, snapshot) {
+        String phone = "";
+        if (snapshot.hasData && snapshot.data!.exists) {
+          phone = (snapshot.data!.data() as Map<String, dynamic>)['telefono'] ?? "";
+        }
+        return Container(
+          height: 60, width: 60,
+          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)]),
+          child: IconButton(
+            onPressed: () async {
+              if (phone.isEmpty) return;
+              String cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+              if (cleanPhone.startsWith('0')) cleanPhone = '58${cleanPhone.substring(1)}';
+              final url = "https://wa.me/$cleanPhone?text=Hola, me interesa tu libro '${arguments['titulo']}'";
+              if (await canLaunchUrl(Uri.parse(url))) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            },
+            icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 30),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildPayPalSection(BuildContext context, Map<String, dynamic> arguments) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF003087), width: 2),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF003087), width: 2)),
       child: Column(
         children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.payment, color: Color(0xFF003087)),
-              SizedBox(width: 10),
-              Text("Checkout Seguro", style: TextStyle(color: Color(0xFF003087), fontWeight: FontWeight.bold, fontSize: 18)),
-            ],
-          ),
+          const Text("Checkout Seguro", style: TextStyle(color: Color(0xFF003087), fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 15),
-          Text("Total a pagar: \$${arguments['precio']}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          Text("Total: \$${arguments['precio']}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () => _ejecutarPagoReal(context, arguments),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFC439),
-              foregroundColor: Colors.black,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFC439), foregroundColor: Colors.black, minimumSize: const Size(double.infinity, 50)),
             child: const Text("Pagar con PayPal", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
-          TextButton(
-            onPressed: () => setState(() => _mostrarPago = false),
-            child: const Text("Cancelar", style: TextStyle(color: Colors.red)),
-          )
+          TextButton(onPressed: () => setState(() => _mostrarPago = false), child: const Text("Cancelar", style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -315,67 +401,33 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
   Widget _buildHeader(BuildContext context, dynamic precio, String rutaImagen, Map<String, dynamic> arguments) {
     return SizedBox(
-      height: 320,
-      width: double.infinity,
+      height: 320, width: double.infinity,
       child: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              color: Colors.grey[300],
-              child: rutaImagen.startsWith('http')
-                  ? Image.network(rutaImagen, fit: BoxFit.cover)
-                  : Image.asset(rutaImagen, fit: BoxFit.cover),
-            ),
-          ),
+          Positioned.fill(child: Image.network(rutaImagen, fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey))),
           Positioned(
-            top: 45,
-            right: 20,
+            top: 45, right: 20,
             child: Row(
               children: [
-                _buildCircularAction(
-                  icon: Icons.share_outlined,
-                  onPressed: () {
-                    Share.share('¡Mira este material en BookSwap UNIMET!\n\n${arguments['titulo']}\nPrecio: \$${arguments['precio']}');
-                  },
-                ),
+                _buildCircularAction(icon: Icons.share_outlined, onPressed: () => Share.share('¡Mira esto en BookSwap!\n${arguments['titulo']}')),
                 const SizedBox(width: 12),
                 StreamBuilder<DocumentSnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('usuarios')
-                      .doc(FirebaseAuth.instance.currentUser?.uid)
-                      .collection('favoritos')
-                      .doc(arguments['id'])
-                      .snapshots(),
+                  stream: FirebaseFirestore.instance.collection('usuarios').doc(FirebaseAuth.instance.currentUser?.uid).collection('favoritos').doc(arguments['id']).snapshots(),
                   builder: (context, snapshot) {
-                    bool esFavorito = snapshot.hasData && snapshot.data!.exists;
-                    return _buildCircularAction(
-                      icon: esFavorito ? Icons.favorite : Icons.favorite_border,
-                      iconColor: esFavorito ? Colors.red : Colors.black,
-                      onPressed: () {
-                        final userId = FirebaseAuth.instance.currentUser?.uid;
-                        if (userId == null) return;
-                        context.read<CoraCubit>().toggleFavorito(arguments['id'], esFavorito);
-                      },
-                    );
+                    bool esFav = snapshot.hasData && snapshot.data!.exists;
+                    return _buildCircularAction(icon: esFav ? Icons.favorite : Icons.favorite_border, iconColor: esFav ? Colors.red : Colors.black, 
+                      onPressed: () => context.read<CoraCubit>().toggleFavorito(arguments['id'], esFav));
                   },
                 ),
               ],
             ),
           ),
           Positioned(
-            bottom: 20,
-            left: 20,
+            bottom: 20, left: 20,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E88E5),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8)],
-              ),
-              child: Text(
-                "VENTA - \$ ${precio.toString()}",
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
+              decoration: BoxDecoration(color: const Color(0xFF1E88E5), borderRadius: BorderRadius.circular(12)),
+              child: Text("VENTA - \$ $precio", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -388,6 +440,10 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
       child: IconButton(icon: Icon(icon, color: iconColor), onPressed: onPressed),
     );
+  }
+
+  Widget _buildBackButton(BuildContext context) {
+    return Positioned(top: 45, left: 20, child: CircleAvatar(backgroundColor: Colors.white, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () => Navigator.pop(context))));
   }
 
   Widget _buildStatusTimeline() {
@@ -408,67 +464,56 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   }
 
   Widget _statusItem(String label, IconData icon, bool active) {
-    return Column(
-      children: [
-        Icon(icon, color: active ? const Color(0xFF1E88E5) : Colors.grey, size: 24),
-        const SizedBox(height: 6),
-        Text(label, style: TextStyle(fontSize: 10, color: active ? Colors.black : Colors.grey)),
-      ],
-    );
+    return Column(children: [
+      Icon(icon, color: active ? const Color(0xFF1E88E5) : Colors.grey, size: 24),
+      const SizedBox(height: 6),
+      Text(label, style: TextStyle(fontSize: 10, color: active ? Colors.black : Colors.grey)),
+    ]);
   }
 
   Widget _buildInfoCard(String titulo, String contenido) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      width: double.infinity, padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 10),
-          Text(contenido, style: const TextStyle(color: Colors.black87, height: 1.5)),
-        ],
-      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        const SizedBox(height: 10),
+        Text(contenido, style: const TextStyle(color: Colors.black87, height: 1.5)),
+      ]),
     );
   }
 
   Widget _buildSellerCard(BuildContext context, Map<String, dynamic> arguments) {
-    return BlocBuilder<RatingCubit, RatingState>(
-      builder: (context, state) {
-        return Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 25,
-                backgroundColor: const Color(0xFF003870),
-                child: Text(arguments['iniciales'] ?? '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(arguments['vendedor'] ?? 'Vendedor', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(arguments['carrera'] ?? 'Carrera no especificada', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/perfil', arguments: {
-                    ...arguments,
-                    'isOtherUser': true,
-                  });
-                },
-                child: const Text("Ver Perfil", style: TextStyle(color: Color(0xFF1E88E5), fontWeight: FontWeight.bold)),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      child: Row(children: [
+        CircleAvatar(backgroundColor: const Color(0xFF003870), child: Text(arguments['iniciales'] ?? '?', style: const TextStyle(color: Colors.white))),
+        const SizedBox(width: 15),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(arguments['vendedor'] ?? 'Vendedor', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(arguments['carrera'] ?? 'UNIMET', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        ])),
+        TextButton(onPressed: () => Navigator.pushNamed(context, '/perfil', arguments: {...arguments, 'isOtherUser': true}), 
+          child: const Text("Ver Perfil", style: TextStyle(color: Color(0xFF1E88E5), fontWeight: FontWeight.bold))),
+      ]),
+    );
+  }
+
+  Widget statusItem(String label, IconData icon, bool isActive) {
+    return Column(
+      children: [
+        Icon(icon, color: isActive ? const Color(0xFF1E88E5) : Colors.grey, size: 28),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: isActive ? Colors.black : Colors.grey,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 }

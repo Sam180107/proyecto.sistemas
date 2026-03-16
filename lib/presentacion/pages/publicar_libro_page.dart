@@ -19,6 +19,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
   final _autorController = TextEditingController();
   final _materiaController = TextEditingController();
   final _precioController = TextEditingController();
+  final _stockController = TextEditingController();
 
   String _tipoTransaccion = 'Venta';
   String _categoria = 'LITERATURA';
@@ -62,9 +63,10 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
       }
       final userData = userDoc.data()!;
 
-      final double? precio = double.tryParse(
-        _precioController.text.replaceAll(',', ''),
-      );
+      final double? precio = _tipoTransaccion == 'Venta'
+          ? double.tryParse(_precioController.text.replaceAll(',', ''))
+          : null;
+      final int? stock = int.tryParse(_stockController.text);
 
       // --- SUBIDA A SUPABASE STORAGE ---
       final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -102,7 +104,8 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         'titulo': _tituloController.text.trim(),
         'autor': _autorController.text.trim(),
         'materia': _materiaController.text.trim(),
-        'precio': precio ?? 0.0,
+        'precio': _tipoTransaccion == 'Venta' ? (precio ?? 0.0) : null,
+        'stock': stock ?? 0,
         'tipo': _tipoTransaccion,
         'tipoTransaccion': _tipoTransaccion,
         'categoria': _categoria,
@@ -111,10 +114,10 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         'userId': user.uid,
         'vendedor': nombre,
         'carrera': userData['carrera'] ?? 'Estudiante',
-        'rol': userData['rol'] ?? 'Estudiante', // Nuevo campo
+        'rol': userData['rol'] ?? 'Estudiante',
         'iniciales': iniciales,
         'fechaCreacion': FieldValue.serverTimestamp(),
-        'estado': 'Pendiente',
+        'estado': 'Disponible',
       });
 
       if (mounted) {
@@ -169,7 +172,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                             final XFile? image = await _picker.pickImage(
                               source: ImageSource.gallery,
                               imageQuality:
-                                  50, // Reducimos calidad para asegurar compatibilidad
+                                  50, 
                               maxWidth: 1000,
                               maxHeight: 1000,
                             );
@@ -271,21 +274,23 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _precioController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Precio',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.attach_money),
+                        if (_tipoTransaccion == 'Venta')
+                          Expanded(
+                            child: TextFormField(
+                              controller: _precioController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Precio',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.attach_money),
+                              ),
+                              validator: (value) => _tipoTransaccion == 'Venta' && (value == null || value.isEmpty)
+                                  ? 'Campo requerido'
+                                  : null,
                             ),
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Campo requerido'
-                                : null,
                           ),
-                        ),
-                        const SizedBox(width: 16),
+                        if (_tipoTransaccion == 'Venta')
+                          const SizedBox(width: 16),
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: _tipoTransaccion,
@@ -306,6 +311,19 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _stockController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Stock',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.inventory_2_outlined),
+                      ),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Campo requerido'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(

@@ -395,6 +395,8 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                   ),
                   const SizedBox(height: 30),
                   _buildSettingsList(userData),
+                  const SizedBox(height: 30),
+                  buildPublicationsSection(userAuth.uid),
                 ],
               ),
             );
@@ -994,6 +996,218 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
           borderRadius: BorderRadius.circular(5),
         ),
       ],
+    );
+  }
+
+ // --- SECCIÓN DE PUBLICACIONES ---
+  Widget buildPublicationsSection(String userId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Mis Publicaciones",
+          style: TextStyle(
+            fontSize: 22, 
+            fontWeight: FontWeight.bold, 
+            color: Color(0xFF003870)
+          ),
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<QuerySnapshot>(
+          
+          stream: FirebaseFirestore.instance
+              .collection('libros')
+              .where('userId', isEqualTo: userId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Text(
+                  "Aún no tienes publicaciones activas.",
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              );
+            }
+
+            final docs = snapshot.data!.docs;
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3, // 3 libros por fila
+                mainAxisSpacing: 10, 
+                crossAxisSpacing: 10, 
+                childAspectRatio: 0.75, 
+              ),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final data = docs[index].data() as Map<String, dynamic>;
+                data['id'] = docs[index].id;
+                return buildMiniBookCard(context, data);
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // --- TARJETA INDIVIDUAL DE LIBRO ---
+  Widget buildMiniBookCard(BuildContext context, Map<String, dynamic> data) {
+    
+    final String imagenUrl = data['imageUrl'] ?? ''; 
+    final String titulo = data['titulo'] ?? 'Sin título';
+    final String precio = data['precio']?.toString() ?? '0';
+    final String libroId = data['id'] ?? ''; // Necesitamos el ID para eliminar
+
+    return GestureDetector(
+      onTap: () {
+        
+        Navigator.pushNamed(context, '/detalle_libro', arguments: data);
+      },
+      // Usamos Stack para superponer la X sobre la tarjeta del libro
+      child: Stack(
+        children: [
+          
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2)
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    child: imagenUrl.isNotEmpty
+                        ? Image.network(
+                            imagenUrl, 
+                            fit: BoxFit.cover, 
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) => 
+                              Container(color: Colors.grey[100], child: const Icon(Icons.broken_image, color: Colors.grey)),
+                          )
+                        : Container(
+                            color: Colors.grey[100], 
+                            child: const Icon(Icons.book, color: Colors.grey, size: 30)
+                          ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(6.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titulo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), 
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "\$ $precio",
+                        style: const TextStyle(
+                          color: Color(0xFF1E88E5), 
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Capa Superior: El botón "X"
+          Positioned(
+            top: 5, 
+            right: 5, 
+            child: GestureDetector(
+              onTap: () {
+                
+                _confirmarEliminacion(context, libroId, titulo);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(5), 
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6), 
+                  shape: BoxShape.circle, 
+                ),
+                child: const Icon(
+                  Icons.close, 
+                  color: Colors.white, 
+                  size: 25, 
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- FUNCIÓN PARA MOSTRAR DIÁLOGO DE CONFIRMACIÓN Y ELIMINAR ---
+  void _confirmarEliminacion(BuildContext context, String docId, String titulo) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text("Eliminar publicación"),
+          content: Text("¿Estás seguro de que deseas eliminar permanentemente la publicación de \"$titulo\"?"),
+          actions: [
+            // Botón de Cancelar
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext); 
+              },
+              child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+            ),
+            // Botón de Eliminar
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  // Eliminación real en Firestore
+                  await FirebaseFirestore.instance.collection('libros').doc(docId).delete();
+                  
+                  
+                  if (context.mounted) {
+                    Navigator.pop(dialogContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Publicación eliminada con éxito")),
+                    );
+                  }
+                } catch (e) {
+                  
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Error al eliminar: $e")),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red), // Botón rojo
+              child: const Text("Sí, eliminar", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

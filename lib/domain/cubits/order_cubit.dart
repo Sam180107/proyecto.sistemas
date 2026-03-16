@@ -37,17 +37,16 @@ class OrderCubit extends Cubit<OrderState> {
   OrderCubit(this._orderRepository) : super(OrderInitial());
 
   /// Crear una nueva orden
-  /// Se agregó 'tipoTransaccion' para diferenciar entre Venta e Intercambio
   Future<void> createOrder({
     required String sellerId,
     required String bookId,
     required String bookTitle,
     required String bookAuthor,
     required double price,
-    required String tipoTransaccion, // Parámetro añadido
+    required String tipoTransaccion,
   }) async {
     try {
-      emit(OrderLoading()); // Opcional: emitir carga antes de iniciar
+      emit(OrderLoading());
 
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
@@ -55,7 +54,6 @@ class OrderCubit extends Cubit<OrderState> {
         return;
       }
 
-      // Obtener nombres de comprador y vendedor desde Firestore
       final buyerDoc = await _firestore.collection('users').doc(currentUser.uid).get();
       final sellerDoc = await _firestore.collection('users').doc(sellerId).get();
 
@@ -67,9 +65,8 @@ class OrderCubit extends Cubit<OrderState> {
           ? (sellerDoc.data()?['nombre'] ?? 'Desconocido') 
           : 'Desconocido';
 
-      // Creación del objeto de la entidad con el nuevo campo
       final order = BookOrder(
-        id: '', // Firestore generará el ID
+        id: '', 
         buyerId: currentUser.uid,
         sellerId: sellerId,
         bookId: bookId,
@@ -80,7 +77,7 @@ class OrderCubit extends Cubit<OrderState> {
         createdAt: DateTime.now(),
         buyerName: buyerName,
         sellerName: sellerName,
-        tipoTransaccion: tipoTransaccion, // Campo asignado
+        tipoTransaccion: tipoTransaccion,
       );
 
       final orderId = await _orderRepository.createOrder(order);
@@ -90,7 +87,19 @@ class OrderCubit extends Cubit<OrderState> {
     }
   }
 
-  /// Cargar órdenes donde el usuario actual es el comprador
+  /// MÉTODO NUEVO: Marcar como vendido / Reducir Stock
+  Future<void> markBookAsSold(String bookId) async {
+    try {
+      // Usamos FieldValue.increment(-1) para que sea una operación atómica en Firebase
+      await _firestore.collection('libros').doc(bookId).update({
+        'stock': FieldValue.increment(-1),
+      });
+    } catch (e) {
+      print("Error al actualizar stock: $e");
+      emit(OrderError('Error al actualizar stock: $e'));
+    }
+  }
+
   void loadBuyerOrders() {
     emit(OrderLoading());
     _ordersSubscription?.cancel();
@@ -110,7 +119,6 @@ class OrderCubit extends Cubit<OrderState> {
     );
   }
 
-  /// Cargar órdenes donde el usuario actual es el vendedor
   void loadSellerOrders() {
     emit(OrderLoading());
     _ordersSubscription?.cancel();
@@ -130,7 +138,6 @@ class OrderCubit extends Cubit<OrderState> {
     );
   }
 
-  /// Actualizar estado de orden (Ej: de 'pending' a 'completed')
   Future<void> updateOrderStatus(String orderId, String status) async {
     if (orderId.isEmpty) {
       emit(OrderError('ID de orden inválido'));
@@ -138,7 +145,6 @@ class OrderCubit extends Cubit<OrderState> {
     }
     try {
       await _orderRepository.updateOrderStatus(orderId, status);
-      // El stream de Firebase actualizará la UI automáticamente
     } catch (e) {
       emit(OrderError('Error al actualizar orden: $e'));
     }
