@@ -597,6 +597,14 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
             ),
             const SizedBox(height: 20),
             _buildReputationCard(),
+            const SizedBox(height: 30),
+            const Text(
+              "Publicaciones del Vendedor",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildPublicationsSection(userId),
+            const SizedBox(height: 50),
           ],
         ),
       ),
@@ -1098,7 +1106,7 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
 
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/product_detail', arguments: data);
+        Navigator.pushNamed(context, '/detalle_libro', arguments: data);
       },
       child: Container(
         decoration: BoxDecoration(

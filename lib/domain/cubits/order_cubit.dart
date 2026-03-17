@@ -131,6 +131,26 @@ class OrderCubit extends Cubit<OrderState> {
     }
     try {
       await _orderRepository.updateOrderStatus(orderId, status);
+      
+      // Enviar notificación al comprador si fue aceptada o rechazada
+      if (status == 'accepted' || status == 'rejected') {
+        final orderDoc = await _firestore.collection('orders').doc(orderId).get();
+        if (orderDoc.exists) {
+          final orderData = orderDoc.data()!;
+          final buyerId = orderData['buyerId'];
+          final bookTitle = orderData['bookTitle'];
+          String statusText = status == 'accepted' ? 'aceptada' : 'rechazada';
+
+          await _firestore.collection('notificaciones').add({
+            'targetUserId': buyerId,
+            'leido': false,
+            'tipo': 'order_update',
+            'mensaje': 'Tu solicitud para "$bookTitle" ha sido $statusText.',
+            'titulo': bookTitle, // Reutilizando el campo \`titulo\` existente para consistencia
+            'fecha': FieldValue.serverTimestamp(),
+          });
+        }
+      }
       // El stream se actualizará automáticamente
     } catch (e) {
       emit(OrderError('Error al actualizar orden: $e'));

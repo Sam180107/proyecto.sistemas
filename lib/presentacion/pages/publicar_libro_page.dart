@@ -34,6 +34,10 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
     _stockController = TextEditingController(text: (widget.bookData?['stock'] ?? '1').toString());
     
     _tipoTransaccion = widget.bookData?['tipoTransaccion'] ?? 'Venta';
+    if (!['Venta', 'Intercambio'].contains(_tipoTransaccion)) {
+      _tipoTransaccion = 'Venta';
+    }
+    
     _categoria = widget.bookData?['categoria'] ?? 'LITERATURA';
     _estadoLibro = widget.bookData?['condicion'] ?? 'Usado';
     _carreraSeleccionada = widget.bookData?['materia'];
@@ -111,7 +115,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
       );
       final int stock = int.tryParse(_stockController.text) ?? 1;
 
-      String imageUrl = widget.bookData?['imageUrl'] ?? '';
+      String imageUrl = widget.bookData?['imageUrl'] ?? widget.bookData?['imagen'] ?? '';
 
       if (_selectedImage != null) {
         final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -273,7 +277,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                                       )
                                     : null),
                           ),
-                          child: _selectedImage == null && widget.bookData?['imageUrl'] == null
+                          child: _selectedImage == null && widget.bookData?['imageUrl'] == null && widget.bookData?['imagen'] == null
                               ? const Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -348,24 +352,26 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _precioController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                            ],
-                            decoration: const InputDecoration(
-                              labelText: 'Precio',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.attach_money),
+                        if (_tipoTransaccion != 'Intercambio') ...[
+                          Expanded(
+                            child: TextFormField(
+                              controller: _precioController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                              ],
+                              decoration: const InputDecoration(
+                                labelText: 'Precio',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.attach_money),
+                              ),
+                              validator: (value) => value == null || value.isEmpty
+                                  ? 'Campo requerido'
+                                  : null,
                             ),
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Campo requerido'
-                                : null,
                           ),
-                        ),
-                        const SizedBox(width: 16),
+                          const SizedBox(width: 16),
+                        ],
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: _tipoTransaccion,
@@ -374,7 +380,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                               labelText: 'Tipo',
                               border: OutlineInputBorder(),
                             ),
-                            items: ['Venta', 'Intercambio', 'Donación']
+                            items: ['Venta', 'Intercambio']
                                 .map(
                                   (e) => DropdownMenuItem(
                                     value: e,
@@ -382,8 +388,14 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                                   ),
                                 )
                                 .toList(),
-                            onChanged: (val) =>
-                                setState(() => _tipoTransaccion = val!),
+                            onChanged: (val) {
+                              setState(() {
+                                _tipoTransaccion = val!;
+                                if (val == 'Intercambio') {
+                                  _precioController.text = '0';
+                                }
+                              });
+                            },
                           ),
                         ),
                       ],

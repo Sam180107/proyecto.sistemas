@@ -144,13 +144,22 @@ class NotificacionesPage extends StatelessWidget {
         ? '${fecha.toDate().day}/${fecha.toDate().month}/${fecha.toDate().year}'
         : '';
 
+    final isOrderUpdate = report['tipo'] == 'order_update';
+    final borderColor = isOrderUpdate ? const Color(0xFFA5D6A7) : const Color(0xFFFFE0B2);
+    final iconBgColor = isOrderUpdate ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0);
+    final iconColor = isOrderUpdate ? Colors.green[700] : Colors.orange[700];
+    final title = isOrderUpdate ? 'Actualización de Solicitud' : 'Aviso del Administrador';
+    final iconData = isOrderUpdate ? Icons.check_circle_outline : Icons.admin_panel_settings_outlined;
+    final messageBgColor = isOrderUpdate ? const Color(0xFFF1F8E9) : const Color(0xFFFFFBF0);
+    final quoteIconColor = isOrderUpdate ? Colors.green[300] : Colors.orange[300];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFE0B2), width: 1.5),
+        border: Border.all(color: borderColor, width: 1.5),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -166,18 +175,17 @@ class NotificacionesPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3E0),
+                  color: iconBgColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.admin_panel_settings_outlined,
-                    color: Colors.orange[700], size: 22),
+                child: Icon(iconData, color: iconColor, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Aviso del Administrador',
+                    Text(title,
                         style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold, fontSize: 14)),
                     if (fechaStr.isNotEmpty)
@@ -192,7 +200,7 @@ class NotificacionesPage extends StatelessWidget {
                     context.read<NotificationCubit>().markReportAsRead(report['id']),
                 child: Text('Marcar leído',
                     style: GoogleFonts.inter(
-                        fontSize: 12, color: Colors.orange[700])),
+                        fontSize: 12, color: iconColor)),
               ),
             ],
           ),
@@ -200,13 +208,13 @@ class NotificacionesPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFBF0),
+              color: messageBgColor,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
                 Icon(Icons.format_quote_rounded,
-                    color: Colors.orange[300], size: 18),
+                    color: quoteIconColor, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -218,7 +226,7 @@ class NotificacionesPage extends StatelessWidget {
               ],
             ),
           ),
-          if ((report['titulo'] as String?)?.isNotEmpty == true) ...[
+          if ((report['titulo'] as String?)?.isNotEmpty == true && !isOrderUpdate) ...[
             const SizedBox(height: 8),
             Text('Publicación afectada: "${report['titulo']}"',
                 style: GoogleFonts.inter(fontSize: 12, color: Colors.black45)),
