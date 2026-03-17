@@ -597,6 +597,35 @@ class DetalleLibroPage extends StatelessWidget {
               );
             },
           ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                if (!context.mounted) return;
+                final bookId = arguments['id'] ?? '';
+                if (bookId.isNotEmpty) {
+                  context.read<OrderCubit>().markBookAsSold(bookId);
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('¡Simulación de pago exitosa!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.bug_report),
+              label: const Text('Simular Pago (Prueba)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            ),
+          ),
         ],
       ],
     );

@@ -135,6 +135,35 @@ class CartPage extends StatelessWidget {
                         Navigator.of(context).pop();
                       },
                     ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          for (final item in state.items) {
+                            context.read<OrderCubit>().markBookAsSold(item.bookId);
+                          }
+                          context.read<CartCubit>().clearCart();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('¡Simulación de pago exitosa!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          Navigator.of(context).pop();
+                        },
+                        icon: const Icon(Icons.bug_report),
+                        label: const Text('Simular Pago (Prueba)'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
