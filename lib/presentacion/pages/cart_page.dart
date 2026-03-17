@@ -123,7 +123,15 @@ class CartPage extends StatelessWidget {
                       amount: state.totalAmount.toStringAsFixed(2),
                       onPaymentSuccess: (data) {
                         for (final item in state.items) {
-                          context.read<OrderCubit>().markBookAsSold(item.bookId);
+                          context.read<OrderCubit>().createOrder(
+                            sellerId: item.sellerId,
+                            bookId: item.bookId,
+                            bookTitle: item.title,
+                            bookAuthor: item.author,
+                            price: item.price,
+                            tipoTransaccion: 'Venta',
+                            status: 'completed',
+                          );
                         }
                         context.read<CartCubit>().clearCart();
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,7 +149,15 @@ class CartPage extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () {
                           for (final item in state.items) {
-                            context.read<OrderCubit>().markBookAsSold(item.bookId);
+                            context.read<OrderCubit>().createOrder(
+                              sellerId: item.sellerId,
+                              bookId: item.bookId,
+                              bookTitle: item.title,
+                              bookAuthor: item.author,
+                              price: item.price,
+                              tipoTransaccion: 'Venta',
+                              status: 'completed',
+                            );
                           }
                           context.read<CartCubit>().clearCart();
                           ScaffoldMessenger.of(context).showSnackBar(

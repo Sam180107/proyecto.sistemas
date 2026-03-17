@@ -587,7 +587,15 @@ class DetalleLibroPage extends StatelessWidget {
               if (!context.mounted) return;
               final bookId = arguments['id'] ?? '';
               if (bookId.isNotEmpty) {
-                context.read<OrderCubit>().markBookAsSold(bookId);
+                context.read<OrderCubit>().createOrder(
+                  sellerId: arguments['userId'] ?? 'system',
+                  bookId: bookId,
+                  bookTitle: arguments['titulo'] ?? 'Sin Título',
+                  bookAuthor: arguments['autor'] ?? 'Autor Desconocido',
+                  price: double.tryParse(price) ?? 0.0,
+                  tipoTransaccion: 'Venta',
+                  status: 'completed',
+                );
               }
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -605,7 +613,15 @@ class DetalleLibroPage extends StatelessWidget {
                 if (!context.mounted) return;
                 final bookId = arguments['id'] ?? '';
                 if (bookId.isNotEmpty) {
-                  context.read<OrderCubit>().markBookAsSold(bookId);
+                  context.read<OrderCubit>().createOrder(
+                    sellerId: arguments['userId'] ?? 'system',
+                    bookId: bookId,
+                    bookTitle: arguments['titulo'] ?? 'Sin Título',
+                    bookAuthor: arguments['autor'] ?? 'Autor Desconocido',
+                    price: double.tryParse(price) ?? 0.0,
+                    tipoTransaccion: 'Venta',
+                    status: 'completed',
+                  );
                 }
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

@@ -37,6 +37,7 @@ class OrderCubit extends Cubit<OrderState> {
     required String bookAuthor,
     required double price,
     required String tipoTransaccion,
+    String status = 'pending',
   }) async {
     try {
       final currentUser = _auth.currentUser;
@@ -72,7 +73,7 @@ class OrderCubit extends Cubit<OrderState> {
         bookAuthor: bookAuthor,
         price: price,
         tipoTransaccion: tipoTransaccion,
-        status: 'pending',
+        status: status,
         createdAt: DateTime.now(),
         buyerName: buyerName,
         sellerName: sellerName,
@@ -80,15 +81,28 @@ class OrderCubit extends Cubit<OrderState> {
 
       final orderId = await _orderRepository.createOrder(order);
 
-      // Actualizar estado del material a 'Solicitado' si es el último en stock
-      await _orderRepository.updateMaterialStatus(bookId, 'Solicitado');
+      if (status == 'pending') {
+        // Actualizar estado del material a 'Solicitado' si es el último en stock
+        await _orderRepository.updateMaterialStatus(bookId, 'Solicitado');
+      } else if (status == 'completed' || status == 'paid') {
+        // Actualizar material a 'Entregado' tras la venta, evitando decrementos dobles
+        await _orderRepository.updateMaterialStatus(bookId, 'Entregado');
+        // Marcar la orden para que el repository no intente decrementar de nuevo
+        await _firestore.collection('orders').doc(orderId).update({
+          'isStockDecremented': true,
+        });
+      }
 
-      // Notificar al vendedor sobre la nueva solicitud
+      String mensaje = status == 'pending' 
+             ? 'Has recibido una nueva solicitud para "$bookTitle" de $buyerName.'
+             : '¡Gran noticia! Has vendido "$bookTitle" a $buyerName por PayPal.';
+
+      // Notificar al vendedor sobre la nueva solicitud o venta
       await _firestore.collection('notificaciones').add({
         'targetUserId': sellerId,
         'leido': false,
         'tipo': 'new_order',
-        'mensaje': 'Has recibido una nueva solicitud para "$bookTitle" de $buyerName.',
+        'mensaje': mensaje,
         'titulo': bookTitle,
         'fecha': FieldValue.serverTimestamp(),
       });
