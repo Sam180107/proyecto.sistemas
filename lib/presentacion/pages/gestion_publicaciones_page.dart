@@ -305,7 +305,6 @@ class _GestionPublicacionesContentState
     final imageUrl = data['imageUrl'] as String?;
     final estado = data['estado'] as String? ?? 'Disponible';
     final isFrozen = estado == 'Congelado';
-    final userId = data['userId'] as String? ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

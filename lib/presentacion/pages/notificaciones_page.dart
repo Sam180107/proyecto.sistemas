@@ -50,7 +50,7 @@ class NotificacionesPage extends StatelessWidget {
                     ],
                     if (reports.isNotEmpty) ...[
                       _sectionHeader(
-                          'Avisos del Administrador', Icons.admin_panel_settings_outlined, Colors.orange),
+                          'Avisos y Actualizaciones', Icons.notifications_active_outlined, Colors.orange),
                       const SizedBox(height: 8),
                       ...reports.map((r) => _reportCard(context, r)),
                     ],
@@ -145,13 +145,27 @@ class NotificacionesPage extends StatelessWidget {
         : '';
 
     final isOrderUpdate = report['tipo'] == 'order_update';
-    final borderColor = isOrderUpdate ? const Color(0xFFA5D6A7) : const Color(0xFFFFE0B2);
-    final iconBgColor = isOrderUpdate ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0);
-    final iconColor = isOrderUpdate ? Colors.green[700] : Colors.orange[700];
-    final title = isOrderUpdate ? 'Actualización de Solicitud' : 'Aviso del Administrador';
-    final iconData = isOrderUpdate ? Icons.check_circle_outline : Icons.admin_panel_settings_outlined;
-    final messageBgColor = isOrderUpdate ? const Color(0xFFF1F8E9) : const Color(0xFFFFFBF0);
-    final quoteIconColor = isOrderUpdate ? Colors.green[300] : Colors.orange[300];
+    final isNewOrder = report['tipo'] == 'new_order';
+    final isCarreraUpdate = report['tipo'] == 'carrera_update';
+    
+    final isUpdate = isOrderUpdate || isCarreraUpdate || isNewOrder;
+    
+    final borderColor = isUpdate ? const Color(0xFFA5D6A7) : const Color(0xFFFFE0B2);
+    final iconBgColor = isUpdate ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0);
+    final iconColor = isUpdate ? Colors.green[700] : Colors.orange[700];
+
+    String title = 'Aviso del Administrador';
+    if (isOrderUpdate) title = 'Actualización de Solicitud';
+    if (isNewOrder) title = 'Nueva Solicitud Recibida';
+    if (isCarreraUpdate) title = 'Estado de Cambio de Carrera';
+
+    IconData iconData = Icons.admin_panel_settings_outlined;
+    if (isOrderUpdate) iconData = Icons.check_circle_outline;
+    if (isNewOrder) iconData = Icons.shopping_cart_outlined;
+    if (isCarreraUpdate) iconData = Icons.school_outlined;
+
+    final messageBgColor = isUpdate ? const Color(0xFFF1F8E9) : const Color(0xFFFFFBF0);
+    final quoteIconColor = isUpdate ? Colors.green[300] : Colors.orange[300];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

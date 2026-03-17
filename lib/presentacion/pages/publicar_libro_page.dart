@@ -167,7 +167,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         'iniciales': iniciales,
         'stock': stock,
         'updatedAt': FieldValue.serverTimestamp(),
-        'estado': stock > 0 ? 'Disponible' : 'Vendido',
+        'estado': stock > 0 ? 'Disponible' : 'Entregado',
       };
 
       if (widget.bookId != null) {

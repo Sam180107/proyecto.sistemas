@@ -26,7 +26,7 @@ class SearchCubit extends Cubit<SearchState> {
         final data = doc.data();
         // Check for 'estado' field, default to 'Disponible' if missing
         final estado = data['estado'] as String? ?? 'Disponible';
-        return estado != 'Vendido' && estado != 'Eliminado' && estado != 'Congelado';
+        return estado != 'Vendido' && estado != 'Eliminado' && estado != 'Congelado' && estado != 'Entregado';
       }).toList();
 
       // Sort by creation date in memory
@@ -49,7 +49,7 @@ class SearchCubit extends Cubit<SearchState> {
         return dateB.compareTo(dateA); // Descending order
       });
 
-      emit(SearchLoaded(filteredDocs));
+      if (!isClosed) emit(SearchLoaded(filteredDocs));
     } catch (e) {
       if (!isClosed) {
         emit(SearchError('Error al cargar publicaciones: $e'));
@@ -92,7 +92,8 @@ class SearchCubit extends Cubit<SearchState> {
       // Filter in memory to avoid index issues
       List<QueryDocumentSnapshot> results = querySnapshot.docs.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        return data['estado'] != 'Vendido' && data['estado'] != 'Congelado';
+        final estado = data['estado'] as String? ?? 'Disponible';
+        return estado != 'Vendido' && estado != 'Congelado' && estado != 'Entregado' && estado != 'Eliminado';
       }).toList();
 
       if (query != null && query.isNotEmpty) {

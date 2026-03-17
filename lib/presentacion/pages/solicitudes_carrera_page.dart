@@ -64,8 +64,18 @@ class _SolicitudesCarreraPageState extends State<SolicitudesCarreraPage> {
           'fecha_respuesta': FieldValue.serverTimestamp(),
         });
 
-        // Actualizar carrera del usuario
+        // Notificar al usuario
         if (data['uid'] != null) {
+          await _firestore.collection('notificaciones').add({
+            'targetUserId': data['uid'],
+            'leido': false,
+            'tipo': 'carrera_update',
+            'mensaje': 'Tu solicitud de cambio a "${data['nueva_carrera']}" ha sido APROBADA.',
+            'titulo': 'Cambio de Carrera',
+            'fecha': FieldValue.serverTimestamp(),
+          });
+
+          // Actualizar carrera del usuario
           await _firestore.collection('usuarios').doc(data['uid']).update({
             'carrera': data['nueva_carrera'],
           });
@@ -128,6 +138,18 @@ class _SolicitudesCarreraPageState extends State<SolicitudesCarreraPage> {
           'estado': 'Rechazada',
           'fecha_respuesta': FieldValue.serverTimestamp(),
         });
+
+        // Notificar al usuario
+        if (data['uid'] != null) {
+          await _firestore.collection('notificaciones').add({
+            'targetUserId': data['uid'],
+            'leido': false,
+            'tipo': 'carrera_update',
+            'mensaje': 'Tu solicitud de cambio a "${data['nueva_carrera']}" ha sido RECHAZADA.',
+            'titulo': 'Cambio de Carrera',
+            'fecha': FieldValue.serverTimestamp(),
+          });
+        }
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

@@ -50,9 +50,11 @@ class ProfileCubit extends Cubit<ProfileState> {
                 'ProfileCubit: Snapshot received for ${user.uid}, exists: ${snapshot.exists}',
               );
               if (snapshot.exists && snapshot.data() != null) {
-                emit(
-                  ProfileLoaded(userData: snapshot.data()!, currentUser: user),
-                );
+                if (!isClosed) {
+                  emit(
+                    ProfileLoaded(userData: snapshot.data()!, currentUser: user),
+                  );
+                }
               } else {
                 debugPrint(
                   'ProfileCubit: User document not found for ${user.uid}. Using Auth data fallback.',
@@ -65,7 +67,9 @@ class ProfileCubit extends Cubit<ProfileState> {
                   'carrera': 'No especificada',
                   'telefono': '',
                 };
-                emit(ProfileLoaded(userData: fallbackData, currentUser: user));
+                if (!isClosed) {
+                  emit(ProfileLoaded(userData: fallbackData, currentUser: user));
+                }
 
                 // Optional: Try to create the document if it's missing (Self-healing)
                 _firestore
@@ -82,7 +86,7 @@ class ProfileCubit extends Cubit<ProfileState> {
             },
             onError: (error) {
               debugPrint('ProfileCubit: Error fetching user data: $error');
-              emit(ProfileError("Error de red: $error"));
+              if (!isClosed) emit(ProfileError("Error de red: $error"));
             },
           );
     });

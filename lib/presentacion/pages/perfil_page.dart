@@ -1008,10 +1008,11 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
 
         final docs = snapshot.data!.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
+          final estado = data['estado'] as String? ?? 'Disponible';
           if (isOwner) {
-            return data['estado'] != 'Eliminado';
+            return estado != 'Eliminado';
           }
-          return data['estado'] == 'Disponible';
+          return estado == 'Disponible' || estado == 'Solicitado';
         }).toList();
 
         if (docs.isEmpty) {
@@ -1168,6 +1169,26 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                             Icons.delete_outline,
                             color: Colors.red,
                             size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (data['estado'] == 'Solicitado' || data['estado'] == 'Entregado')
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: data['estado'] == 'Solicitado' ? Colors.orange : Colors.green,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          data['estado'].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 7,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),

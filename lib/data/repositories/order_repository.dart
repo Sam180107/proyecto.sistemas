@@ -48,7 +48,7 @@ class OrderRepository {
           // Check if already decremented for this specific order somehow
           final isStockDecremented = orderData['isStockDecremented'] ?? false;
           if (!isStockDecremented) {
-            await markBookAsSold(bookId);
+            await updateMaterialStatus(bookId, status == 'completed' ? 'Entregado' : null);
             // Mark the order so we don't decrement stock multiple times for the same order
             await _firestore.collection('orders').doc(orderId).update({
               'isStockDecremented': true,
@@ -59,33 +59,49 @@ class OrderRepository {
     }
   }
 
-  Future<void> markBookAsSold(String bookId) async {
+  Future<void> updateMaterialStatus(String bookId, String? newStatus) async {
     try {
       final docRef = _firestore.collection('libros').doc(bookId);
       final doc = await docRef.get();
       if (doc.exists) {
-        final currentStock = doc.data()?['stock'] ?? 1;
-        if (currentStock > 1) {
-          await docRef.update({
-            'stock': currentStock - 1,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+        final data = doc.data()!;
+        final currentStock = data['stock'] ?? 1;
+        
+        Map<String, dynamic> updates = {
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        if (newStatus != null) {
+          updates['estado'] = newStatus;
+          // Si el material ya ha sido entregado o vendido, nos aseguramos de que el stock sea coherente
+          if (newStatus == 'Entregado' || newStatus == 'Vendido') {
+            if (currentStock > 0) {
+              updates['stock'] = currentStock - 1;
+            } else {
+              updates['stock'] = 0;
+            }
+          }
         } else {
-          await docRef.update({
-            'stock': 0,
-            'estado': 'Vendido',
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+          // Default behavior (decrement stock and mark as Entregado if last one)
+          if (currentStock > 1) {
+            updates['stock'] = currentStock - 1;
+            // No cambiamos el estado si aún queda stock
+          } else {
+            updates['stock'] = 0;
+            updates['estado'] = 'Entregado';
+          }
         }
+        
+        await docRef.update(updates);
       }
     } catch (e) {
-      print('CRITICAL: Error al restar stock del libro $bookId: $e');
-      if (e.toString().contains('permission-denied')) {
-        print(
-          'AVISO: Error de permisos de Firebase al intentar descontar stock. El comprador no puede editar el libro del vendedor.',
-        );
-      }
+      print('AVISO: No se pudo actualizar el estado del material $bookId. Esto es normal si el usuario actual no es el dueño: $e');
+      // No relanzamos el error para no romper el flujo de UI (ej. pago)
     }
+  }
+
+  Future<void> markBookAsSold(String bookId) async {
+    await updateMaterialStatus(bookId, 'Entregado');
   }
 
   Future<BookOrder?> getOrder(String orderId) async {

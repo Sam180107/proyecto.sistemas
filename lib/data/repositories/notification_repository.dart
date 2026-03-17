@@ -46,4 +46,23 @@ class NotificationRepository {
       'leido': true,
     });
   }
+
+  Future<void> sendNotification({
+    required String targetUserId,
+    required String message,
+    required String title,
+    required String type,
+    Map<String, dynamic>? extraData,
+  }) async {
+    final data = {
+      'targetUserId': targetUserId,
+      'mensaje': message,
+      'titulo': title,
+      'tipo': type,
+      'leido': false,
+      'fecha': FieldValue.serverTimestamp(),
+      if (extraData != null) ...extraData,
+    };
+    await _firestore.collection('notificaciones').add(data);
+  }
 }

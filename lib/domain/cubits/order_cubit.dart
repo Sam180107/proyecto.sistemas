@@ -79,6 +79,20 @@ class OrderCubit extends Cubit<OrderState> {
       );
 
       final orderId = await _orderRepository.createOrder(order);
+
+      // Actualizar estado del material a 'Solicitado' si es el último en stock
+      await _orderRepository.updateMaterialStatus(bookId, 'Solicitado');
+
+      // Notificar al vendedor sobre la nueva solicitud
+      await _firestore.collection('notificaciones').add({
+        'targetUserId': sellerId,
+        'leido': false,
+        'tipo': 'new_order',
+        'mensaje': 'Has recibido una nueva solicitud para "$bookTitle" de $buyerName.',
+        'titulo': bookTitle,
+        'fecha': FieldValue.serverTimestamp(),
+      });
+
       emit(OrderCreated(orderId));
     } catch (e) {
       emit(OrderError('Error al crear la orden: $e'));
@@ -99,8 +113,12 @@ class OrderCubit extends Cubit<OrderState> {
       orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return orders;
     }).listen(
-      (orders) => emit(OrderLoaded(orders)),
-      onError: (error) => emit(OrderError('Error al cargar órdenes: $error')),
+      (orders) {
+        if (!isClosed) emit(OrderLoaded(orders));
+      },
+      onError: (error) {
+        if (!isClosed) emit(OrderError('Error al cargar órdenes: $error'));
+      },
     );
   }
 
@@ -118,8 +136,12 @@ class OrderCubit extends Cubit<OrderState> {
       orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return orders;
     }).listen(
-      (orders) => emit(OrderLoaded(orders)),
-      onError: (error) => emit(OrderError('Error al cargar órdenes: $error')),
+      (orders) {
+        if (!isClosed) emit(OrderLoaded(orders));
+      },
+      onError: (error) {
+        if (!isClosed) emit(OrderError('Error al cargar órdenes: $error'));
+      },
     );
   }
 
@@ -132,6 +154,25 @@ class OrderCubit extends Cubit<OrderState> {
     try {
       await _orderRepository.updateOrderStatus(orderId, status);
       
+      // Manejar el flujo de estados del material
+      if (status == 'rejected') {
+        final orderDoc = await _firestore.collection('orders').doc(orderId).get();
+        if (orderDoc.exists) {
+          final bookId = orderDoc.data()?['bookId'];
+          if (bookId != null) {
+            await _orderRepository.updateMaterialStatus(bookId, 'Disponible');
+          }
+        }
+      } else if (status == 'completed') {
+        final orderDoc = await _firestore.collection('orders').doc(orderId).get();
+        if (orderDoc.exists) {
+          final bookId = orderDoc.data()?['bookId'];
+          if (bookId != null) {
+            await _orderRepository.updateMaterialStatus(bookId, 'Entregado');
+          }
+        }
+      }
+
       // Enviar notificación al comprador si fue aceptada o rechazada
       if (status == 'accepted' || status == 'rejected') {
         final orderDoc = await _firestore.collection('orders').doc(orderId).get();

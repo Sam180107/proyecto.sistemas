@@ -58,12 +58,20 @@ class DetalleLibroPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. Extraemos los argumentos de forma segura
-    final arguments =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final rawArguments = ModalRoute.of(context)?.settings.arguments;
+    if (rawArguments == null || rawArguments is! Map<String, dynamic>) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: const Center(child: Text('No se pudo cargar la información del libro')),
+      );
+    }
+    final arguments = rawArguments;
 
     // Cargar valoraciones del vendedor
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RatingCubit>().cargarValoraciones(arguments['userId']);
+      if (context.mounted) {
+        context.read<RatingCubit>().cargarValoraciones(arguments['userId'] ?? '');
+      }
     });
 
     return Scaffold(
@@ -119,14 +127,14 @@ class DetalleLibroPage extends StatelessWidget {
                       const SizedBox(height: 25),
 
                       const Text(
-                        "Estado de la Transacción",
+                        "Estado del Material",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _buildStatusTimeline(),
+                      _buildStatusTimeline(arguments['estado']),
 
                       const SizedBox(height: 25),
                       _buildInfoCard(
@@ -257,7 +265,13 @@ class DetalleLibroPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusTimeline() {
+  Widget _buildStatusTimeline(String? currentStatus) {
+    final status = currentStatus ?? 'Disponible';
+    
+    bool isDisponible = status == 'Disponible';
+    bool isSolicitado = status == 'Solicitado';
+    bool isEntregado = status == 'Entregado' || status == 'Vendido';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -273,15 +287,15 @@ class DetalleLibroPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _statusItem("Disponible", Icons.check_circle, true),
+          _statusItem("Disponible", isDisponible ? Icons.check_circle : Icons.check_circle_outline, isDisponible || isSolicitado || isEntregado),
           Expanded(
-            child: Divider(indent: 10, endIndent: 10, color: Colors.grey[300]),
+            child: Divider(indent: 10, endIndent: 10, color: (isSolicitado || isEntregado) ? const Color(0xFF1E88E5) : Colors.grey[300]),
           ),
-          _statusItem("Solicitado", Icons.radio_button_unchecked, false),
+          _statusItem("Solicitado", isSolicitado ? Icons.pending : Icons.pending_outlined, isSolicitado || isEntregado),
           Expanded(
-            child: Divider(indent: 10, endIndent: 10, color: Colors.grey[300]),
+            child: Divider(indent: 10, endIndent: 10, color: isEntregado ? const Color(0xFF1E88E5) : Colors.grey[300]),
           ),
-          _statusItem("Aceptado", Icons.radio_button_unchecked, false),
+          _statusItem("Entregado", isEntregado ? Icons.task_alt : Icons.radio_button_unchecked, isEntregado),
         ],
       ),
     );
@@ -466,39 +480,49 @@ class DetalleLibroPage extends StatelessWidget {
     }
 
     final isVenta = arguments['tipoTransaccion'] == 'Venta' || arguments['tipo'] == 'Venta';
+    final estado = arguments['estado'] ?? 'Disponible';
+    final isSolicitado = estado == 'Solicitado';
+    final isEntregado = estado == 'Entregado' || estado == 'Vendido';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (isOwner || !isVenta)
+        if (isOwner || !isVenta || !isEntregado)
           Container(
             decoration: BoxDecoration(
               boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
+                if (!isSolicitado && !isEntregado)
+                  BoxShadow(
+                    color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
               ],
             ),
             child: ElevatedButton(
-              onPressed: () {
-                if (isOwner) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PublicarLibroPage(
-                        bookData: arguments,
-                        bookId: arguments['id'],
-                      ),
-                    ),
-                  );
-                } else {
-                  _solicitarLibro(context, arguments);
-                }
-              },
+              onPressed: (isSolicitado || isEntregado) && !isOwner
+                  ? null
+                  : () {
+                      if (isOwner) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PublicarLibroPage(
+                              bookData: arguments,
+                              bookId: arguments['id'],
+                            ),
+                          ),
+                        );
+                      } else {
+                        _solicitarLibro(context, arguments);
+                      }
+                    },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E88E5),
+                backgroundColor: isOwner
+                    ? const Color(0xFF1E88E5)
+                    : (isSolicitado || isEntregado
+                        ? Colors.grey[400]
+                        : const Color(0xFF1E88E5)),
                 minimumSize: const Size(double.infinity, 60),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
@@ -506,7 +530,11 @@ class DetalleLibroPage extends StatelessWidget {
                 elevation: 0,
               ),
               child: Text(
-                isOwner ? "Editar Publicación" : "Solicitar Material",
+                isOwner
+                    ? "Editar Publicación"
+                    : (isEntregado
+                        ? "Entregado"
+                        : (isSolicitado ? "Solicitado" : "Solicitar Material")),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -515,7 +543,7 @@ class DetalleLibroPage extends StatelessWidget {
               ),
             ),
           ),
-        if (isVenta && !isOwner &&
+        if (isVenta && !isOwner && !isSolicitado && !isEntregado &&
             double.tryParse(price) != null &&
             double.parse(price) > 0) ...[
           if (!isVenta) const SizedBox(height: 12),

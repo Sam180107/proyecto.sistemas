@@ -57,16 +57,20 @@ class RatingCubit extends Cubit<RatingState> {
                 }
               }
 
-              emit(RatingLoaded(
-                promedio: promedio,
-                totalValoraciones: totalValoraciones,
-                miValoracion: miValoracion,
-              ));
+              if (!isClosed) {
+                emit(RatingLoaded(
+                  promedio: promedio,
+                  totalValoraciones: totalValoraciones,
+                  miValoracion: miValoracion,
+                ));
+              }
             } catch (e) {
-              emit(RatingError("Error al cargar valoraciones: $e"));
+              if (!isClosed) emit(RatingError("Error al cargar valoraciones: $e"));
             }
           },
-          onError: (error) => emit(RatingError("Error de red: $error")),
+          onError: (error) {
+            if (!isClosed) emit(RatingError("Error de red: $error"));
+          },
         );
   }
 

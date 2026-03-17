@@ -234,6 +234,28 @@ class _BookCardState extends State<_BookCard> {
                           ],
                         ),
                       ),
+                      if (widget.bookData['estado'] == 'Solicitado')
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.9),
+                            ),
+                            child: const Text(
+                              'SOLICITADO',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -299,7 +321,6 @@ class _BookCardState extends State<_BookCard> {
 
 class _HoverIconButton extends StatefulWidget {
   final IconData icon;
-  final IconData? activeIcon;
   final VoidCallback onPressed;
   final bool isSelected;
   final Color? activeColor;
@@ -307,7 +328,6 @@ class _HoverIconButton extends StatefulWidget {
   const _HoverIconButton({
     required this.icon,
     required this.onPressed,
-    this.activeIcon,
     this.isSelected = false,
     this.activeColor,
   });
@@ -342,9 +362,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
             ],
           ),
           child: Icon(
-            widget.isSelected
-                ? (widget.activeIcon ?? widget.icon)
-                : widget.icon,
+            widget.icon,
             size: 20,
             color: widget.isSelected
                 ? (widget.activeColor ?? Colors.red)
