@@ -52,18 +52,18 @@ class _LandingPageState extends State<LandingPage> {
     try {
       final materialsSnapshot = await firestore.collection('libros').get();
       int countActiveMaterials = 0;
-      
+
       for (var doc in materialsSnapshot.docs) {
         final data = doc.data();
         final estado = (data['estado'] as String? ?? 'Disponible').trim();
-        
+
         // Filtro de honestidad: Solo contar lo que el usuario realmente va a ver en el Home
-        if (estado != 'Vendido' && 
-            estado != 'Eliminado' && 
-            estado != 'Congelado' && 
+        if (estado != 'Vendido' &&
+            estado != 'Eliminado' &&
+            estado != 'Congelado' &&
             estado != 'Entregado') {
           countActiveMaterials++;
-          
+
           if (data['userId'] != null) {
             uniqueUsersFromBooks.add(data['userId'].toString());
           }
@@ -349,7 +349,7 @@ class _LandingPageState extends State<LandingPage> {
 
         Row(
           children: [
-            _buildStatItem('$totalStudents', 'Estudiantes Activos'),
+            _buildStatItem('$totalStudents', 'Estudiantes Registrados'),
             const SizedBox(width: 40),
             _buildStatItem('$totalMaterials', 'Materiales Disponibles'),
             const SizedBox(width: 40),
