@@ -22,10 +22,9 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage> {
   final GlobalKey _howItWorksKey = GlobalKey();
 
-  //valores por defecto si no hay datos en firebase
-  int totalStudents = 500;
-  int totalMaterials = 1200;
-  double satisfaction = 95.0;
+  int totalStudents = 0;
+  int totalMaterials = 0;
+  double satisfaction = 100.0;
 
   @override
   void initState() {
@@ -36,28 +35,37 @@ class _LandingPageState extends State<LandingPage> {
   //Estadisticas desde firebase
   Future<void> _loadStatistics() async {
     final firestore = FirebaseFirestore.instance;
-    int loadedStudents = 500;
-    int loadedMaterials = 1200;
-    double loadedSatisfaction = 95.0;
+    int loadedStudents = 0;
+    int loadedMaterials = 0;
+    double loadedSatisfaction = 100.0;
 
     // 1. Cargar Usuarios
     try {
       final usersSnapshot = await firestore.collection('usuarios').get();
-      if (usersSnapshot.docs.isNotEmpty) {
-        loadedStudents = usersSnapshot.docs.length;
-      }
+      loadedStudents = usersSnapshot.docs.length;
     } catch (e) {
       print('Error cargando usuarios en landing: $e');
     }
 
+    Set<String> uniqueUsersFromBooks = {};
     // 2. Cargar Libros/Materiales
     try {
       final materialsSnapshot = await firestore.collection('libros').get();
-      if (materialsSnapshot.docs.isNotEmpty) {
-        loadedMaterials = materialsSnapshot.docs.length;
+      loadedMaterials = materialsSnapshot.docs.length;
+      
+      for (var doc in materialsSnapshot.docs) {
+        final data = doc.data();
+        if (data['userId'] != null) {
+          uniqueUsersFromBooks.add(data['userId'].toString());
+        }
       }
     } catch (e) {
       print('Error cargando libros en landing: $e');
+    }
+
+    // Fallback: Si Firebase Rules bloquea ver 'usuarios' sin login, sacamos la cuenta de vendedores activos
+    if (loadedStudents == 0 && uniqueUsersFromBooks.isNotEmpty) {
+      loadedStudents = uniqueUsersFromBooks.length;
     }
 
     // 3. Cargar Valoraciones
@@ -330,12 +338,12 @@ class _LandingPageState extends State<LandingPage> {
 
         Row(
           children: [
-            _buildStatItem(totalStudents == 500 ? '500+' : '$totalStudents', 'Estudiantes Activos'),
+            _buildStatItem('$totalStudents', 'Estudiantes Activos'),
             const SizedBox(width: 40),
-            _buildStatItem(totalMaterials == 1200 ? '1200+' : '$totalMaterials', 'Materiales Disponibles'),
+            _buildStatItem('$totalMaterials', 'Materiales Disponibles'),
             const SizedBox(width: 40),
             _buildStatItem(
-              satisfaction == 95.0 ? '95%' : '${satisfaction.toStringAsFixed(0)}%',
+              '${satisfaction.toStringAsFixed(0)}%',
               'Satisfacción',
             ),
           ],
