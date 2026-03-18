@@ -31,6 +31,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/sdi.assets.jpg
+    - assets/LogoDef.png
     - assets/imagen1_landingpage.jpeg
     - assets/imagen2_landingpage.jpeg

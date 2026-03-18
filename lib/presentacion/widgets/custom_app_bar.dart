@@ -16,12 +16,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 1,
       title: Row(
         children: [
-          ClipOval(
-            child: Image.asset(
-              'assets/sdi.assets.jpg',
-              width: 40,
-              height: 40,
-              fit: BoxFit.cover,
+          Container(
+            width: 55,
+            height: 55,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(1.0),
+              child: Image.asset('assets/LogoDef.png', fit: BoxFit.contain),
             ),
           ),
           const SizedBox(width: 8),
@@ -132,8 +136,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 _HoverNavItem(
                   icon: Icons.notifications_outlined,
                   label: 'Notificaciones',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/notificaciones'),
+                  onTap: () => Navigator.pushNamed(context, '/notificaciones'),
                 ),
                 if (count > 0)
                   Positioned(
@@ -146,7 +149,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                         shape: BoxShape.circle,
                       ),
                       constraints: const BoxConstraints(
-                          minWidth: 16, minHeight: 16),
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
                       child: Text(
                         '$count',
                         style: const TextStyle(

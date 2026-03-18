@@ -19,12 +19,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController nombreController = TextEditingController();
-  final TextEditingController cedulaController = TextEditingController(); // <-- NUEVO
+  final TextEditingController cedulaController =
+      TextEditingController(); // <-- NUEVO
   final TextEditingController telefonoController = TextEditingController();
-  final TextEditingController departamentoController = TextEditingController(); 
-  
+  final TextEditingController departamentoController = TextEditingController();
+
   String rolSeleccionado = 'Estudiante';
-  String? carreraSeleccionada; 
+  String? carreraSeleccionada;
   bool isLogin = true;
   bool isPasswordVisible = false;
 
@@ -62,10 +63,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String formatearNombre(String texto) {
     if (texto.isEmpty) return texto;
-    return texto.split(' ').map((palabra) {
-      if (palabra.isEmpty) return '';
-      return palabra[0].toUpperCase() + palabra.substring(1).toLowerCase();
-    }).join(' ');
+    return texto
+        .split(' ')
+        .map((palabra) {
+          if (palabra.isEmpty) return '';
+          return palabra[0].toUpperCase() + palabra.substring(1).toLowerCase();
+        })
+        .join(' ');
   }
 
   void autenticar() {
@@ -81,36 +85,49 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (isLogin) {
       // --- LOGIN ---
-      if (!email.endsWith('@correo.unimet.edu.ve') && !email.endsWith('@unimet.edu.ve')) {
+      if (!email.endsWith('@correo.unimet.edu.ve') &&
+          !email.endsWith('@unimet.edu.ve')) {
         _mostrarMensaje("Usa un correo válido de la Unimet", Colors.red);
         return;
       }
       authCubit.login(email, password);
-
     } else {
       // --- REGISTRO ---
       String nombreRaw = nombreController.text.trim();
       final cedula = cedulaController.text.trim(); // <-- CAPTURAMOS CÉDULA
       final telefono = telefonoController.text.trim();
-      
-      final carreraODepartamento = rolSeleccionado == 'Estudiante' 
-          ? (carreraSeleccionada ?? '') 
+
+      final carreraODepartamento = rolSeleccionado == 'Estudiante'
+          ? (carreraSeleccionada ?? '')
           : departamentoController.text.trim();
 
-      if (nombreRaw.isEmpty || cedula.isEmpty || carreraODepartamento.isEmpty || telefono.isEmpty) {
-        _mostrarMensaje("Por favor, completa todos tus datos personales", Colors.orange);
+      if (nombreRaw.isEmpty ||
+          cedula.isEmpty ||
+          carreraODepartamento.isEmpty ||
+          telefono.isEmpty) {
+        _mostrarMensaje(
+          "Por favor, completa todos tus datos personales",
+          Colors.orange,
+        );
         return;
       }
 
       if (nombreRaw.split(' ').length < 2) {
-        _mostrarMensaje("Por favor, ingresa tu nombre y apellido", Colors.orange);
+        _mostrarMensaje(
+          "Por favor, ingresa tu nombre y apellido",
+          Colors.orange,
+        );
         return;
       }
 
       String nombreFormateado = formatearNombre(nombreRaw);
 
-      if (rolSeleccionado == 'Estudiante' && !email.endsWith('@correo.unimet.edu.ve')) {
-        _mostrarMensaje("Los estudiantes deben usar @correo.unimet.edu.ve", Colors.red);
+      if (rolSeleccionado == 'Estudiante' &&
+          !email.endsWith('@correo.unimet.edu.ve')) {
+        _mostrarMensaje(
+          "Los estudiantes deben usar @correo.unimet.edu.ve",
+          Colors.red,
+        );
         return;
       }
       if (rolSeleccionado == 'Profesor' && !email.endsWith('@unimet.edu.ve')) {
@@ -178,20 +195,42 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(35),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 20,
+                        ),
                       ],
                     ),
-                    child: Image.asset('assets/sdi.assets.jpg', width: 75, height: 75),
+                    child: SizedBox(
+                      width: 140,
+                      height: 140,
+                      child: Padding(
+                        padding: const EdgeInsets.all(2.0),
+                        child: Image.asset(
+                          'assets/LogoDef.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 25),
-                  const Text('BookSwap', style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold)),
-                  const Text('Intercambio de Material Académico', style: TextStyle(color: Colors.black45, fontSize: 16)),
+                  const Text(
+                    'BookSwap',
+                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    'Intercambio de Material Académico',
+                    style: TextStyle(color: Colors.black45, fontSize: 16),
+                  ),
                   const SizedBox(height: 30),
 
                   Container(
                     padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(45)),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(45),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -204,7 +243,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 35),
 
                         if (!isLogin) ...[
-                          const Text('¿Qué eres?', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text(
+                            '¿Qué eres?',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 10),
                           DropdownButtonFormField<String>(
                             initialValue: rolSeleccionado,
@@ -212,9 +254,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               prefixIcon: const Icon(Icons.person_outline),
                               filled: true,
                               fillColor: const Color(0xFFF3F4F6),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide.none,
+                              ),
                             ),
-                            items: ['Estudiante', 'Profesor'].map((String rol) => DropdownMenuItem(value: rol, child: Text(rol))).toList(),
+                            items: ['Estudiante', 'Profesor']
+                                .map(
+                                  (String rol) => DropdownMenuItem(
+                                    value: rol,
+                                    child: Text(rol),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: (String? nuevoValor) {
                               setState(() {
                                 rolSeleccionado = nuevoValor!;
@@ -224,29 +276,39 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 20),
 
-                          const Text('Nombre y Apellido', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Nombre y Apellido',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 10),
                           _buildCustomTextField(
-                            controller: nombreController, 
-                            hint: 'Juan Pérez', 
+                            controller: nombreController,
+                            hint: 'Juan Pérez',
                             icon: Icons.badge_outlined,
                             textCapitalization: TextCapitalization.words,
                           ),
                           const SizedBox(height: 20),
 
                           // --- NUEVO CAMPO DE CÉDULA O CARNET ---
-                          const Text('Cédula o Carnet', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Cédula o Carnet',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 10),
                           _buildCustomTextField(
-                            controller: cedulaController, 
-                            hint: 'Ej. 28123456', 
+                            controller: cedulaController,
+                            hint: 'Ej. 28123456',
                             icon: Icons.credit_card_outlined,
-                            keyboardType: TextInputType.number, // <-- Muestra el teclado numérico
+                            keyboardType: TextInputType
+                                .number, // <-- Muestra el teclado numérico
                           ),
                           const SizedBox(height: 20),
 
                           if (rolSeleccionado == 'Estudiante') ...[
-                            const Text('Carrera', style: TextStyle(fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Carrera',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             const SizedBox(height: 10),
                             DropdownButtonFormField<String>(
                               initialValue: carreraSeleccionada,
@@ -255,14 +317,32 @@ class _LoginScreenState extends State<LoginScreen> {
                                 prefixIcon: const Icon(Icons.school_outlined),
                                 filled: true,
                                 fillColor: const Color(0xFFF3F4F6),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: BorderSide.none,
+                                ),
                                 hintText: 'Selecciona tu carrera',
                               ),
-                              items: opcionesCarrera.map((String carrera) => DropdownMenuItem(value: carrera, child: Text(carrera, overflow: TextOverflow.ellipsis))).toList(),
-                              onChanged: (String? nuevoValor) => setState(() => carreraSeleccionada = nuevoValor),
+                              items: opcionesCarrera
+                                  .map(
+                                    (String carrera) => DropdownMenuItem(
+                                      value: carrera,
+                                      child: Text(
+                                        carrera,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (String? nuevoValor) => setState(
+                                () => carreraSeleccionada = nuevoValor,
+                              ),
                             ),
                           ] else ...[
-                            const Text('Departamento', style: TextStyle(fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Departamento',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             const SizedBox(height: 10),
                             _buildCustomTextField(
                               controller: departamentoController,
@@ -273,7 +353,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                           const SizedBox(height: 20),
 
-                          const Text('Teléfono', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Teléfono',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 10),
                           _buildCustomTextField(
                             controller: telefonoController,
@@ -284,27 +367,44 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 20),
                         ],
 
-                        const Text('Correo Institucional', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Correo Institucional',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 10),
                         TextField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            hintText: !isLogin && rolSeleccionado == 'Profesor' ? 'usuario@unimet.edu.ve' : 'usuario@correo.unimet.edu.ve',
+                            hintText: !isLogin && rolSeleccionado == 'Profesor'
+                                ? 'usuario@unimet.edu.ve'
+                                : 'usuario@correo.unimet.edu.ve',
                             prefixIcon: const Icon(Icons.email_outlined),
                             filled: true,
                             fillColor: const Color(0xFFF3F4F6),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                         if (isLogin)
                           const Padding(
                             padding: EdgeInsets.only(top: 8, left: 5),
-                            child: Text('Usa tu correo institucional verificado', style: TextStyle(fontSize: 12, color: Colors.black38)),
+                            child: Text(
+                              'Usa tu correo institucional verificado',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.black38,
+                              ),
+                            ),
                           ),
                         const SizedBox(height: 25),
 
-                        const Text('Contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Contraseña',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 10),
                         TextField(
                           controller: passwordController,
@@ -313,12 +413,21 @@ class _LoginScreenState extends State<LoginScreen> {
                             hintText: '••••••••',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              icon: Icon(isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                              onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+                              icon: Icon(
+                                isPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () => setState(
+                                () => isPasswordVisible = !isPasswordVisible,
+                              ),
                             ),
                             filled: true,
                             fillColor: const Color(0xFFF3F4F6),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 35),
@@ -329,20 +438,40 @@ class _LoginScreenState extends State<LoginScreen> {
                               _mostrarMensaje(state.message, Colors.red);
                             } else if (state is AuthAuthenticated) {
                               if (isLogin) {
-                                _mostrarMensaje("Inicio de sesión exitoso", Colors.green);
-                                if (emailController.text.trim().toLowerCase() == 'admin@correo.unimet.edu.ve') {
-                                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AdminHomePage()));
+                                _mostrarMensaje(
+                                  "Inicio de sesión exitoso",
+                                  Colors.green,
+                                );
+                                if (emailController.text.trim().toLowerCase() ==
+                                    'admin@correo.unimet.edu.ve') {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AdminHomePage(),
+                                    ),
+                                  );
                                 } else {
-                                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomePage()));
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const HomePage(),
+                                    ),
+                                  );
                                 }
                               }
-                            } else if (state is AuthUnauthenticated && !isLogin) {
-                              _mostrarMensaje("Registro exitoso. Ahora inicia sesión.", Colors.green);
+                            } else if (state is AuthUnauthenticated &&
+                                !isLogin) {
+                              _mostrarMensaje(
+                                "Registro exitoso. Ahora inicia sesión.",
+                                Colors.green,
+                              );
                               setState(() {
                                 isLogin = true;
                                 passwordController.clear();
                                 nombreController.clear();
-                                cedulaController.clear(); // <-- LO LIMPIAMOS PARA EL SIGUIENTE REGISTRO
+                                cedulaController
+                                    .clear(); // <-- LO LIMPIAMOS PARA EL SIGUIENTE REGISTRO
                                 telefonoController.clear();
                                 departamentoController.clear();
                                 carreraSeleccionada = null;
@@ -351,18 +480,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           builder: (context, state) {
                             if (state is AuthLoading) {
-                              return const Center(child: CircularProgressIndicator());
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
                             }
                             return ElevatedButton(
                               onPressed: autenticar,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1976D2),
                                 minimumSize: const Size(double.infinity, 62),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
                               ),
                               child: Text(
                                 isLogin ? 'Iniciar Sesión' : 'Registrarse',
-                                style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             );
                           },
@@ -373,7 +510,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           Center(
                             child: TextButton(
                               onPressed: _navigateToForgotPasswordScreen,
-                              child: const Text('¿Olvidaste tu contraseña?', style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w600)),
+                              child: const Text(
+                                '¿Olvidaste tu contraseña?',
+                                style: TextStyle(
+                                  color: Color(0xFF1976D2),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
                       ],
@@ -385,7 +528,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.lock_outline, size: 16, color: Colors.black38),
-                      Text(' Protección de datos garantizada', style: TextStyle(color: Colors.black38, fontSize: 13)),
+                      Text(
+                        ' Protección de datos garantizada',
+                        style: TextStyle(color: Colors.black38, fontSize: 13),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 50),
@@ -399,9 +545,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildCustomTextField({
-    required TextEditingController controller, 
-    required String hint, 
-    required IconData icon, 
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
@@ -414,7 +560,10 @@ class _LoginScreenState extends State<LoginScreen> {
         prefixIcon: Icon(icon),
         filled: true,
         fillColor: const Color(0xFFF3F4F6),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
@@ -434,7 +583,13 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(22),
           ),
           child: Center(
-            child: Text(label, style: TextStyle(color: active ? Colors.white : Colors.black54, fontWeight: FontWeight.bold)),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: active ? Colors.white : Colors.black54,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ),

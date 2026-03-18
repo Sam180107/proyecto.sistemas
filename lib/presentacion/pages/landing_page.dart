@@ -171,12 +171,16 @@ class _LandingPageState extends State<LandingPage> {
           // Logo
           Row(
             children: [
-              ClipOval(
-                child: Image.asset(
-                  'assets/sdi.assets.jpg',
-                  width: 32,
-                  height: 32,
-                  fit: BoxFit.cover,
+              Container(
+                width: 50,
+                height: 50,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(1.0),
+                  child: Image.asset('assets/LogoDef.png', fit: BoxFit.contain),
                 ),
               ),
               const SizedBox(width: 12),
