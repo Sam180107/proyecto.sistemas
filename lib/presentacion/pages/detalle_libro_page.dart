@@ -603,6 +603,7 @@ class DetalleLibroPage extends StatelessWidget {
                   backgroundColor: Colors.green,
                 ),
               );
+              Navigator.pushNamed(context, '/orders');
             },
           ),
           const SizedBox(height: 12),
@@ -629,6 +630,7 @@ class DetalleLibroPage extends StatelessWidget {
                     backgroundColor: Colors.green,
                   ),
                 );
+                Navigator.pushNamed(context, '/orders');
               },
               icon: const Icon(Icons.bug_report),
               label: const Text('Simular Pago (Prueba)'),
