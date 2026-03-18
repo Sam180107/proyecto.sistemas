@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/cubits/auth_cubit.dart';
@@ -109,6 +110,21 @@ class _LoginScreenState extends State<LoginScreen> {
           "Por favor, completa todos tus datos personales",
           Colors.orange,
         );
+        return;
+      }
+
+      // Validaciones de Cédula y Teléfono
+      final RegExp numRegExp = RegExp(r'^[0-9]+$');
+      if (!numRegExp.hasMatch(cedula) || cedula.length > 12) {
+        _mostrarMensaje(
+          "La cédula solo puede contener números y hasta 12 caracteres",
+          Colors.red,
+        );
+        return;
+      }
+
+      if (!numRegExp.hasMatch(telefono) || telefono.length != 11) {
+        _mostrarMensaje("El teléfono debe ser solo de 11 números", Colors.red);
         return;
       }
 
@@ -299,8 +315,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: cedulaController,
                             hint: 'Ej. 28123456',
                             icon: Icons.credit_card_outlined,
-                            keyboardType: TextInputType
-                                .number, // <-- Muestra el teclado numérico
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(12),
+                            ],
                           ),
                           const SizedBox(height: 20),
 
@@ -363,6 +382,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             hint: '0412 1234567',
                             icon: Icons.phone_outlined,
                             keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(11),
+                            ],
                           ),
                           const SizedBox(height: 20),
                         ],
@@ -550,11 +573,13 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon),
