@@ -51,14 +51,25 @@ class _LandingPageState extends State<LandingPage> {
     // 2. Cargar Libros/Materiales
     try {
       final materialsSnapshot = await firestore.collection('libros').get();
-      loadedMaterials = materialsSnapshot.docs.length;
+      int countActiveMaterials = 0;
       
       for (var doc in materialsSnapshot.docs) {
         final data = doc.data();
-        if (data['userId'] != null) {
-          uniqueUsersFromBooks.add(data['userId'].toString());
+        final estado = (data['estado'] as String? ?? 'Disponible').trim();
+        
+        // Filtro de honestidad: Solo contar lo que el usuario realmente va a ver en el Home
+        if (estado != 'Vendido' && 
+            estado != 'Eliminado' && 
+            estado != 'Congelado' && 
+            estado != 'Entregado') {
+          countActiveMaterials++;
+          
+          if (data['userId'] != null) {
+            uniqueUsersFromBooks.add(data['userId'].toString());
+          }
         }
       }
+      loadedMaterials = countActiveMaterials;
     } catch (e) {
       print('Error cargando libros en landing: $e');
     }
