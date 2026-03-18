@@ -606,7 +606,7 @@ class DetalleLibroPage extends StatelessWidget {
               Navigator.pushReplacementNamed(
                 context, 
                 '/pago_exitoso', 
-                arguments: [{'id': arguments['userId'], 'nombre': arguments['vendedor'] ?? 'el Vendedor'}],
+                arguments: [{'id': arguments['userId']?.toString() ?? '', 'nombre': (arguments['vendedor'] ?? 'el Vendedor').toString()}],
               );
             },
           ),
@@ -637,7 +637,7 @@ class DetalleLibroPage extends StatelessWidget {
                 Navigator.pushReplacementNamed(
                   context, 
                   '/pago_exitoso', 
-                  arguments: [{'id': arguments['userId'], 'nombre': arguments['vendedor'] ?? 'el Vendedor'}],
+                  arguments: [{'id': arguments['userId']?.toString() ?? '', 'nombre': (arguments['vendedor'] ?? 'el Vendedor').toString()}],
                 );
               },
               icon: const Icon(Icons.bug_report),

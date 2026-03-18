@@ -21,17 +21,17 @@ class SearchCubit extends Cubit<SearchState> {
 
       // Filter in memory to avoid index issues
       final allDocs = querySnapshot.docs;
-      
+
       final filteredDocs = allDocs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         // Check for 'estado' field, default to 'Disponible' if missing or empty
         String estado = (data['estado'] as String? ?? 'Disponible').trim();
         if (estado.isEmpty) estado = 'Disponible';
 
-        return estado != 'Vendido' && 
-               estado != 'Eliminado' && 
-               estado != 'Congelado' && 
-               estado != 'Entregado';
+        return estado != 'Vendido' &&
+            estado != 'Eliminado' &&
+            estado != 'Congelado' &&
+            estado != 'Entregado';
       }).toList();
 
       // Sort by creation date in memory
@@ -39,13 +39,13 @@ class SearchCubit extends Cubit<SearchState> {
         final dataA = a.data();
         final dataB = b.data();
         // Handle potential missing or different type for fechaCreacion
-        Timestamp? dateA; 
+        Timestamp? dateA;
         if (dataA['fechaCreacion'] is Timestamp) {
-            dateA = dataA['fechaCreacion'];
+          dateA = dataA['fechaCreacion'];
         }
         Timestamp? dateB;
         if (dataB['fechaCreacion'] is Timestamp) {
-            dateB = dataB['fechaCreacion'];
+          dateB = dataB['fechaCreacion'];
         }
 
         if (dateA == null && dateB == null) return 0;
@@ -89,21 +89,24 @@ class SearchCubit extends Cubit<SearchState> {
         );
       }
       if (condicion != null && condicion.isNotEmpty && condicion != 'Todos') {
-        collectionQuery = collectionQuery.where('condicion', isEqualTo: condicion);
+        collectionQuery = collectionQuery.where(
+          'condicion',
+          isEqualTo: condicion,
+        );
       }
 
       final querySnapshot = await collectionQuery.get();
-      
+
       // Filter in memory to avoid index issues
       List<QueryDocumentSnapshot> results = querySnapshot.docs.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
         String estado = (data['estado'] as String? ?? 'Disponible').trim();
         if (estado.isEmpty) estado = 'Disponible';
 
-        return estado != 'Vendido' && 
-               estado != 'Congelado' && 
-               estado != 'Entregado' && 
-               estado != 'Eliminado';
+        return estado != 'Vendido' &&
+            estado != 'Congelado' &&
+            estado != 'Entregado' &&
+            estado != 'Eliminado';
       }).toList();
 
       if (query != null && query.isNotEmpty) {
@@ -118,14 +121,16 @@ class SearchCubit extends Cubit<SearchState> {
       }
 
       if (isClosed) return;
-      emit(SearchLoaded(
-        results,
-        lastQuery: query,
-        lastCarrera: carrera,
-        lastMateria: materia,
-        lastTransaccion: transaccion,
-        lastCondicion: condicion,
-      ));
+      emit(
+        SearchLoaded(
+          results,
+          lastQuery: query,
+          lastCarrera: carrera,
+          lastMateria: materia,
+          lastTransaccion: transaccion,
+          lastCondicion: condicion,
+        ),
+      );
     } on FirebaseException catch (e) {
       if (isClosed) return;
       if (e.code == 'permission-denied') {

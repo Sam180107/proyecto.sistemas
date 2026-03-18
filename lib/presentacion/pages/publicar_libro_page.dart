@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
+
 class PublicarLibroPage extends StatefulWidget {
   final Map<String, dynamic>? bookData;
   final String? bookId;
@@ -27,17 +28,27 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
   @override
   void initState() {
     super.initState();
-    _tituloController = TextEditingController(text: widget.bookData?['titulo'] ?? '');
-    _autorController = TextEditingController(text: widget.bookData?['autor'] ?? '');
-    _precioController = TextEditingController(text: widget.bookData?['precio']?.toString() ?? '');
-    _descripcionController = TextEditingController(text: widget.bookData?['descripcion'] ?? '');
-    _stockController = TextEditingController(text: (widget.bookData?['stock'] ?? '1').toString());
-    
+    _tituloController = TextEditingController(
+      text: widget.bookData?['titulo'] ?? '',
+    );
+    _autorController = TextEditingController(
+      text: widget.bookData?['autor'] ?? '',
+    );
+    _precioController = TextEditingController(
+      text: widget.bookData?['precio']?.toString() ?? '',
+    );
+    _descripcionController = TextEditingController(
+      text: widget.bookData?['descripcion'] ?? '',
+    );
+    _stockController = TextEditingController(
+      text: (widget.bookData?['stock'] ?? '1').toString(),
+    );
+
     _tipoTransaccion = widget.bookData?['tipoTransaccion'] ?? 'Venta';
     if (!['Venta', 'Intercambio'].contains(_tipoTransaccion)) {
       _tipoTransaccion = 'Venta';
     }
-    
+
     _categoria = widget.bookData?['categoria'] ?? 'LITERATURA';
     _estadoLibro = widget.bookData?['condicion'] ?? 'Usado';
     _carreraSeleccionada = widget.bookData?['materia'];
@@ -64,7 +75,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
     'Educación',
     'Psicología',
     'Matemáticas Industriales',
-    'Otra'
+    'Otra',
   ];
 
   String _tipoTransaccion = 'Venta';
@@ -104,9 +115,14 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
         throw Exception('Debes iniciar sesión para publicar');
       }
 
-      final userDoc = await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .get();
       if (!userDoc.exists) {
-        throw Exception('Perfil de usuario no encontrado. Completa tu perfil primero.');
+        throw Exception(
+          'Perfil de usuario no encontrado. Completa tu perfil primero.',
+        );
       }
       final userData = userDoc.data()!;
 
@@ -115,7 +131,8 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
       );
       final int stock = int.tryParse(_stockController.text) ?? 1;
 
-      String imageUrl = widget.bookData?['imageUrl'] ?? widget.bookData?['imagen'] ?? '';
+      String imageUrl =
+          widget.bookData?['imageUrl'] ?? widget.bookData?['imagen'] ?? '';
 
       if (_selectedImage != null) {
         final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -146,7 +163,9 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
       }
 
       String nombre = userData['nombre'] ?? 'Usuario';
-      String iniciales = nombre.isNotEmpty ? nombre.split(' ').map((e) => e[0]).take(2).join('').toUpperCase() : 'UN';
+      String iniciales = nombre.isNotEmpty
+          ? nombre.split(' ').map((e) => e[0]).take(2).join('').toUpperCase()
+          : 'UN';
 
       final materialData = {
         'titulo': _tituloController.text.trim(),
@@ -171,7 +190,10 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
       };
 
       if (widget.bookId != null) {
-        await FirebaseFirestore.instance.collection('libros').doc(widget.bookId).update(materialData);
+        await FirebaseFirestore.instance
+            .collection('libros')
+            .doc(widget.bookId)
+            .update(materialData);
       } else {
         materialData['fechaCreacion'] = FieldValue.serverTimestamp();
         await FirebaseFirestore.instance.collection('libros').add(materialData);
@@ -179,7 +201,13 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(widget.bookId != null ? '¡Publicación actualizada!' : '¡Libro publicado con éxito!')),
+          SnackBar(
+            content: Text(
+              widget.bookId != null
+                  ? '¡Publicación actualizada!'
+                  : '¡Libro publicado con éxito!',
+            ),
+          ),
         );
         Navigator.pop(context, true);
       }
@@ -271,13 +299,18 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                                     fit: BoxFit.cover,
                                   )
                                 : (widget.bookData?['imageUrl'] != null
-                                    ? DecorationImage(
-                                        image: NetworkImage(widget.bookData!['imageUrl']),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null),
+                                      ? DecorationImage(
+                                          image: NetworkImage(
+                                            widget.bookData!['imageUrl'],
+                                          ),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null),
                           ),
-                          child: _selectedImage == null && widget.bookData?['imageUrl'] == null && widget.bookData?['imagen'] == null
+                          child:
+                              _selectedImage == null &&
+                                  widget.bookData?['imageUrl'] == null &&
+                                  widget.bookData?['imagen'] == null
                               ? const Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -323,7 +356,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: _carreraSeleccionada,
+                      initialValue: _carreraSeleccionada,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Carrera',
@@ -331,10 +364,15 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                         prefixIcon: Icon(Icons.school),
                       ),
                       items: opcionesCarrera
-                          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
                           .toList(),
-                      onChanged: (val) => setState(() => _carreraSeleccionada = val),
-                      validator: (value) => value == null || value.isEmpty ? 'Selecciona una carrera' : null,
+                      onChanged: (val) =>
+                          setState(() => _carreraSeleccionada = val),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Selecciona una carrera'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -356,16 +394,22 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                           Expanded(
                             child: TextFormField(
                               controller: _precioController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d*'),
+                                ),
                               ],
                               decoration: const InputDecoration(
                                 labelText: 'Precio',
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.attach_money),
                               ),
-                              validator: (value) => value == null || value.isEmpty
+                              validator: (value) =>
+                                  value == null || value.isEmpty
                                   ? 'Campo requerido'
                                   : null,
                             ),
@@ -374,7 +418,7 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                         ],
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _tipoTransaccion,
+                            initialValue: _tipoTransaccion,
                             isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Tipo',
@@ -405,32 +449,44 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _categoria,
+                            initialValue: _categoria,
                             isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Categoría',
                               border: OutlineInputBorder(),
                             ),
-                            items: [
-                              'LITERATURA',
-                              'INGENIERÍA',
-                              'CIENCIAS',
-                              'NEGOCIOS',
-                              'DERECHO',
-                              'ECONOMÍA',
-                              'PSICOLOGÍA',
-                              'MEDICINA',
-                              'ARQUITECTURA',
-                              'HUMANIDADES',
-                              'OTROS',
-                            ].map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (val) => setState(() => _categoria = val!),
+                            items:
+                                [
+                                      'LITERATURA',
+                                      'INGENIERÍA',
+                                      'CIENCIAS',
+                                      'NEGOCIOS',
+                                      'DERECHO',
+                                      'ECONOMÍA',
+                                      'PSICOLOGÍA',
+                                      'MEDICINA',
+                                      'ARQUITECTURA',
+                                      'HUMANIDADES',
+                                      'OTROS',
+                                    ]
+                                    .map(
+                                      (e) => DropdownMenuItem(
+                                        value: e,
+                                        child: Text(
+                                          e,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                            onChanged: (val) =>
+                                setState(() => _categoria = val!),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _estadoLibro,
+                            initialValue: _estadoLibro,
                             decoration: const InputDecoration(
                               labelText: 'Estado del Libro',
                               border: OutlineInputBorder(),
@@ -443,7 +499,8 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                                   ),
                                 )
                                 .toList(),
-                            onChanged: (val) => setState(() => _estadoLibro = val!),
+                            onChanged: (val) =>
+                                setState(() => _estadoLibro = val!),
                           ),
                         ),
                       ],
@@ -459,8 +516,10 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                         prefixIcon: Icon(Icons.inventory),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Campo requerido';
-                        if (int.tryParse(value) == null || int.parse(value) < 1) {
+                        if (value == null || value.isEmpty)
+                          return 'Campo requerido';
+                        if (int.tryParse(value) == null ||
+                            int.parse(value) < 1) {
                           return 'El stock debe ser al menos 1';
                         }
                         return null;
@@ -476,9 +535,14 @@ class _PublicarLibroPageState extends State<PublicarLibroPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                        child: Text(
-                          widget.bookId != null ? 'Guardar Cambios' : 'Publicar Ahora',
-                          style: const TextStyle(fontSize: 18, color: Colors.white),
+                      child: Text(
+                        widget.bookId != null
+                            ? 'Guardar Cambios'
+                            : 'Publicar Ahora',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],

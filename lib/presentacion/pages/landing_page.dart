@@ -815,11 +815,14 @@ class _LandingPageState extends State<LandingPage> {
                   children: [
                     Expanded(
                       child: _buildFooterColumn('Plataforma', [
-                        {'label': 'Cómo Funciona', 'page': ComoFuncionaPage()},
-                        {'label': 'Beneficios', 'page': BeneficiosPage()},
+                        {
+                          'label': 'Cómo Funciona',
+                          'page': const ComoFuncionaPage(),
+                        },
+                        {'label': 'Beneficios', 'page': const BeneficiosPage()},
                         {
                           'label': 'Preguntas Frecuentes',
-                          'page': PreguntasFrecuentesPage(),
+                          'page': const PreguntasFrecuentesPage(),
                         },
                       ]),
                     ),
@@ -827,23 +830,23 @@ class _LandingPageState extends State<LandingPage> {
                       child: _buildFooterColumn('Soporte', [
                         {
                           'label': 'Centro de Ayuda',
-                          'page': CentroDeAyudaPage(),
+                          'page': const CentroDeAyudaPage(),
                         },
                         {
                           'label': 'Políticas de Uso',
-                          'page': PoliticasDeUsoPage(),
+                          'page': const PoliticasDeUsoPage(),
                         },
-                        {'label': 'Contacto', 'page': ContactoPage()},
+                        {'label': 'Contacto', 'page': const ContactoPage()},
                       ]),
                     ),
                     Expanded(
                       child: _buildFooterColumn('Legal', [
                         {
                           'label': 'Términos y Condiciones',
-                          'page': TerminosYCondicionesPage(),
+                          'page': const TerminosYCondicionesPage(),
                         },
-                        {'label': 'Privacidad', 'page': PrivacidadPage()},
-                        {'label': 'Cookies', 'page': CookiesPage()},
+                        {'label': 'Privacidad', 'page': const PrivacidadPage()},
+                        {'label': 'Cookies', 'page': const CookiesPage()},
                       ]),
                     ),
                   ],
@@ -855,30 +858,36 @@ class _LandingPageState extends State<LandingPage> {
                     _buildFooterBrand(),
                     const SizedBox(height: 24),
                     _buildFooterColumn('Plataforma', [
-                      {'label': 'Cómo Funciona', 'page': ComoFuncionaPage()},
-                      {'label': 'Beneficios', 'page': BeneficiosPage()},
+                      {
+                        'label': 'Cómo Funciona',
+                        'page': const ComoFuncionaPage(),
+                      },
+                      {'label': 'Beneficios', 'page': const BeneficiosPage()},
                       {
                         'label': 'Preguntas Frecuentes',
-                        'page': PreguntasFrecuentesPage(),
+                        'page': const PreguntasFrecuentesPage(),
                       },
                     ]),
                     const SizedBox(height: 24),
                     _buildFooterColumn('Soporte', [
-                      {'label': 'Centro de Ayuda', 'page': CentroDeAyudaPage()},
+                      {
+                        'label': 'Centro de Ayuda',
+                        'page': const CentroDeAyudaPage(),
+                      },
                       {
                         'label': 'Políticas de Uso',
-                        'page': PoliticasDeUsoPage(),
+                        'page': const PoliticasDeUsoPage(),
                       },
-                      {'label': 'Contacto', 'page': ContactoPage()},
+                      {'label': 'Contacto', 'page': const ContactoPage()},
                     ]),
                     const SizedBox(height: 24),
                     _buildFooterColumn('Legal', [
                       {
                         'label': 'Términos y Condiciones',
-                        'page': TerminosYCondicionesPage(),
+                        'page': const TerminosYCondicionesPage(),
                       },
-                      {'label': 'Privacidad', 'page': PrivacidadPage()},
-                      {'label': 'Cookies', 'page': CookiesPage()},
+                      {'label': 'Privacidad', 'page': const PrivacidadPage()},
+                      {'label': 'Cookies', 'page': const CookiesPage()},
                     ]),
                   ],
                 );

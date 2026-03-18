@@ -120,7 +120,7 @@ class _SearchOverlayState extends State<SearchOverlay> {
                             String? currentMateria;
                             String? currentTransaccion;
                             String? currentCondicion;
-                            
+
                             if (state is SearchLoaded) {
                               currentCarrera = state.lastCarrera;
                               currentMateria = state.lastMateria;
@@ -279,11 +279,7 @@ class _FilterDialogState extends State<_FilterDialog> {
     'Intercambio',
     'Donación',
   ];
-  final List<String> _condiciones = [
-    'Todos',
-    'Nuevo',
-    'Usado',
-  ];
+  final List<String> _condiciones = ['Todos', 'Nuevo', 'Usado'];
 
   @override
   Widget build(BuildContext context) {
@@ -292,9 +288,9 @@ class _FilterDialogState extends State<_FilterDialog> {
       title: Stack(
         alignment: Alignment.center,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
+            children: [
               Icon(Icons.filter_list_rounded, color: Color(0xFF003870)),
               SizedBox(width: 8),
               Text('Filtros de Búsqueda'),
@@ -366,7 +362,9 @@ class _FilterDialogState extends State<_FilterDialog> {
                 transaccion: _selectedTransaccion == 'Todos'
                     ? null
                     : _selectedTransaccion,
-                condicion: _selectedCondicion == 'Todos' ? null : _selectedCondicion,
+                condicion: _selectedCondicion == 'Todos'
+                    ? null
+                    : _selectedCondicion,
               );
               Navigator.of(context).pop();
             },
@@ -398,7 +396,7 @@ class _FilterDialogState extends State<_FilterDialog> {
     ValueChanged<String?> onChanged,
   ) {
     return DropdownButtonFormField<String>(
-      value: selectedValue,
+      initialValue: selectedValue,
       hint: Text('Seleccionar ${label.toLowerCase()}'),
       decoration: InputDecoration(
         labelText: label,

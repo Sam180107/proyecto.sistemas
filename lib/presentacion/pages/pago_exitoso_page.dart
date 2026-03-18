@@ -8,15 +8,18 @@ class PagoExitosoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // arguments es una lista de mapas con id y nombre del vendedor
-    final List<Map<String, String>> vendedores = (ModalRoute.of(context)?.settings.arguments as List<Map<String, String>>?) ?? [];
+    final List<dynamic> rawArguments = (ModalRoute.of(context)?.settings.arguments as List<dynamic>?) ?? [];
 
     // Filtramos vendedores duplicados basándonos en el ID
     final vendedoresUnicos = [];
     final idsVistos = <String>{};
-    for (var v in vendedores) {
-      if (v['id'] != null && !idsVistos.contains(v['id'])) {
-        idsVistos.add(v['id']!);
-        vendedoresUnicos.add(v);
+    for (var v in rawArguments) {
+      if (v is Map) {
+        final id = v['id']?.toString();
+        if (id != null && !idsVistos.contains(id)) {
+          idsVistos.add(id);
+          vendedoresUnicos.add(v);
+        }
       }
     }
 
@@ -76,7 +79,7 @@ class PagoExitosoPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                ...vendedoresUnicos.map((vendedor) => _buildValoracionCard(context, vendedor['id']!, vendedor['nombre']!)),
+                ...vendedoresUnicos.map((vendedor) => _buildValoracionCard(context, vendedor['id']!.toString(), vendedor['nombre']?.toString() ?? 'Vendedor')),
               ],
               const SizedBox(height: 40),
               SizedBox(
@@ -121,32 +124,51 @@ class PagoExitosoPage extends StatelessWidget {
         elevation: 2,
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Text(
-                '¿Cómo calificarías a $nombreVendedor?',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              BlocBuilder<RatingCubit, RatingState>(
-                builder: (context, state) {
-                  int estrellasSeleccionadas = 0;
-                  if (state is RatingLoaded && state.miValoracion != null) {
-                    estrellasSeleccionadas = state.miValoracion!;
-                  }
+          child: BlocBuilder<RatingCubit, RatingState>(
+            builder: (context, state) {
+              if (state is RatingLoaded && state.miValoracion != null) {
+                return Column(
+                  children: [
+                    const Icon(Icons.stars, color: Colors.green, size: 40),
+                    const SizedBox(height: 8),
+                    Text(
+                      '¡Gracias por valorar a $nombreVendedor!',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      'Le diste ${state.miValoracion} estrella${state.miValoracion! > 1 ? 's' : ''}',
+                      style: const TextStyle(fontSize: 14, color: Colors.black54),
+                    ),
+                  ],
+                );
+              }
 
-                  return Row(
+              if (state is RatingLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return Column(
+                children: [
+                  Text(
+                    '¿Cómo calificarías a $nombreVendedor?',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
                       return IconButton(
-                        icon: Icon(
-                          index < estrellasSeleccionadas
-                              ? Icons.star
-                              : Icons.star_border,
+                        icon: const Icon(
+                          Icons.star_border,
                           color: Colors.amber,
                           size: 36,
                         ),
@@ -159,16 +181,16 @@ class PagoExitosoPage extends StatelessWidget {
                                 backgroundColor: Colors.green,
                               ),
                             );
-                            // Recargar las valoraciones después de guardarlas para que resalten las estrellas correctas
-                            context.read<RatingCubit>().cargarValoraciones(vendedorId);
+                            // Al guardar, el Cubit emitirá un nuevo estado con miValoracion != null
+                            // y el BlocBuilder reconstruirá la UI mostrando el mensaje de agradecimiento.
                           }
                         },
                       );
                     }),
-                  );
-                },
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

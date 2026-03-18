@@ -332,8 +332,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
       ),
       body: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
-          if (state is ProfileLoading)
+          if (state is ProfileLoading) {
             return const Center(child: CircularProgressIndicator());
+          }
           if (state is ProfileError) return Center(child: Text(state.mensaje));
 
           if (state is ProfileLoaded) {
@@ -512,7 +513,8 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                     builder: (context, snapshot) {
                       String telefonoFirebase = "";
                       if (snapshot.hasData && snapshot.data!.exists) {
-                        final data = snapshot.data!.data() as Map<String, dynamic>;
+                        final data =
+                            snapshot.data!.data() as Map<String, dynamic>;
                         telefonoFirebase = data['telefono'] ?? "";
                       }
 
@@ -1085,14 +1087,16 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Publicación eliminada correctamente')),
+            const SnackBar(
+              content: Text('Publicación eliminada correctamente'),
+            ),
           );
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al eliminar: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
         }
       }
     }
@@ -1143,7 +1147,13 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                             )
                           : Container(
                               color: Colors.grey[200],
-                              child: const Center(child: Icon(Icons.book, size: 30, color: Colors.grey)),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.book,
+                                  size: 30,
+                                  color: Colors.grey,
+                                ),
+                              ),
                             ),
                     ),
                   ),
@@ -1173,14 +1183,20 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                         ),
                       ),
                     ),
-                  if (data['estado'] == 'Solicitado' || data['estado'] == 'Entregado')
+                  if (data['estado'] == 'Solicitado' ||
+                      data['estado'] == 'Entregado')
                     Positioned(
                       top: 4,
                       left: 4,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: data['estado'] == 'Solicitado' ? Colors.orange : Colors.green,
+                          color: data['estado'] == 'Solicitado'
+                              ? Colors.orange
+                              : Colors.green,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -1198,7 +1214,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.7),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
                         ),
                         child: const Center(
                           child: Column(
@@ -1225,7 +1243,10 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
             Expanded(
               flex: isOwner ? 10 : 7,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 8.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1258,7 +1279,9 @@ class _PerfilPageViewState extends State<_PerfilPageView> {
                           if (rawPrice is num) {
                             price = rawPrice.toStringAsFixed(2);
                           } else if (rawPrice is String) {
-                            price = double.tryParse(rawPrice)?.toStringAsFixed(2) ?? rawPrice;
+                            price =
+                                double.tryParse(rawPrice)?.toStringAsFixed(2) ??
+                                rawPrice;
                           }
                         }
                         return Text(

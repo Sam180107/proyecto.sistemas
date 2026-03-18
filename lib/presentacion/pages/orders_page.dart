@@ -128,7 +128,7 @@ class _OrdersPageState extends State<_OrdersPageContent> with SingleTickerProvid
         child: const Text('Pagar'),
       );
     }
-    if (order.status == 'paid' || order.status == 'completed') {
+    if (order.status == 'paid') {
       return IconButton(
         icon: const Icon(Icons.star_outline, color: Colors.amber, size: 28),
         onPressed: () => _mostrarDialogoValoracion(context, order.id, order.sellerId),
