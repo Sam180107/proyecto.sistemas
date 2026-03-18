@@ -140,7 +140,11 @@ class CartPage extends StatelessWidget {
                             backgroundColor: Colors.green,
                           ),
                         );
-                        Navigator.pushNamed(context, '/orders');
+                        final vendedoresAValorar = state.items.map((item) => {
+                          'id': item.sellerId,
+                          'nombre': 'el vendedor de ${item.title}'
+                        }).toList();
+                        Navigator.pushReplacementNamed(context, '/pago_exitoso', arguments: vendedoresAValorar);
                       },
                     ),
                     const SizedBox(height: 12),
@@ -166,7 +170,11 @@ class CartPage extends StatelessWidget {
                               backgroundColor: Colors.green,
                             ),
                           );
-                          Navigator.pushNamed(context, '/orders');
+                          final vendedoresAValorar = state.items.map((item) => {
+                            'id': item.sellerId,
+                            'nombre': 'el vendedor de ${item.title}'
+                          }).toList();
+                          Navigator.pushReplacementNamed(context, '/pago_exitoso', arguments: vendedoresAValorar);
                         },
                         icon: const Icon(Icons.bug_report),
                         label: const Text('Simular Pago (Prueba)'),

@@ -34,6 +34,7 @@ import 'package:unimet_marketplace/presentacion/pages/gestion_usuarios_page.dart
 import 'package:unimet_marketplace/presentacion/pages/solicitudes_carrera_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/notificaciones_page.dart';
 import 'package:unimet_marketplace/presentacion/pages/favorites_page.dart';
+import 'package:unimet_marketplace/presentacion/pages/pago_exitoso_page.dart';
 import 'package:unimet_marketplace/domain/cubits/cora_cubit.dart';
 
 void main() async {
@@ -105,6 +106,7 @@ class MyApp extends StatelessWidget {
             '/gestion_usuarios': (context) => const GestionUsuariosPage(),
             '/solicitudes_carrera': (context) => const SolicitudesCarreraPage(),
             '/notificaciones': (context) => const NotificacionesPage(),
+            '/pago_exitoso': (context) => const PagoExitosoPage(),
           },
         ),
       ),
