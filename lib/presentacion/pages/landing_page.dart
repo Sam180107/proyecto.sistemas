@@ -35,14 +35,34 @@ class _LandingPageState extends State<LandingPage> {
 
   //Estadisticas desde firebase
   Future<void> _loadStatistics() async {
+    final firestore = FirebaseFirestore.instance;
+    int loadedStudents = 500;
+    int loadedMaterials = 1200;
+    double loadedSatisfaction = 95.0;
+
+    // 1. Cargar Usuarios
     try {
-      final firestore = FirebaseFirestore.instance;
       final usersSnapshot = await firestore.collection('usuarios').get();
+      if (usersSnapshot.docs.isNotEmpty) {
+        loadedStudents = usersSnapshot.docs.length;
+      }
+    } catch (e) {
+      print('Error cargando usuarios en landing: $e');
+    }
+
+    // 2. Cargar Libros/Materiales
+    try {
       final materialsSnapshot = await firestore.collection('libros').get();
+      if (materialsSnapshot.docs.isNotEmpty) {
+        loadedMaterials = materialsSnapshot.docs.length;
+      }
+    } catch (e) {
+      print('Error cargando libros en landing: $e');
+    }
+
+    // 3. Cargar Valoraciones
+    try {
       final reviewsSnapshot = await firestore.collection('valoraciones').get();
-      
-      double satisfactionValue = 95.0; // valor por defecto
-      
       if (reviewsSnapshot.docs.isNotEmpty) {
         double totalRating = 0.0;
         int count = 0;
@@ -55,23 +75,19 @@ class _LandingPageState extends State<LandingPage> {
         }
         if (count > 0) {
           double avgRating = totalRating / count;
-          satisfactionValue = avgRating * 20.0;
+          loadedSatisfaction = avgRating * 20.0; // Convertir 5 estrellas a %
         }
       }
-
-      if (mounted) {
-        setState(() {
-          totalStudents = usersSnapshot.docs.isNotEmpty
-              ? usersSnapshot.docs.length
-              : 500;
-          totalMaterials = materialsSnapshot.docs.isNotEmpty
-              ? materialsSnapshot.docs.length
-              : 1200;
-          satisfaction = satisfactionValue;
-        });
-      }
     } catch (e) {
-      print('Error cargando estadísticas: $e');
+      print('Error cargando valoraciones en landing: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        totalStudents = loadedStudents;
+        totalMaterials = loadedMaterials;
+        satisfaction = loadedSatisfaction;
+      });
     }
   }
 
@@ -314,12 +330,12 @@ class _LandingPageState extends State<LandingPage> {
 
         Row(
           children: [
-            _buildStatItem('$totalStudents+', 'Estudiantes Activos'),
+            _buildStatItem(totalStudents == 500 ? '500+' : '$totalStudents', 'Estudiantes Activos'),
             const SizedBox(width: 40),
-            _buildStatItem('$totalMaterials+', 'Materiales Disponibles'),
+            _buildStatItem(totalMaterials == 1200 ? '1200+' : '$totalMaterials', 'Materiales Disponibles'),
             const SizedBox(width: 40),
             _buildStatItem(
-              '${satisfaction.toStringAsFixed(0)}%',
+              satisfaction == 95.0 ? '95%' : '${satisfaction.toStringAsFixed(0)}%',
               'Satisfacción',
             ),
           ],
