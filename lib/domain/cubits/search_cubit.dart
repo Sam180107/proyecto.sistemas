@@ -23,10 +23,15 @@ class SearchCubit extends Cubit<SearchState> {
       final allDocs = querySnapshot.docs;
       
       final filteredDocs = allDocs.where((doc) {
-        final data = doc.data();
-        // Check for 'estado' field, default to 'Disponible' if missing
-        final estado = data['estado'] as String? ?? 'Disponible';
-        return estado != 'Vendido' && estado != 'Eliminado' && estado != 'Congelado' && estado != 'Entregado';
+        final data = doc.data() as Map<String, dynamic>;
+        // Check for 'estado' field, default to 'Disponible' if missing or empty
+        String estado = (data['estado'] as String? ?? 'Disponible').trim();
+        if (estado.isEmpty) estado = 'Disponible';
+
+        return estado != 'Vendido' && 
+               estado != 'Eliminado' && 
+               estado != 'Congelado' && 
+               estado != 'Entregado';
       }).toList();
 
       // Sort by creation date in memory
@@ -92,8 +97,13 @@ class SearchCubit extends Cubit<SearchState> {
       // Filter in memory to avoid index issues
       List<QueryDocumentSnapshot> results = querySnapshot.docs.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        final estado = data['estado'] as String? ?? 'Disponible';
-        return estado != 'Vendido' && estado != 'Congelado' && estado != 'Entregado' && estado != 'Eliminado';
+        String estado = (data['estado'] as String? ?? 'Disponible').trim();
+        if (estado.isEmpty) estado = 'Disponible';
+
+        return estado != 'Vendido' && 
+               estado != 'Congelado' && 
+               estado != 'Entregado' && 
+               estado != 'Eliminado';
       }).toList();
 
       if (query != null && query.isNotEmpty) {
