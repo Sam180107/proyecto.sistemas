@@ -19,12 +19,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           Container(
             width: 55,
             height: 55,
+            clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
             ),
             child: Padding(
-              padding: const EdgeInsets.all(1.0),
+              padding: const EdgeInsets.all(4.0),
               child: Image.asset('assets/LogoDef.png', fit: BoxFit.contain),
             ),
           ),
